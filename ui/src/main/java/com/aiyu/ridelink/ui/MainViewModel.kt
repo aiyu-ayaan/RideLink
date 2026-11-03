@@ -30,6 +30,8 @@ class MainViewModel @Inject constructor(
     val caller = controller.caller
     val log = controller.log
     val detected = controller.detected
+    val speed = controller.speed
+    val demo = controller.demo
 
     fun startScan() = link.startScan()
     fun stopScan() = link.stopScan()
@@ -50,6 +52,7 @@ class MainViewModel @Inject constructor(
     fun setForwardCalls(on: Boolean) = viewModelScope.launch { repo.setForwardCalls(on) }
     fun setForwardMessages(on: Boolean) = viewModelScope.launch { repo.setForwardMessages(on) }
 
+    fun setDemo(on: Boolean) = controller.setDemo(on)
     fun sendText(text: String) = controller.sendTestText(text)
     fun sendTestTurn() = controller.onNavigation(NavStep(250, 540, 3_400, Maneuver.RIGHT, "Turn right test"))
     fun testCall(start: Boolean) = if (start) controller.onIncomingCall("Test caller") else controller.onCallEnded()

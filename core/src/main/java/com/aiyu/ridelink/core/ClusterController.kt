@@ -10,6 +10,7 @@ import com.aiyu.ridelink.core.protocol.ClusterModel
 import com.aiyu.ridelink.core.protocol.ClusterProtocol
 import com.aiyu.ridelink.core.protocol.ClusterProtocol.CallState
 import com.aiyu.ridelink.core.protocol.ClusterProtocol.NavStep
+import com.aiyu.ridelink.core.protocol.Maneuver
 import com.aiyu.ridelink.core.settings.Settings
 import com.aiyu.ridelink.core.settings.SettingsRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -59,6 +60,15 @@ class ClusterController @Inject constructor(
     private val _detected = MutableStateFlow<ClusterModel?>(null)
     val detected: StateFlow<ClusterModel?> = _detected.asStateFlow()
 
+    /** Km/h reported by the display. */
+    private val _speed = MutableStateFlow<Int?>(null)
+    val speed: StateFlow<Int?> = _speed.asStateFlow()
+
+    /** Demo ride: fake speed, turns and a call, for screenshots and testing without a scooter. */
+    private val _demo = MutableStateFlow(false)
+    val demo: StateFlow<Boolean> = _demo.asStateFlow()
+    private var demoJob: Job? = null
+
     private fun model(s: Settings) = s.model ?: _detected.value ?: ClusterModel.DEFAULT
 
     init {
@@ -66,6 +76,7 @@ class ClusterController @Inject constructor(
             link.incoming.collect { frame ->
                 log(frame, ok = true, rx = true)
                 ClusterModel.detect(frame)?.let { _detected.value = it }
+                ClusterProtocol.speedKmh(frame)?.let { _speed.value = it }
             }
         }
     }
@@ -152,6 +163,43 @@ class ClusterController @Inject constructor(
         if (settings.current().forwardMessages) send(ClusterProtocol.text(ClusterProtocol.DID_TEXT_LINE_2, sender))
     }
 
+    fun setDemo(on: Boolean) {
+        demoJob?.cancel()
+        _demo.value = on
+        if (!on) {
+            _speed.value = null
+            onNavigationEnded()
+            onCallEnded()
+            return
+        }
+        demoJob = scope.launch {
+            val route = listOf(
+                Triple(Maneuver.RIGHT, "Turn right onto MG Road", 450),
+                Triple(Maneuver.SLIGHT_LEFT, "Slight left toward Ring Rd", 900),
+                Triple(Maneuver.ROUNDABOUT, "At the roundabout take exit 2", 300),
+                Triple(Maneuver.U_TURN, "Make a U-turn", 200),
+                Triple(Maneuver.DESTINATION, "Arrive at Home", 120),
+            )
+            var left = route.sumOf { it.third }
+            var tick = 0
+            while (isActive) {
+                for ((maneuver, text, length) in route) {
+                    var d = length
+                    while (d > 0 && isActive) {
+                        _speed.value = 28 + (tick * 7) % 24
+                        onNavigation(ClusterProtocol.NavStep(d, (left / 8.0).toLong(), left, maneuver, text))
+                        if (tick == 4) onIncomingCall("Mom") else if (tick == 9) onCallEnded()
+                        tick++
+                        d -= 50
+                        left = (left - 50).coerceAtLeast(0)
+                        delay(DEMO_STEP_MS)
+                    }
+                }
+                left = route.sumOf { it.third }
+            }
+        }
+    }
+
     /** Debug screen: write raw text to custom line 1. */
     fun sendTestText(text: String) = scope.launch { send(ClusterProtocol.text(ClusterProtocol.DID_TEXT_LINE_1, text)) }
 
@@ -187,5 +235,6 @@ class ClusterController @Inject constructor(
 
     private companion object {
         const val LOG_SIZE = 100
+        const val DEMO_STEP_MS = 1_500L
     }
 }

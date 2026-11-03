@@ -29,7 +29,13 @@
     <string name="pair_scanning">Scanning…</string>
     <string name="pair_none">Nothing found yet</string>
     <string name="pair_rescan">Scan again</string>
-    <string name="nav_now">Navigation</string>
+    <string name="hero_demo">Demo ride</string>
+    <string name="dash_no_route">No route. Start navigation in Google Maps.</string>
+    <string name="dash_speed">Speed</string>
+    <string name="dash_kmh">km/h</string>
+    <string name="dash_eta">ETA</string>
+    <string name="dash_min">min</string>
+    <string name="dash_left">Left</string>
     <string name="call_now">Incoming call</string>
     <string name="perm_bluetooth_title">Bluetooth access needed</string>
     <string name="perm_bluetooth_body">RideLink needs nearby devices access to find and talk to the scooter display.</string>
@@ -66,6 +72,7 @@
     <string name="console_send">Send</string>
     <string name="console_test_turn">Send test turn</string>
     <string name="console_test_call">Test call</string>
+    <string name="console_demo">Demo ride</string>
     <string name="console_empty">Frames sent to the scooter show up here.</string>
     <string name="console_failed">Not delivered</string>
     <string name="console_delivered">Delivered</string>

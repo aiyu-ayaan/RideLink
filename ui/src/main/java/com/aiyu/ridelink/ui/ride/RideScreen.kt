@@ -8,7 +8,11 @@ import android.os.Build
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -32,6 +36,12 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.TurnLeft
+import androidx.compose.material.icons.rounded.ForkRight
+import androidx.compose.material.icons.rounded.TurnSlightRight
+import androidx.compose.material.icons.rounded.TurnSharpRight
+import androidx.compose.material.icons.rounded.ForkLeft
+import androidx.compose.material.icons.rounded.TurnSlightLeft
+import androidx.compose.material.icons.rounded.TurnSharpLeft
 import androidx.compose.material.icons.rounded.TurnRight
 import androidx.compose.material.icons.rounded.Bluetooth
 import androidx.compose.material.icons.rounded.Call
@@ -113,6 +123,8 @@ fun RideScreen(vm: MainViewModel, onStartRide: () -> Unit, onEndRide: () -> Unit
     val link by vm.linkState.collectAsStateWithLifecycle()
     val nav by vm.nav.collectAsStateWithLifecycle()
     val caller by vm.caller.collectAsStateWithLifecycle()
+    val speed by vm.speed.collectAsStateWithLifecycle()
+    val demo by vm.demo.collectAsStateWithLifecycle()
 
     // Re-check grants each time we come back from system settings.
     var refresh by remember { mutableIntStateOf(0) }
@@ -150,7 +162,13 @@ fun RideScreen(vm: MainViewModel, onStartRide: () -> Unit, onEndRide: () -> Unit
                 }
             }
 
-            HeroCard(link, paired, settings.deviceName)
+            HeroCard(link, paired, settings.deviceName, demo)
+            AnimatedVisibility(nav != null || speed != null, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
+                RideDashboard(nav, speed)
+            }
+            AnimatedVisibility(caller != null, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
+                InfoCard(Icons.Rounded.Call, stringResource(R.string.call_now), caller.orEmpty())
+            }
 
             if (!paired) {
                 Button(onClick = { pairing = true }, enabled = bluetoothOk, modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)) {
@@ -166,12 +184,6 @@ fun RideScreen(vm: MainViewModel, onStartRide: () -> Unit, onEndRide: () -> Unit
                 }
             }
 
-            AnimatedVisibility(caller != null, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
-                InfoCard(Icons.Rounded.Call, stringResource(R.string.call_now), caller.orEmpty())
-            }
-            AnimatedVisibility(nav != null, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
-                nav?.let { NavCard(it) }
-            }
             Spacer(Modifier.height(Dimens.xl))
         }
     }
@@ -180,9 +192,10 @@ fun RideScreen(vm: MainViewModel, onStartRide: () -> Unit, onEndRide: () -> Unit
 }
 
 @Composable
-private fun HeroCard(link: LinkState, paired: Boolean, deviceName: String?) {
-    val connected = link is LinkState.Ready
+private fun HeroCard(link: LinkState, paired: Boolean, deviceName: String?, demo: Boolean) {
+    val connected = link is LinkState.Ready || demo
     val title = when {
+        demo -> R.string.hero_demo
         !paired -> R.string.hero_no_scooter
         link is LinkState.Ready -> R.string.hero_ready
         link is LinkState.Connecting -> R.string.hero_connecting
@@ -204,7 +217,7 @@ private fun HeroCard(link: LinkState, paired: Boolean, deviceName: String?) {
                     .background(if (connected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondaryContainer),
                 contentAlignment = Alignment.Center,
             ) {
-                if (link is LinkState.Connecting) {
+                if (link is LinkState.Connecting && !demo) {
                     LoadingIndicator(Modifier.size(56.dp))
                 } else {
                     Icon(
@@ -226,18 +239,73 @@ private fun HeroCard(link: LinkState, paired: Boolean, deviceName: String?) {
     }
 }
 
+private fun Maneuver.icon(): ImageVector = when (this) {
+    Maneuver.LEFT -> Icons.Rounded.TurnLeft
+    Maneuver.SHARP_LEFT -> Icons.Rounded.TurnSharpLeft
+    Maneuver.SLIGHT_LEFT -> Icons.Rounded.TurnSlightLeft
+    Maneuver.FORK_LEFT -> Icons.Rounded.ForkLeft
+    Maneuver.RIGHT -> Icons.Rounded.TurnRight
+    Maneuver.SHARP_RIGHT -> Icons.Rounded.TurnSharpRight
+    Maneuver.SLIGHT_RIGHT -> Icons.Rounded.TurnSlightRight
+    Maneuver.FORK_RIGHT -> Icons.Rounded.ForkRight
+    Maneuver.U_TURN -> Icons.Rounded.UTurnLeft
+    Maneuver.ROUNDABOUT -> Icons.Rounded.RoundaboutRight
+    Maneuver.DESTINATION -> Icons.Rounded.Flag
+    Maneuver.STRAIGHT -> Icons.Rounded.Straight
+}
+
+private fun meters(m: Int) = if (m >= 1000) "%.1f km".format(m / 1000f) else "$m m"
+
+/** What the scooter display shows: big turn arrow, distance to the turn, ETA and speed. */
 @Composable
-private fun NavCard(step: NavStep) {
-    val icon = when (step.maneuver) {
-        Maneuver.LEFT, Maneuver.SHARP_LEFT, Maneuver.SLIGHT_LEFT, Maneuver.FORK_LEFT -> Icons.Rounded.TurnLeft
-        Maneuver.RIGHT, Maneuver.SHARP_RIGHT, Maneuver.SLIGHT_RIGHT, Maneuver.FORK_RIGHT -> Icons.Rounded.TurnRight
-        Maneuver.U_TURN -> Icons.Rounded.UTurnLeft
-        Maneuver.ROUNDABOUT -> Icons.Rounded.RoundaboutRight
-        Maneuver.DESTINATION -> Icons.Rounded.Flag
-        Maneuver.STRAIGHT -> Icons.Rounded.Straight
+private fun RideDashboard(step: NavStep?, speed: Int?) {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer),
+        shape = MaterialTheme.shapes.extraLarge,
+        modifier = Modifier.fillMaxWidth().semantics { liveRegion = LiveRegionMode.Polite },
+    ) {
+        Column(Modifier.padding(Dimens.xl)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (step != null) {
+                    val arrowSpec = MaterialTheme.motionScheme.defaultSpatialSpec<Float>()
+                    AnimatedContent(step.maneuver, transitionSpec = { (scaleIn(arrowSpec) + fadeIn()) togetherWith (scaleOut() + fadeOut()) }, label = "arrow") { m ->
+                        Box(
+                            Modifier.size(112.dp).clip(MaterialShapes.Cookie7Sided.toShape()).background(MaterialTheme.colorScheme.onTertiaryContainer),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(m.icon(), contentDescription = null, tint = MaterialTheme.colorScheme.tertiaryContainer, modifier = Modifier.size(72.dp))
+                        }
+                    }
+                    Column(Modifier.padding(start = Dimens.lg).weight(1f)) {
+                        Text(meters(step.distanceToTurnM), style = MaterialTheme.typography.displayMediumEmphasized, color = MaterialTheme.colorScheme.onTertiaryContainer)
+                        Text(step.instruction, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onTertiaryContainer)
+                    }
+                } else {
+                    Text(stringResource(R.string.dash_no_route), style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+                }
+            }
+            Spacer(Modifier.height(Dimens.lg))
+            Row(horizontalArrangement = Arrangement.spacedBy(Dimens.sm)) {
+                Stat(stringResource(R.string.dash_speed), speed?.toString() ?: "--", stringResource(R.string.dash_kmh), Modifier.weight(1f))
+                Stat(stringResource(R.string.dash_eta), step?.let { (it.etaSeconds / 60).toString() } ?: "--", stringResource(R.string.dash_min), Modifier.weight(1f))
+                Stat(stringResource(R.string.dash_left), step?.let { meters(it.distanceLeftM) } ?: "--", "", Modifier.weight(1f))
+            }
+        }
     }
-    val distance = if (step.distanceToTurnM >= 1000) "%.1f km".format(step.distanceToTurnM / 1000f) else "${step.distanceToTurnM} m"
-    InfoCard(icon, distance, step.instruction, emphasized = true)
+}
+
+@Composable
+private fun Stat(label: String, value: String, unit: String, modifier: Modifier) {
+    Column(
+        // Tonal tile on the tertiary card: works in light and dark without a raw color.
+        modifier.clip(MaterialTheme.shapes.large).background(MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.08f)).padding(Dimens.md),
+    ) {
+        Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onTertiaryContainer)
+        Row(verticalAlignment = Alignment.Bottom) {
+            Text(value, style = MaterialTheme.typography.headlineSmallEmphasized, color = MaterialTheme.colorScheme.onTertiaryContainer)
+            if (unit.isNotEmpty()) Text(" $unit", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onTertiaryContainer)
+        }
+    }
 }
 
 @Composable

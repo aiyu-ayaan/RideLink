@@ -122,6 +122,10 @@ object ClusterProtocol {
         return listOf(textFrame, frame(START_NAV, DID_NAV_CONTROL, control))
     }
 
+    /** Speed in km/h from the display's `5A 10` speedometer frame (byte 3, both families), else null. */
+    fun speedKmh(frame: ByteArray): Int? =
+        if (frame.size > 3 && frame[0] == START_NAV && frame[1] == 0x10.toByte()) frame[3].toInt() and 0xFF else null
+
     /** BluetoothUtil.getIceBatteryLevel: 0..5 bars. */
     fun batteryLevel(percent: Int) = when (percent) {
         in 0..9 -> 0

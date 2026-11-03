@@ -43,6 +43,7 @@ import com.aiyu.ridelink.ui.theme.Dimens
 fun ConsoleScreen(vm: MainViewModel) {
     val log by vm.log.collectAsStateWithLifecycle()
     val caller by vm.caller.collectAsStateWithLifecycle()
+    val demo by vm.demo.collectAsStateWithLifecycle()
     var text by rememberSaveable { mutableStateOf("") }
 
     Scaffold(topBar = { MediumFlexibleTopAppBar(title = { Text(stringResource(R.string.tab_console)) }) }) { padding ->
@@ -72,9 +73,15 @@ fun ConsoleScreen(vm: MainViewModel) {
                 ToggleButton(
                     checked = caller != null,
                     onCheckedChange = vm::testCall,
-                    shapes = ButtonGroupDefaults.connectedTrailingButtonShapes(),
+                    shapes = ButtonGroupDefaults.connectedMiddleButtonShapes(),
                     modifier = Modifier.weight(1f),
                 ) { Text(stringResource(R.string.console_test_call)) }
+                ToggleButton(
+                    checked = demo,
+                    onCheckedChange = vm::setDemo,
+                    shapes = ButtonGroupDefaults.connectedTrailingButtonShapes(),
+                    modifier = Modifier.weight(1f),
+                ) { Text(stringResource(R.string.console_demo)) }
             }
             if (log.isEmpty()) {
                 Text(

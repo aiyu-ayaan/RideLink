@@ -63,4 +63,9 @@ class ClusterProtocolTest {
         assertEquals(null, ClusterModel.detect(byteArrayOf(0x5A, 0x10, 1)))
         assertEquals(null, ClusterModel.detect(byteArrayOf(0x5A)))
     }
+
+    @Test fun speedFromSpeedometerFrame() {
+        assertEquals(62, ClusterProtocol.speedKmh(byteArrayOf(0x5A, 0x10, 0, 62, 0)))
+        assertEquals(null, ClusterProtocol.speedKmh(byteArrayOf(0x5A, 0x11, 0, 62)))
+    }
 }
