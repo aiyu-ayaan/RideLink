@@ -1,0 +1,30 @@
+<!doctype html><html><head><meta charset="utf-8"><title>RideLink splash preview</title>
+<style>
+ html,body{margin:0;height:100%;background:#FAF8F5;font-family:system-ui,sans-serif}
+ /* Mirrors app/src/main/res/drawable/splash_logo_animated.xml and MainActivity.playSplashExit. */
+ #screen{position:fixed;inset:0;background:#B3261E;display:grid;place-items:center}
+ #app{position:fixed;inset:0;display:grid;place-items:center;color:#1C1B1F;font-size:28px;font-weight:600}
+ svg{width:240px;height:240px;overflow:visible}
+</style></head><body>
+<div id="app">RideLink</div>
+<div id="screen"><svg id="icon" viewBox="0 0 240 240">
+ <g id="mark" style="transform-origin:120.0px 120.0px">
+  <path id="ring" d="M179.78 107.3 A61.11 61.11 0 1 1 132.7 60.22" fill="none" stroke="#FFFFFF" stroke-width="27.78" stroke-linecap="round" pathLength="1"
+        stroke-dasharray="1 1" stroke-dashoffset="1"/>
+  <g id="spark" style="transform-origin:163.21px 76.79px;transform:scale(0)"><circle cx="163.21" cy="76.79" r="13.89" fill="#FFB82E"/></g>
+  <g id="pulse" style="transform-origin:163.21px 76.79px"><circle cx="163.21" cy="76.79" r="13.89" fill="none" stroke="#FFB82E" stroke-width="6.94" stroke-opacity="0"/></g>
+ </g></svg></div>
+<script>
+ const $=id=>document.getElementById(id);
+ const ease='cubic-bezier(.4,0,.2,1)', outEase='cubic-bezier(0,0,.2,1)', pop='cubic-bezier(.34,1.56,.64,1)', exitEase='cubic-bezier(.3,0,.8,.15)';
+ const o=(d,delay,e)=>({duration:d,delay,easing:e,fill:'both'});
+ window.anims=[
+  $('mark').animate([{transform:'rotate(-110deg)'},{transform:'rotate(0deg)'}],o(640,0,ease)),
+  $('ring').animate([{strokeDashoffset:1},{strokeDashoffset:0}],o(600,0,ease)),
+  $('spark').animate([{transform:'scale(0)'},{transform:'scale(1)'}],o(300,420,pop)),
+  $('pulse').animate([{transform:'scale(1)'},{transform:'scale(2.6)'}],o(360,640,outEase)),
+  $('pulse').querySelector('circle').animate([{strokeOpacity:.9},{strokeOpacity:0}],{duration:360,delay:640,easing:outEase,fill:'forwards'}),
+  $('icon').animate([{transform:'scale(1)',opacity:1},{transform:'scale(1.35)',opacity:0}],o(380,1000,exitEase)),
+  $('screen').animate([{opacity:1},{opacity:0}],o(380,1000,'cubic-bezier(.4,0,1,1)')),
+ ];
+</script></body></html>
