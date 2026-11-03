@@ -1,10 +1,6 @@
 package com.aiyu.ridelink.ui.ride
 
-import android.Manifest
-import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
-import android.os.Build
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -86,8 +82,6 @@ import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
-import androidx.core.app.NotificationManagerCompat
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.LifecycleEventObserver
@@ -97,27 +91,13 @@ import com.aiyu.ridelink.core.protocol.ClusterProtocol.NavStep
 import com.aiyu.ridelink.core.protocol.Maneuver
 import com.aiyu.ridelink.ui.MainViewModel
 import com.aiyu.ridelink.ui.R
+import com.aiyu.ridelink.ui.bluetoothPermissions
+import com.aiyu.ridelink.ui.hasBluetooth
+import com.aiyu.ridelink.ui.hasListener
 import com.aiyu.ridelink.ui.theme.Dimens
 
-private val bluetoothPermissions = buildList {
-    if (Build.VERSION.SDK_INT >= 31) {
-        add(Manifest.permission.BLUETOOTH_SCAN)
-        add(Manifest.permission.BLUETOOTH_CONNECT)
-    } else {
-        add(Manifest.permission.ACCESS_FINE_LOCATION)
-    }
-    if (Build.VERSION.SDK_INT >= 33) add(Manifest.permission.POST_NOTIFICATIONS)
-}.toTypedArray()
-
-private fun Context.hasBluetooth() = bluetoothPermissions.all {
-    // Notification permission is nice-to-have; Bluetooth ones gate everything.
-    it == Manifest.permission.POST_NOTIFICATIONS || ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED
-}
-
-private fun Context.hasListener() = packageName in NotificationManagerCompat.getEnabledListenerPackages(this)
-
 @Composable
-fun RideScreen(vm: MainViewModel, onStartRide: () -> Unit, onEndRide: () -> Unit) {
+fun RideScreen(vm: MainViewModel, onConnect: () -> Unit, onDisconnect: () -> Unit) {
     val context = LocalContext.current
     val settings by vm.settings.collectAsStateWithLifecycle()
     val link by vm.linkState.collectAsStateWithLifecycle()
@@ -175,12 +155,13 @@ fun RideScreen(vm: MainViewModel, onStartRide: () -> Unit, onEndRide: () -> Unit
                     Text(stringResource(R.string.pair_scooter))
                 }
             } else if (rideOn) {
-                OutlinedButton(onClick = onEndRide, modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)) {
-                    Text(stringResource(R.string.end_ride))
+                // The session starts on its own once paired; this only stops it until the next launch.
+                OutlinedButton(onClick = onDisconnect, modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)) {
+                    Text(stringResource(R.string.disconnect))
                 }
             } else {
-                Button(onClick = onStartRide, enabled = bluetoothOk, modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)) {
-                    Text(stringResource(R.string.start_ride))
+                Button(onClick = onConnect, enabled = bluetoothOk, modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)) {
+                    Text(stringResource(R.string.connect))
                 }
             }
 

@@ -8,7 +8,7 @@
     <string name="status_waiting">Waiting for scooter. Turn the ignition on.</string>
     <string name="status_connected">Connected to %1$s</string>
     <string name="status_idle">Not connected</string>
-    <string name="action_end_ride">End ride</string>
+    <string name="action_end_ride">Disconnect</string>
 
     <!-- Navigation bar -->
     <string name="tab_ride">Ride</string>
@@ -19,10 +19,10 @@
     <string name="hero_no_scooter">No scooter paired</string>
     <string name="hero_ready">Connected</string>
     <string name="hero_connecting">Searching</string>
-    <string name="hero_idle">Ride not started</string>
+    <string name="hero_idle">Not connected</string>
     <string name="hero_failed">Connection problem</string>
-    <string name="start_ride">Start ride</string>
-    <string name="end_ride">End ride</string>
+    <string name="connect">Connect</string>
+    <string name="disconnect">Disconnect</string>
     <string name="pair_scooter">Pair scooter</string>
     <string name="pair_title">Pair your scooter</string>
     <string name="pair_hint">Turn the scooter ignition on and keep the phone close. Scooter displays show up with names starting with TVS.</string>

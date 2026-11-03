@@ -30,7 +30,9 @@ Modules:
 ## How it works
 
 1. Pair: scan for BLE names containing `TVS` (not `HUD`), save address in DataStore.
-2. Start ride: `ClusterService` (foreground, `connectedDevice`) calls `ClusterController.start()`.
+2. Auto-connect: once a scooter is paired and Bluetooth is granted, `RideLinkRoot` starts
+   `ClusterService` (foreground, `connectedDevice`) on app start, after pairing, and `BootReceiver` on boot.
+   The service calls `ClusterController.start()`. The Ride button is Disconnect / Connect.
 3. `ClusterLink` connects, requests MTU 512, enables notify on `5354`, then writes on `5352`
    with response, one frame at a time. On drop it reconnects with `autoConnect = true`.
 4. On ready: rider name frame, then the `5B 4A` status frame every 2 s.

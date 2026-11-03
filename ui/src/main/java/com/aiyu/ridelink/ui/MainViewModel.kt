@@ -33,11 +33,15 @@ class MainViewModel @Inject constructor(
     val speed = controller.speed
     val demo = controller.demo
 
+    /** Set by the Disconnect button; stops auto-connect until the app process starts again. */
+    var userStopped = false
+
     fun startScan() = link.startScan()
     fun stopScan() = link.stopScan()
 
     fun pair(cluster: FoundCluster) = viewModelScope.launch {
         link.stopScan()
+        userStopped = false
         repo.setDevice(cluster.address, cluster.name)
     }
 

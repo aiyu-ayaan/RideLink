@@ -17,8 +17,8 @@ class MainActivity : ComponentActivity() {
         setContent {
             RideLinkTheme {
                 RideLinkRoot(
-                    onStartRide = { ClusterService.start(this) },
-                    onEndRide = { ClusterService.stop(this) },
+                    onConnect = { ClusterService.start(this) },
+                    onDisconnect = { ClusterService.stop(this) },
                 )
             }
         }
