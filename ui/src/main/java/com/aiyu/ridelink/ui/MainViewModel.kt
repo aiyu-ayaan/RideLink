@@ -29,6 +29,7 @@ class MainViewModel @Inject constructor(
     val nav = controller.nav
     val caller = controller.caller
     val log = controller.log
+    val detected = controller.detected
 
     fun startScan() = link.startScan()
     fun stopScan() = link.stopScan()
@@ -43,7 +44,7 @@ class MainViewModel @Inject constructor(
         repo.setDevice(null, null)
     }
 
-    fun setModel(model: ClusterModel) = viewModelScope.launch { repo.setModel(model) }
+    fun setModel(model: ClusterModel?) = viewModelScope.launch { repo.setModel(model) }
     fun setRiderName(name: String) = viewModelScope.launch { repo.setRiderName(name) }
     fun setForwardNavigation(on: Boolean) = viewModelScope.launch { repo.setForwardNavigation(on) }
     fun setForwardCalls(on: Boolean) = viewModelScope.launch { repo.setForwardCalls(on) }

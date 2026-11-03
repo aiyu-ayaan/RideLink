@@ -16,7 +16,8 @@ import javax.inject.Singleton
 data class Settings(
     val deviceAddress: String? = null,
     val deviceName: String? = null,
-    val model: ClusterModel = ClusterModel.NTORQ_U812,
+    /** null = Auto: detected from the display, see ClusterModel.detect. */
+    val model: ClusterModel? = null,
     val riderName: String = "",
     val forwardNavigation: Boolean = true,
     val forwardCalls: Boolean = true,
@@ -42,7 +43,7 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
         Settings(
             deviceAddress = p[K.address],
             deviceName = p[K.name],
-            model = p[K.model]?.let { runCatching { ClusterModel.valueOf(it) }.getOrNull() } ?: ClusterModel.NTORQ_U812,
+            model = p[K.model]?.let { runCatching { ClusterModel.valueOf(it) }.getOrNull() },
             riderName = p[K.rider] ?: "",
             forwardNavigation = p[K.nav] ?: true,
             forwardCalls = p[K.calls] ?: true,
@@ -59,7 +60,7 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
         }
     }
 
-    suspend fun setModel(model: ClusterModel) { context.store.edit { it[K.model] = model.name } }
+    suspend fun setModel(model: ClusterModel?) { context.store.edit { if (model == null) it.remove(K.model) else it[K.model] = model.name } }
     suspend fun setRiderName(name: String) { context.store.edit { it[K.rider] = name } }
     suspend fun setForwardNavigation(on: Boolean) { context.store.edit { it[K.nav] = on } }
     suspend fun setForwardCalls(on: Boolean) { context.store.edit { it[K.calls] = on } }

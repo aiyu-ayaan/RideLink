@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonGroupDefaults
@@ -89,9 +90,23 @@ fun ConsoleScreen(vm: MainViewModel) {
                         headlineContent = { Text(f.hex, fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall) },
                         leadingContent = {
                             Icon(
-                                if (f.ok) Icons.Rounded.CheckCircle else Icons.Rounded.ErrorOutline,
-                                contentDescription = stringResource(if (f.ok) R.string.console_delivered else R.string.console_failed),
-                                tint = if (f.ok) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+                                when {
+                                    f.rx -> Icons.Rounded.Download
+                                    f.ok -> Icons.Rounded.CheckCircle
+                                    else -> Icons.Rounded.ErrorOutline
+                                },
+                                contentDescription = stringResource(
+                                    when {
+                                        f.rx -> R.string.console_received
+                                        f.ok -> R.string.console_delivered
+                                        else -> R.string.console_failed
+                                    },
+                                ),
+                                tint = when {
+                                    f.rx -> MaterialTheme.colorScheme.tertiary
+                                    f.ok -> MaterialTheme.colorScheme.primary
+                                    else -> MaterialTheme.colorScheme.error
+                                },
                                 modifier = Modifier.size(20.dp),
                             )
                         },

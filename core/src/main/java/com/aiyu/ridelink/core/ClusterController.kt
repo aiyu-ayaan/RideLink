@@ -6,9 +6,11 @@ import android.os.BatteryManager
 import android.telephony.TelephonyManager
 import com.aiyu.ridelink.core.ble.ClusterLink
 import com.aiyu.ridelink.core.ble.LinkState
+import com.aiyu.ridelink.core.protocol.ClusterModel
 import com.aiyu.ridelink.core.protocol.ClusterProtocol
 import com.aiyu.ridelink.core.protocol.ClusterProtocol.CallState
 import com.aiyu.ridelink.core.protocol.ClusterProtocol.NavStep
+import com.aiyu.ridelink.core.settings.Settings
 import com.aiyu.ridelink.core.settings.SettingsRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
@@ -27,7 +29,8 @@ import java.time.LocalDateTime
 import javax.inject.Inject
 import javax.inject.Singleton
 
-data class FrameLog(val time: String, val hex: String, val ok: Boolean)
+/** [rx] = sent by the display; otherwise written by us and [ok] tells if it was acknowledged. */
+data class FrameLog(val time: String, val hex: String, val ok: Boolean, val rx: Boolean = false)
 
 /** Owns the ride session: status loop, navigation and call forwarding to the cluster. */
 @Singleton
@@ -51,6 +54,21 @@ class ClusterController @Inject constructor(
     val log: StateFlow<List<FrameLog>> = _log.asStateFlow()
 
     val linkState = link.state
+
+    /** Model inferred from display frames while in Auto mode; null until something proves it. */
+    private val _detected = MutableStateFlow<ClusterModel?>(null)
+    val detected: StateFlow<ClusterModel?> = _detected.asStateFlow()
+
+    private fun model(s: Settings) = s.model ?: _detected.value ?: ClusterModel.DEFAULT
+
+    init {
+        scope.launch {
+            link.incoming.collect { frame ->
+                log(frame, ok = true, rx = true)
+                ClusterModel.detect(frame)?.let { _detected.value = it }
+            }
+        }
+    }
 
     /** Called by the foreground service. Connects to the saved cluster and keeps the session alive. */
     fun start() {
@@ -79,7 +97,7 @@ class ClusterController @Inject constructor(
         statusJob?.cancel()
         statusJob = scope.launch {
             while (isActive) {
-                send(ClusterProtocol.status(settings.current().model, phoneStatus()))
+                send(ClusterProtocol.status(model(settings.current()), phoneStatus()))
                 delay(ClusterProtocol.STATUS_INTERVAL_MS)
             }
         }
@@ -89,7 +107,7 @@ class ClusterController @Inject constructor(
         val s = settings.current()
         if (!s.forwardNavigation) return@launch
         _nav.value = step
-        val (text, control) = ClusterProtocol.navigation(s.model, step)
+        val (text, control) = ClusterProtocol.navigation(model(s), step)
         send(text)
         delay(ClusterProtocol.NAV_FRAME_GAP_MS)
         send(control)
@@ -99,7 +117,7 @@ class ClusterController @Inject constructor(
         val last = _nav.value ?: return@launch
         _nav.value = null
         val s = settings.current()
-        if (s.forwardNavigation) ClusterProtocol.navigation(s.model, last.copy(stopped = true)).forEach { send(it) }
+        if (s.forwardNavigation) ClusterProtocol.navigation(model(s), last.copy(stopped = true)).forEach { send(it) }
     }
 
     fun onIncomingCall(nameOrNumber: String) {
@@ -137,11 +155,11 @@ class ClusterController @Inject constructor(
     /** Debug screen: write raw text to custom line 1. */
     fun sendTestText(text: String) = scope.launch { send(ClusterProtocol.text(ClusterProtocol.DID_TEXT_LINE_1, text)) }
 
-    private suspend fun send(frame: ByteArray): Boolean {
-        val ok = link.send(frame)
-        val line = FrameLog(LocalDateTime.now().toLocalTime().withNano(0).toString(), frame.joinToString(" ") { "%02x".format(it) }, ok)
+    private suspend fun send(frame: ByteArray): Boolean = link.send(frame).also { log(frame, it) }
+
+    private fun log(frame: ByteArray, ok: Boolean, rx: Boolean = false) {
+        val line = FrameLog(LocalDateTime.now().toLocalTime().withNano(0).toString(), frame.joinToString(" ") { "%02x".format(it) }, ok, rx)
         _log.update { (listOf(line) + it).take(LOG_SIZE) }
-        return ok
     }
 
     @SuppressLint("MissingPermission")

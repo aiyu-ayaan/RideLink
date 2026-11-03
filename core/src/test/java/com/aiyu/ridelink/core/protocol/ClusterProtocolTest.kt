@@ -56,4 +56,11 @@ class ClusterProtocolTest {
         assertEquals(0x10, ClusterModel.NTORQ_U577_PREMIUM.pictogram(Maneuver.RIGHT))
         assertEquals(0x57, ClusterModel.NTORQ_U577_PREMIUM.pictogram(Maneuver.STRAIGHT))
     }
+
+    @Test fun detectsOlderNtorqFromMusicOrWifiFrames() {
+        assertEquals(ClusterModel.NTORQ_U577_PREMIUM, ClusterModel.detect(byteArrayOf(0x5A, 0x6B, 1)))
+        assertEquals(ClusterModel.NTORQ_U577_PREMIUM, ClusterModel.detect(byteArrayOf(0x5A, 0x29, 1)))
+        assertEquals(null, ClusterModel.detect(byteArrayOf(0x5A, 0x10, 1)))
+        assertEquals(null, ClusterModel.detect(byteArrayOf(0x5A)))
+    }
 }

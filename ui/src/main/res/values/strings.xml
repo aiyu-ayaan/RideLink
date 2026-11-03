@@ -41,7 +41,9 @@
     <!-- Settings screen -->
     <string name="settings_scooter">Scooter</string>
     <string name="settings_model">Model</string>
-    <string name="settings_model_hint">Picks the message format. 2025+ Ntorq and new XT use the newer format.</string>
+    <string name="settings_model_hint">Picks the message format. Leave on Auto unless the display shows wrong data.</string>
+    <string name="model_auto">Auto (recommended)</string>
+    <string name="model_auto_using">Using: %1$s. Switches to the older format if the display sends older-Ntorq frames.</string>
     <string name="settings_rider">Rider name</string>
     <string name="settings_rider_hint">Shown on the display when the ride starts</string>
     <string name="settings_forwarding">Show on the display</string>
@@ -67,4 +69,5 @@
     <string name="console_empty">Frames sent to the scooter show up here.</string>
     <string name="console_failed">Not delivered</string>
     <string name="console_delivered">Delivered</string>
+    <string name="console_received">From scooter</string>
 </resources>

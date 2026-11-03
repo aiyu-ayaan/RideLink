@@ -44,6 +44,7 @@ private val ClusterModel.label
 @Composable
 fun SettingsScreen(vm: MainViewModel) {
     val s by vm.settings.collectAsStateWithLifecycle()
+    val detected by vm.detected.collectAsStateWithLifecycle()
     var rider by remember(s.riderName) { mutableStateOf(s.riderName) }
 
     Scaffold(topBar = { MediumFlexibleTopAppBar(title = { Text(stringResource(R.string.tab_forwarding)) }) }) { padding ->
@@ -68,6 +69,17 @@ fun SettingsScreen(vm: MainViewModel) {
                 ListItem(
                     headlineContent = { Text(stringResource(R.string.settings_model)) },
                     supportingContent = { Text(stringResource(R.string.settings_model_hint)) },
+                )
+            }
+            item {
+                val auto = s.model == null
+                ListItem(
+                    headlineContent = { Text(stringResource(R.string.model_auto)) },
+                    supportingContent = {
+                        Text(stringResource(R.string.model_auto_using, stringResource((detected ?: ClusterModel.DEFAULT).label)))
+                    },
+                    leadingContent = { RadioButton(selected = auto, onClick = null) },
+                    modifier = Modifier.selectable(selected = auto, role = Role.RadioButton) { vm.setModel(null) },
                 )
             }
             items(ClusterModel.entries) { m ->

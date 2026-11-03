@@ -30,9 +30,21 @@ enum class ClusterModel(val vehicleId: Int, val family: ClusterFamily) {
         else -> NEW_NTORQ[m.mappls] ?: 0
     }
 
-    private companion object {
-        val NEW_NTORQ = mapOf(0 to 0, 1 to 1, 2 to 2, 3 to 10, 4 to 11, 5 to 12, 6 to 19, 7 to 57, 8 to 22, 15 to 7, 16 to 17, 68 to 48)
-        val PREMIUM_U577 = mapOf(0 to 0, 1 to 1, 2 to 2, 3 to 10, 4 to 11, 5 to 12, 6 to 9, 7 to 57, 8 to 22, 15 to 7, 16 to 17, 68 to 48)
-        val BASE_U577 = mapOf(0 to 6, 1 to 12, 2 to 10, 3 to 7, 4 to 13, 5 to 11, 6 to 15, 7 to 5, 8 to 2, 15 to 19, 16 to 20, 68 to 45)
+    companion object {
+        /** Used in Auto mode until the display proves it is an older Ntorq. */
+        val DEFAULT = NTORQ_U812
+
+        /**
+         * Infers the model from a frame the display notifies. Only the older Ntorq displays
+         * (U716/U577) send music-control `5A 6B` or Wi-Fi `5A 29` frames (NtorqFrameIdentifier),
+         * so either one means the older format. Returns null when the frame proves nothing.
+         * shortcut: U716 and U577 base cannot be told apart from frames yet; refine from real captures.
+         */
+        fun detect(frame: ByteArray): ClusterModel? =
+            if (frame.size >= 2 && frame[0] == 0x5A.toByte() && (frame[1] == 0x6B.toByte() || frame[1] == 0x29.toByte())) NTORQ_U577_PREMIUM else null
+
+        private val NEW_NTORQ = mapOf(0 to 0, 1 to 1, 2 to 2, 3 to 10, 4 to 11, 5 to 12, 6 to 19, 7 to 57, 8 to 22, 15 to 7, 16 to 17, 68 to 48)
+        private val PREMIUM_U577 = mapOf(0 to 0, 1 to 1, 2 to 2, 3 to 10, 4 to 11, 5 to 12, 6 to 9, 7 to 57, 8 to 22, 15 to 7, 16 to 17, 68 to 48)
+        private val BASE_U577 = mapOf(0 to 6, 1 to 12, 2 to 10, 3 to 7, 4 to 13, 5 to 11, 6 to 15, 7 to 5, 8 to 2, 15 to 19, 16 to 20, 68 to 45)
     }
 }
