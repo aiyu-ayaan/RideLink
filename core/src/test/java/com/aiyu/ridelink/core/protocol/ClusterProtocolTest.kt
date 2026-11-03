@@ -185,4 +185,11 @@ class ClusterProtocolTest {
         assertEquals(3, ntorq[10].toInt())
         assertEquals(0xFF, ClusterProtocol.status(ClusterModel.NTORQ_U577_PREMIUM, status)[3].toInt() and 0xFF)
     }
+
+    @Test fun customTextLines() {
+        assertEquals("5b 4c 52 69 64 65 20 73 61 66 65 00 00 00 00 00 00 00 00 ff", hex(ClusterProtocol.customLine1("Ride safe")))
+        assertEquals("5b 63 4b 41 31 32 41 42 31 32 33 34 00 00 00 00 00 00 00 ff", hex(ClusterProtocol.customLine2("KA12AB1234")))
+        // Never starts with 00, so it cannot be mistaken for the 5B 4C 00 <id> screen switch.
+        assertEquals(0x4B, ClusterProtocol.customLine1("Kesari@").let { it[2].toInt() })
+    }
 }

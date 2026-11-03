@@ -20,6 +20,9 @@ data class Settings(
     /** null = Auto: detected from the display, see ClusterModel.detect. */
     val model: ClusterModel? = null,
     val riderName: String = "",
+    /** Custom text lines on the display (DID 0x4C / 0x63), re-sent on every connect. Blank = not sent. */
+    val displayLine1: String = "",
+    val displayLine2: String = "",
     val forwardNavigation: Boolean = true,
     val forwardCalls: Boolean = true,
     /** WhatsApp / Facebook / Instagram unread counts (`5B 9C`). */
@@ -57,6 +60,8 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
         val name = stringPreferencesKey("device_name")
         val model = stringPreferencesKey("model")
         val rider = stringPreferencesKey("rider_name")
+        val line1 = stringPreferencesKey("display_line_1")
+        val line2 = stringPreferencesKey("display_line_2")
         val nav = booleanPreferencesKey("forward_nav")
         val calls = booleanPreferencesKey("forward_calls")
         val social = booleanPreferencesKey("show_social")
@@ -77,6 +82,8 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
             deviceName = p[K.name],
             model = p[K.model]?.let { runCatching { ClusterModel.valueOf(it) }.getOrNull() },
             riderName = p[K.rider] ?: "",
+            displayLine1 = p[K.line1] ?: "",
+            displayLine2 = p[K.line2] ?: "",
             forwardNavigation = p[K.nav] ?: true,
             forwardCalls = p[K.calls] ?: true,
             showSocial = p[K.social] ?: true,
@@ -103,6 +110,12 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
 
     suspend fun setModel(model: ClusterModel?) { context.store.edit { if (model == null) it.remove(K.model) else it[K.model] = model.name } }
     suspend fun setRiderName(name: String) { context.store.edit { it[K.rider] = name } }
+    suspend fun setDisplayLines(line1: String, line2: String) {
+        context.store.edit {
+            it[K.line1] = line1
+            it[K.line2] = line2
+        }
+    }
     suspend fun setForwardNavigation(on: Boolean) { context.store.edit { it[K.nav] = on } }
     suspend fun setForwardCalls(on: Boolean) { context.store.edit { it[K.calls] = on } }
     suspend fun setShowSocial(on: Boolean) { context.store.edit { it[K.social] = on } }

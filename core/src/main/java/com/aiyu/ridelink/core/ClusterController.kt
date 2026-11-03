@@ -163,6 +163,7 @@ class ClusterController @Inject constructor(
     private suspend fun onReady() {
         val s = settings.current()
         if (s.riderName.isNotBlank()) send(ClusterProtocol.riderName(s.riderName))
+        sendDisplayText(s)
         sendSocial()
         sendMusic(force = true)
         startWeather()
@@ -355,6 +356,18 @@ class ClusterController @Inject constructor(
                 left = route.sumOf { it.third }
             }
         }
+    }
+
+    private suspend fun sendDisplayText(s: Settings) {
+        if (s.displayLine1.isNotBlank()) send(ClusterProtocol.customLine1(s.displayLine1))
+        if (s.displayLine2.isNotBlank()) send(ClusterProtocol.customLine2(s.displayLine2))
+    }
+
+    /** Settings "Send to display": rider name and both custom lines right away. */
+    fun sendDisplayTextNow() = scope.launch {
+        val s = settings.current()
+        if (s.riderName.isNotBlank()) send(ClusterProtocol.riderName(s.riderName))
+        sendDisplayText(s)
     }
 
     /** Debug screen: write raw text to custom line 1. */

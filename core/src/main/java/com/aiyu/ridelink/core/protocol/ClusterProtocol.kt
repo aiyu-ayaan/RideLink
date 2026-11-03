@@ -47,6 +47,12 @@ object ClusterProtocol {
 
     fun riderName(name: String) = text(DID_RIDER_NAME, name)
 
+    /** Custom text line 1 (DID 0x4C), as the stock app's "custom text" setting writes it. */
+    fun customLine1(value: String) = text(DID_TEXT_LINE_1, value)
+
+    /** Custom text line 2 (DID 0x63). The same DID carries the music artist, so a playing song replaces it. */
+    fun customLine2(value: String) = text(DID_TEXT_LINE_2, value)
+
     /** Incoming call name or number. Stock app strips the +91 prefix. */
     fun caller(nameOrNumber: String) = text(DID_CALLER, nameOrNumber.replace("+91", ""))
 

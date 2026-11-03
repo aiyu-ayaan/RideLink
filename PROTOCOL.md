@@ -44,6 +44,8 @@ some cluster frames, `0x9A` for the challenge frame (other bikes).
 ### Text frame (`BluetoothUtil.createMobileToClusterArray(text, did)`)
 `5B DID <text up to 17 bytes, UTF-8> <zero pad> FF` (20 bytes).
 Characters outside `A-Z a-z 0-9 space` become `X`; emoji become `@`.
+RideLink's Settings -> Display text writes the rider name (`0x52`) and custom lines 1 (`0x4C`) and 2 (`0x63`) on every
+connect and on "Send to display". `0x63` is also the music artist on Ntorq, so a playing song replaces line 2.
 
 | DID | Hex | Use |
 |---|---|---|

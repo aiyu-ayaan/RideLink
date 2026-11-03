@@ -75,6 +75,12 @@
     <string name="settings_model_hint">Picks the message format. Leave on Auto unless the display shows wrong data.</string>
     <string name="model_auto">Auto (recommended)</string>
     <string name="model_auto_using">Using: %1$s. Switches to the older format if the display sends older-Ntorq frames.</string>
+    <string name="settings_display_text">Display text</string>
+    <string name="settings_line1">Custom text, line 1</string>
+    <string name="settings_line1_hint">Sent on every connect. Letters, digits and spaces.</string>
+    <string name="settings_line2">Custom text, line 2</string>
+    <string name="settings_line2_hint">A playing song\'s artist replaces this line.</string>
+    <string name="settings_send_text">Send to display</string>
     <string name="settings_rider">Rider name</string>
     <string name="settings_rider_hint">Shown on the display when the ride starts</string>
     <string name="settings_forwarding">Show on the display</string>

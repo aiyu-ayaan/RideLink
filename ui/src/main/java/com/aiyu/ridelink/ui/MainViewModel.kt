@@ -57,6 +57,8 @@ class MainViewModel @Inject constructor(
 
     fun setModel(model: ClusterModel?) = viewModelScope.launch { repo.setModel(model) }
     fun setRiderName(name: String) = viewModelScope.launch { repo.setRiderName(name) }
+    fun setDisplayLines(line1: String, line2: String) = viewModelScope.launch { repo.setDisplayLines(line1, line2) }
+    fun sendDisplayText() = controller.sendDisplayTextNow()
     fun setForwardNavigation(on: Boolean) = viewModelScope.launch { repo.setForwardNavigation(on) }
     fun setForwardCalls(on: Boolean) = viewModelScope.launch { repo.setForwardCalls(on) }
     fun setShowSocial(on: Boolean) = viewModelScope.launch { repo.setShowSocial(on) }

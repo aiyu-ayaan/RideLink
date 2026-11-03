@@ -1,12 +1,15 @@
 package com.aiyu.ridelink.ui.settings
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.toggleable
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MediumFlexibleTopAppBar
@@ -28,6 +31,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.aiyu.ridelink.core.ble.LinkState
 import com.aiyu.ridelink.core.protocol.ClusterModel
 import com.aiyu.ridelink.core.settings.Settings
 import kotlin.math.roundToInt
@@ -52,9 +56,29 @@ fun SettingsScreen(vm: MainViewModel) {
     val detected by vm.detected.collectAsStateWithLifecycle()
     val telemetry by vm.telemetry.collectAsStateWithLifecycle()
     var rider by remember(s.riderName) { mutableStateOf(s.riderName) }
+    var line1 by remember(s.displayLine1) { mutableStateOf(s.displayLine1) }
+    var line2 by remember(s.displayLine2) { mutableStateOf(s.displayLine2) }
+    val link by vm.linkState.collectAsStateWithLifecycle()
+    val linkReady = link is LinkState.Ready
 
     Scaffold(topBar = { MediumFlexibleTopAppBar(title = { Text(stringResource(R.string.tab_forwarding)) }) }) { padding ->
         LazyColumn(Modifier.padding(padding)) {
+            item { Section(R.string.settings_display_text) }
+            item {
+                DisplayTextField(rider, R.string.settings_rider, R.string.settings_rider_hint) { rider = it; vm.setRiderName(it) }
+            }
+            item {
+                DisplayTextField(line1, R.string.settings_line1, R.string.settings_line1_hint) { line1 = it; vm.setDisplayLines(it, line2) }
+            }
+            item {
+                DisplayTextField(line2, R.string.settings_line2, R.string.settings_line2_hint) { line2 = it; vm.setDisplayLines(line1, it) }
+            }
+            item {
+                Row(Modifier.fillMaxWidth().padding(horizontal = Dimens.gutter), horizontalArrangement = Arrangement.End) {
+                    FilledTonalButton(onClick = vm::sendDisplayText, enabled = linkReady) { Text(stringResource(R.string.settings_send_text)) }
+                }
+            }
+
             item { Section(R.string.settings_forwarding) }
             item { SwitchRow(R.string.settings_nav, null, s.forwardNavigation, vm::setForwardNavigation) }
             item { SwitchRow(R.string.settings_calls, null, s.forwardCalls, vm::setForwardCalls) }
@@ -74,16 +98,6 @@ fun SettingsScreen(vm: MainViewModel) {
             item { SwitchRow(R.string.settings_vehicle, R.string.settings_vehicle_hint, s.showVehicle, vm::setShowVehicle) }
 
             item { Section(R.string.settings_scooter) }
-            item {
-                OutlinedTextField(
-                    value = rider,
-                    onValueChange = { rider = it.take(17); vm.setRiderName(rider) },
-                    label = { Text(stringResource(R.string.settings_rider)) },
-                    supportingText = { Text(stringResource(R.string.settings_rider_hint)) },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = Dimens.gutter),
-                )
-            }
             item {
                 ListItem(
                     headlineContent = { Text(stringResource(R.string.settings_model)) },
@@ -134,6 +148,26 @@ fun SettingsScreen(vm: MainViewModel) {
         }
     }
 }
+
+/** 17 characters max, the display's text frame width; the counter shows what is left. */
+@Composable
+private fun DisplayTextField(value: String, label: Int, hint: Int, onChange: (String) -> Unit) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = { onChange(it.take(TEXT_MAX)) },
+        label = { Text(stringResource(label)) },
+        supportingText = {
+            Row {
+                Text(stringResource(hint), modifier = Modifier.weight(1f))
+                Text("${value.length}/$TEXT_MAX")
+            }
+        },
+        singleLine = true,
+        modifier = Modifier.fillMaxWidth().padding(horizontal = Dimens.gutter),
+    )
+}
+
+private const val TEXT_MAX = 17
 
 /** Limit in 5 km/h steps; saved when the finger lifts so DataStore is not written on every frame. */
 @Composable
