@@ -11,6 +11,24 @@ enum class Maneuver(val mappls: Int) {
     FORK_LEFT(15), FORK_RIGHT(16), ROUNDABOUT(68),
 }
 
+/** Weather groups RideLink can tell apart; the display picks the icon from them. */
+enum class WeatherKind { CLEAR, CLEAR_NIGHT, CLOUDY, FOG, RAIN, SNOW, THUNDERSTORM, HAIL;
+
+    companion object {
+        /** WMO weather interpretation code, as returned by Open-Meteo `weather_code`. */
+        fun fromWmo(code: Int, isDay: Boolean): WeatherKind = when (code) {
+            0, 1 -> if (isDay) CLEAR else CLEAR_NIGHT
+            2, 3 -> CLOUDY
+            45, 48 -> FOG
+            in 51..67, in 80..82 -> RAIN
+            in 71..77, 85, 86 -> SNOW
+            96, 99 -> HAIL
+            95 -> THUNDERSTORM
+            else -> CLOUDY
+        }
+    }
+}
+
 /** Supported scooters. [vehicleId] is the TVS account VehicleId. */
 enum class ClusterModel(val vehicleId: Int, val family: ClusterFamily) {
     NTORQ_U716(34, ClusterFamily.NTORQ),
@@ -29,6 +47,35 @@ enum class ClusterModel(val vehicleId: Int, val family: ClusterFamily) {
         // U716 is not in any stock nav table; it falls back to the U812 one.
         else -> NEW_NTORQ[m.mappls] ?: 0
     }
+
+    /**
+     * Weather icon id. 2025+ family: BluetoothUtil.getWeatherIcon (clouds 1, clear 2, thunderstorm 3, snow 4, rain 5,
+     * fog 9, night 11, hailstorm 16). Older Ntorq: getWeatherIconForPremium (clouds 1, clear 2, thunderstorm 3,
+     * snow 4, rain 5, fog 9, else 0).
+     */
+    fun weatherIcon(kind: WeatherKind): Int = when (family) {
+        ClusterFamily.JUPITER -> when (kind) {
+            WeatherKind.CLOUDY -> 1
+            WeatherKind.CLEAR -> 2
+            WeatherKind.THUNDERSTORM -> 3
+            WeatherKind.SNOW -> 4
+            WeatherKind.RAIN -> 5
+            WeatherKind.FOG -> 9
+            WeatherKind.CLEAR_NIGHT -> 11
+            WeatherKind.HAIL -> 16
+        }
+        ClusterFamily.NTORQ -> when (kind) {
+            WeatherKind.CLOUDY -> 1
+            WeatherKind.CLEAR, WeatherKind.CLEAR_NIGHT -> 2
+            WeatherKind.THUNDERSTORM, WeatherKind.HAIL -> 3
+            WeatherKind.SNOW -> 4
+            WeatherKind.RAIN -> 5
+            WeatherKind.FOG -> 9
+        }
+    }
+
+    /** TFT displays (2025+ family and the U577 premium) have the weather, location and music screens. */
+    val hasTft: Boolean get() = family == ClusterFamily.JUPITER || this == NTORQ_U577_PREMIUM
 
     companion object {
         /** Used in Auto mode until the display proves it is an older Ntorq. */

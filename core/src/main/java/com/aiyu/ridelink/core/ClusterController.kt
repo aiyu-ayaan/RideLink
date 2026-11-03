@@ -17,6 +17,7 @@ import com.aiyu.ridelink.core.protocol.ClusterProtocol.NavStep
 import com.aiyu.ridelink.core.protocol.Maneuver
 import com.aiyu.ridelink.core.settings.Settings
 import com.aiyu.ridelink.core.settings.SettingsRepository
+import com.aiyu.ridelink.core.weather.WeatherRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -43,6 +44,7 @@ class ClusterController @Inject constructor(
     @ApplicationContext private val context: Context,
     private val link: ClusterLink,
     private val settings: SettingsRepository,
+    private val weatherRepo: WeatherRepository,
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private var session: Job? = null
@@ -100,23 +102,69 @@ class ClusterController @Inject constructor(
     fun stop() {
         session?.cancel()
         statusJob?.cancel()
+        weatherJob?.cancel()
         callJob?.cancel()
         link.disconnect()
     }
 
     private var statusJob: Job? = null
+    private var weatherJob: Job? = null
+
+    private val _weather = MutableStateFlow<ClusterProtocol.Weather?>(null)
+    val weather: StateFlow<ClusterProtocol.Weather?> = _weather.asStateFlow()
+
+    private val _place = MutableStateFlow<String?>(null)
+    val place: StateFlow<String?> = _place.asStateFlow()
 
     private suspend fun onReady() {
         val s = settings.current()
         if (s.riderName.isNotBlank()) send(ClusterProtocol.riderName(s.riderName))
         sendSocial()
+        startWeather()
         statusJob?.cancel()
         statusJob = scope.launch {
             while (isActive) {
-                send(ClusterProtocol.status(model(settings.current()), phoneStatus()))
+                val s = settings.current()
+                send(ClusterProtocol.status(model(s), phoneStatus(s)))
                 delay(ClusterProtocol.STATUS_INTERVAL_MS)
             }
         }
+    }
+
+    /** Weather, AQI and place name every [WEATHER_INTERVAL_MS] while connected (stock weather loop). */
+    private fun startWeather() {
+        weatherJob?.cancel()
+        weatherJob = scope.launch {
+            while (isActive) {
+                if (!_demo.value) refreshWeather()
+                delay(WEATHER_INTERVAL_MS)
+            }
+        }
+    }
+
+    private suspend fun refreshWeather() {
+        val s = settings.current()
+        if (!s.showWeather && !s.showLocation) return
+        val here = weatherRepo.location() ?: return
+        if (s.showWeather) weatherRepo.weather(here)?.let { _weather.value = it }
+        if (s.showLocation) weatherRepo.placeName(here)?.let { _place.value = it }
+        sendWeather()
+    }
+
+    /**
+     * Screen switch to weather, then the weather frame, then the place name. Skipped while navigating so the
+     * weather screen never covers the turn arrow. shortcut: whether the display returns to nav on its own is unconfirmed.
+     */
+    private suspend fun sendWeather() {
+        val s = settings.current()
+        val m = model(s)
+        if (!m.hasTft || link.state.value !is LinkState.Ready) return
+        val w = _weather.value
+        if (s.showWeather && w != null && _nav.value == null) {
+            send(ClusterProtocol.screen(ClusterProtocol.Screen.WEATHER))
+            send(ClusterProtocol.weather(m, w))
+        }
+        _place.value?.takeIf { s.showLocation }?.let { send(ClusterProtocol.location(it)) }
     }
 
     fun onNavigation(step: NavStep) = scope.launch {
@@ -226,7 +274,7 @@ class ClusterController @Inject constructor(
     }
 
     @SuppressLint("MissingPermission")
-    private fun phoneStatus(): ClusterProtocol.PhoneStatus {
+    private fun phoneStatus(s: Settings): ClusterProtocol.PhoneStatus {
         val battery = context.getSystemService(BatteryManager::class.java)?.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY) ?: 0
         val tm = context.getSystemService(TelephonyManager::class.java)
         // Stock app (sendJupiterMobileData) reads the level only with location granted.
@@ -250,6 +298,7 @@ class ClusterController @Inject constructor(
             month = now.monthValue,
             year = now.year,
             callState = callState,
+            temperatureC = _weather.value?.takeIf { s.showWeather }?.temperatureC ?: 0,
         )
     }
 
@@ -258,5 +307,6 @@ class ClusterController @Inject constructor(
     private companion object {
         const val LOG_SIZE = 100
         const val DEMO_STEP_MS = 1_500L
+        const val WEATHER_INTERVAL_MS = 15 * 60_000L
     }
 }

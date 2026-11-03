@@ -87,4 +87,59 @@ class ClusterProtocolTest {
             hex(ClusterProtocol.socialCounts(ClusterProtocol.SocialCounts(40, 9, 20, 300))),
         )
     }
+
+    @Test fun screenSwitchFrame() {
+        assertEquals(
+            "5b 4c 00 78 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ff",
+            hex(ClusterProtocol.screen(ClusterProtocol.Screen.WEATHER)),
+        )
+        assertEquals(0x00, ClusterProtocol.screen(ClusterProtocol.Screen.DEFAULT)[3].toInt())
+    }
+
+    @Test fun weatherFrameIsSpacePadded() {
+        val w = ClusterProtocol.Weather(WeatherKind.RAIN, temperatureC = 24, aqi = 312, rainPercent = 80, description = "Rain")
+        // icon 5, AQI 312 = 01 38, rain 80 = 0x50, "Rain" + 9 spaces.
+        assertEquals(
+            "5b 5d 05 01 38 50 52 61 69 6e 20 20 20 20 20 20 20 20 20 ff",
+            hex(ClusterProtocol.weather(ClusterModel.NTORQ_U812, w)),
+        )
+    }
+
+    @Test fun weatherFrameClampsAndTruncates() {
+        val w = ClusterProtocol.Weather(WeatherKind.THUNDERSTORM, 30, aqi = 70_000, rainPercent = 140, description = "Thunderstorms nearby")
+        val f = ClusterProtocol.weather(ClusterModel.NTORQ_U812, w)
+        assertEquals(20, f.size)
+        assertEquals("03 ff ff 64", hex(f.copyOfRange(2, 6)))
+        assertEquals("Thunderstorms", String(f, 6, 13))
+    }
+
+    @Test fun weatherIconsPerFamily() {
+        assertEquals(11, ClusterModel.NTORQ_U812.weatherIcon(WeatherKind.CLEAR_NIGHT))
+        assertEquals(16, ClusterModel.NTORQ_U812.weatherIcon(WeatherKind.HAIL))
+        assertEquals(2, ClusterModel.NTORQ_U577_PREMIUM.weatherIcon(WeatherKind.CLEAR_NIGHT))
+        assertEquals(9, ClusterModel.NTORQ_U577_PREMIUM.weatherIcon(WeatherKind.FOG))
+    }
+
+    @Test fun wmoCodesMapToKinds() {
+        assertEquals(WeatherKind.CLEAR, WeatherKind.fromWmo(0, isDay = true))
+        assertEquals(WeatherKind.CLEAR_NIGHT, WeatherKind.fromWmo(1, isDay = false))
+        assertEquals(WeatherKind.RAIN, WeatherKind.fromWmo(81, isDay = true))
+        assertEquals(WeatherKind.SNOW, WeatherKind.fromWmo(73, isDay = true))
+        assertEquals(WeatherKind.HAIL, WeatherKind.fromWmo(99, isDay = true))
+        assertEquals(WeatherKind.FOG, WeatherKind.fromWmo(45, isDay = false))
+    }
+
+    @Test fun locationFrame() {
+        assertEquals(
+            "5b 5c 49 6e 64 69 72 61 6e 61 67 61 72 00 00 00 00 00 00 ff",
+            hex(ClusterProtocol.location("Indiranagar")),
+        )
+    }
+
+    @Test fun locationKeepsUtf8CharactersWhole() {
+        // 9 two-byte characters = 18 bytes; only 8 (16 bytes) fit in 17.
+        val f = ClusterProtocol.location("ééééééééé")
+        assertEquals("éééééééé", String(f, 2, 16, Charsets.UTF_8))
+        assertEquals(0, f[18].toInt())
+    }
 }

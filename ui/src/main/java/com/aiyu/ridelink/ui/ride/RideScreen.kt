@@ -108,6 +108,8 @@ fun RideScreen(vm: MainViewModel, onConnect: () -> Unit, onDisconnect: () -> Uni
     val caller by vm.caller.collectAsStateWithLifecycle()
     val speed by vm.speed.collectAsStateWithLifecycle()
     val demo by vm.demo.collectAsStateWithLifecycle()
+    val weather by vm.weather.collectAsStateWithLifecycle()
+    val place by vm.place.collectAsStateWithLifecycle()
 
     // Re-check grants each time we come back from system settings.
     var refresh by remember { mutableIntStateOf(0) }
@@ -155,6 +157,10 @@ fun RideScreen(vm: MainViewModel, onConnect: () -> Unit, onDisconnect: () -> Uni
             HeroCard(link, paired, settings.deviceName, demo)
             AnimatedVisibility(nav != null || speed != null, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
                 RideDashboard(nav, speed)
+            }
+            val showWeather = (weather != null && settings.showWeather) || (place != null && settings.showLocation)
+            AnimatedVisibility(showWeather, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
+                WeatherCard(weather?.takeIf { settings.showWeather }, place?.takeIf { settings.showLocation })
             }
             AnimatedVisibility(caller != null, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
                 InfoCard(Icons.Rounded.Call, stringResource(R.string.call_now), caller.orEmpty())

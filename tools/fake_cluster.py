@@ -35,6 +35,8 @@ NOTIFY_UUID = "00005354-0000-1000-8000-00805f9b34fb"
 
 LOG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "captures")
 
+SCREENS = {0x00: "default", 0x78: "weather", 0x79: "cricket", 0x80: "football"}
+
 TEXT_DIDS = {
     0x52: "rider-name",
     0x4C: "text-line-1/nav-text",
@@ -79,6 +81,8 @@ def decode(frame):
         )
     if start == 0x5A and did == 0x49:
         return f"NAV road-name '{ascii_payload(body[:-4])}' flags={bytes(body[-4:]).hex(' ')}"
+    if start == 0x5B and did == 0x4C and body and body[0] == 0x00 and len(body) > 1 and body[1] in SCREENS:
+        return f"SCREEN {SCREENS[body[1]]}"
     if start == 0x5B and did == 0x43 and body:
         cat = {1: "number", 2: "name", 3: "country"}.get(body[0], hex(body[0]))
         return f"CALLER {cat} '{ascii_payload(body[1:])}'"
@@ -86,6 +90,12 @@ def decode(frame):
         return f"TEXT {TEXT_DIDS[did]} '{ascii_payload(body)}'"
     if start == 0x5B and did == 0x9C and len(body) >= 3:
         return f"SOCIAL whatsapp={body[0] >> 3}msgs/{body[0] & 7}chats facebook={body[1] >> 4}/{body[1] & 0xF} instagram={body[2]}"
+    if start == 0x5B and did == 0x5D and len(body) >= 4:
+        desc = bytes(body[4:]).decode("utf-8", "replace").rstrip()
+        return f"WEATHER icon={body[0]} aqi={int.from_bytes(body[1:3], 'big')} rain={body[3]}% '{desc}'"
+    if start == 0x5B and did == 0x5C:
+        place = bytes(body).rstrip(b"\x00").decode("utf-8", "replace")
+        return f"LOCATION '{place}'"
     if start == 0x5B and did == 0x22:
         return f"USER-ID {bytes(body).hex(' ')}"
     return f"UNKNOWN start={start:#04x} did={did:#04x} ({chr(did) if 32 <= did < 127 else '?'})"

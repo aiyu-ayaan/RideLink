@@ -159,6 +159,32 @@ text `N messages from M chats`; else `^(\d+) new messages$` = N messages in 1 ch
 RideLink rebuilds the counts from the active notifications on every post/remove (reading a chat clears it);
 Facebook (`com.facebook.katana`, `com.facebook.orca`) and Instagram count visible non-summary notifications.
 
+### Screen switch, DID `0x4C` with a leading `00` (`BluetoothUtil.createTrafficSequenceCustomFrame`, `TrafficSequence`)
+`5B 4C 00 <id> <15 x 00> FF`. id: default `0x00`, weather `0x78`, cricket `0x79`, football `0x80`.
+Same DID as text line 1; the leading `00` byte tells them apart.
+
+### Weather + AQI, DID `0x5D` (`BluetoothUtil.createClimateData`)
+```
+5B 5D
+icon                 see tables below
+AQI                  2 bytes BE (0..65535)
+rain chance %        1 byte
+description          13 bytes UTF-8, padded with spaces (0x20)
+FF
+```
+Send the screen switch `0x78` first. Icons, 2025+ family (`getWeatherIcon`): clouds/cloud/cloudy 1, clear/sunny 2,
+thunderstorm 3, snow 4, rain/rainy 5, sunrise 6, sunset 7, rain date 8, fog/foggy 9, haze 10, night 11, rainbow 15,
+hailstorm 16, high tide 17, low tide 18, weather alert 20, else 12. U577 premium (`getWeatherIconForPremium`):
+clouds 1, clear sky 2, thunderstorm 3, snow 4, rain 5, fog 9, else 0.
+Temperature goes in the status frame (Jupiter family: `temp + 40`).
+RideLink source: Open-Meteo `current=temperature_2m,weather_code,is_day`, hourly `precipitation_probability`,
+air-quality `us_aqi`; WMO code -> `WeatherKind` -> icon. Refreshed every 15 min while connected; the screen
+switch + weather frame are skipped while a route is active. Only sent to TFT models (2025+ family, U577 premium).
+
+### Current location, DID `0x5C` (`BluetoothUtil.createCurrentLocationArray`, `BleEngine.sendAddressDataToCluster`)
+`5B 5C <place name, up to 17 bytes UTF-8> <zero pad> FF`. RideLink cuts on character boundaries.
+Name from `Geocoder` (sub-locality, else locality) on the coarse network fix.
+
 ## Model detection
 The display never reports its model; the stock app takes `VehicleId` from the TVS account.
 RideLink's Auto mode uses the 2025+ format and switches to the older Ntorq format when the display

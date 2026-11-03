@@ -23,6 +23,10 @@ data class Settings(
     val forwardCalls: Boolean = true,
     /** WhatsApp / Facebook / Instagram unread counts (`5B 9C`). */
     val showSocial: Boolean = true,
+    /** Weather + AQI screen (`5B 5D`) and temperature in the status frame. */
+    val showWeather: Boolean = true,
+    /** Current place name (`5B 5C`). */
+    val showLocation: Boolean = true,
 )
 
 private val Context.store by preferencesDataStore("settings")
@@ -37,6 +41,8 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
         val nav = booleanPreferencesKey("forward_nav")
         val calls = booleanPreferencesKey("forward_calls")
         val social = booleanPreferencesKey("show_social")
+        val weather = booleanPreferencesKey("show_weather")
+        val location = booleanPreferencesKey("show_location")
     }
 
     val settings: Flow<Settings> = context.store.data.map { p ->
@@ -48,6 +54,8 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
             forwardNavigation = p[K.nav] ?: true,
             forwardCalls = p[K.calls] ?: true,
             showSocial = p[K.social] ?: true,
+            showWeather = p[K.weather] ?: true,
+            showLocation = p[K.location] ?: true,
         )
     }
 
@@ -65,4 +73,6 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
     suspend fun setForwardNavigation(on: Boolean) { context.store.edit { it[K.nav] = on } }
     suspend fun setForwardCalls(on: Boolean) { context.store.edit { it[K.calls] = on } }
     suspend fun setShowSocial(on: Boolean) { context.store.edit { it[K.social] = on } }
+    suspend fun setShowWeather(on: Boolean) { context.store.edit { it[K.weather] = on } }
+    suspend fun setShowLocation(on: Boolean) { context.store.edit { it[K.location] = on } }
 }

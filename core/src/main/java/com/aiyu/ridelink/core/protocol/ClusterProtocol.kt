@@ -31,6 +31,9 @@ object ClusterProtocol {
     const val DID_NAV_TEXT = 0x4F
     const val DID_NAV_CONTROL = 0x4E
     const val DID_SOCIAL = 0x9C
+    const val DID_SCREEN = 0x4C
+    const val DID_WEATHER = 0x5D
+    const val DID_LOCATION = 0x5C
 
     /** `5B DID <text, 17 bytes max> <zero pad> FF`, same sanitising as the stock app. */
     fun text(did: Int, value: String): ByteArray {
@@ -142,6 +145,52 @@ object ClusterProtocol {
         val fbCount = c.facebookMessages.coerceIn(0, 0x0F)
         val fb = (fbCount shl 4) or fbCount
         return frame(START, DID_SOCIAL, byteArrayOf(wa.toByte(), fb.toByte(), c.instagram.coerceIn(0, 0xFF).toByte()))
+    }
+
+    /** TrafficSequence ids for [screen]. Cricket/football need TVS's score API and are not used. */
+    enum class Screen(val id: Int) { DEFAULT(0x00), WEATHER(0x78), CRICKET(0x79), FOOTBALL(0x80) }
+
+    /** `5B 4C 00 <id> <15 zero> FF` (BluetoothUtil.createTrafficSequenceCustomFrame). */
+    fun screen(screen: Screen) = frame(START, DID_SCREEN, byteArrayOf(0, screen.id.toByte()))
+
+    data class Weather(
+        val kind: WeatherKind,
+        val temperatureC: Int,
+        /** 0..65535; RideLink sends the US AQI from Open-Meteo. */
+        val aqi: Int,
+        val rainPercent: Int,
+        val description: String,
+    )
+
+    private const val WEATHER_TEXT_MAX = 13
+
+    /**
+     * `5B 5D <icon> <AQI hi> <AQI lo> <rain %> <description, 13 bytes UTF-8, space padded> FF`
+     * (BluetoothUtil.createClimateData). Send [screen] WEATHER first.
+     */
+    fun weather(model: ClusterModel, w: Weather): ByteArray {
+        val aqi = w.aqi.coerceIn(0, 0xFFFF)
+        val text = utf8Take(w.description, WEATHER_TEXT_MAX).copyOf(WEATHER_TEXT_MAX)
+        for (i in text.indices) if (text[i] == 0.toByte()) text[i] = 0x20
+        val head = byteArrayOf(model.weatherIcon(w.kind).toByte(), (aqi shr 8).toByte(), aqi.toByte(), w.rainPercent.coerceIn(0, 100).toByte())
+        return frame(START, DID_WEATHER, head + text)
+    }
+
+    /** `5B 5C <place name, 17 bytes UTF-8> <zero pad> FF` (BluetoothUtil.createCurrentLocationArray). */
+    fun location(placeName: String) = frame(START, DID_LOCATION, utf8Take(placeName.trim(), TEXT_MAX))
+
+    /** UTF-8 bytes of [s], cut to [max] bytes without splitting a character. */
+    private fun utf8Take(s: String, max: Int): ByteArray {
+        val out = java.io.ByteArrayOutputStream()
+        var i = 0
+        while (i < s.length) {
+            val cp = s.codePointAt(i)
+            val bytes = String(Character.toChars(cp)).toByteArray(Charsets.UTF_8)
+            if (out.size() + bytes.size > max) break
+            out.write(bytes)
+            i += Character.charCount(cp)
+        }
+        return out.toByteArray()
     }
 
     /**
