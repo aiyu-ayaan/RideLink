@@ -24,6 +24,20 @@ data class DisplayTelemetry(
     val instantEconomy: Int? = null,
     /** Distance to empty, 5A 19 [11..12]. */
     val rangeKm: Int? = null,
+    /** 5A 11 [7]. */
+    val softwareVersion: Int? = null,
+    /** Malfunction indicator code, 5A 11 [8]; non-zero means the engine light is on. */
+    val milCode: Int? = null,
+    /** 5A 18 [2]. */
+    val engineLoad: Int? = null,
+    /** 5A 18 [7], raw. */
+    val intakeTemp: Int? = null,
+    /** 5A 18 [8], raw. */
+    val engineTemp: Int? = null,
+    /** 5A 18 [11], raw (likely tenths of a volt; confirm). */
+    val batteryVoltage: Int? = null,
+    /** 5A 18 [12..13]. */
+    val engineRunTime: Int? = null,
 ) {
     /** Folds one notified frame in; unknown frames return this unchanged. */
     fun merge(frame: ByteArray): DisplayTelemetry {
@@ -50,6 +64,8 @@ data class DisplayTelemetry(
             // Speedometer 2.
             0x11 -> copy(
                 serviceReminder = u8(4) ?: serviceReminder,
+                softwareVersion = u8(7) ?: softwareVersion,
+                milCode = u8(8) ?: milCode,
                 vehicleModel = u8(9) ?: vehicleModel,
                 turnIndicators = u8(12) ?: turnIndicators,
             )
@@ -59,10 +75,22 @@ data class DisplayTelemetry(
                 instantEconomy = u8(9) ?: instantEconomy,
                 rangeKm = be(11, 2) ?: rangeKm,
             )
+            // Speedometer 4.
+            0x18 -> copy(
+                engineLoad = u8(2) ?: engineLoad,
+                intakeTemp = u8(7) ?: intakeTemp,
+                engineTemp = u8(8) ?: engineTemp,
+                batteryVoltage = u8(11) ?: batteryVoltage,
+                engineRunTime = be(12, 2) ?: engineRunTime,
+            )
             else -> this
         }
     }
 }
+
+/** True once any vehicle-health field has arrived (5A 10 RPM, 5A 11, 5A 18, 5A 19 instant economy). */
+val DisplayTelemetry.hasHealth: Boolean
+    get() = listOf(rpm, batteryVoltage, engineTemp, instantEconomy, serviceReminder, milCode, turnIndicators).any { it != null }
 
 /** Scooter button presses carried in 5A 10 [12] (TelephonyUtils.handleCallAcceptRejectAction). */
 enum class CallButton(val code: Int) {

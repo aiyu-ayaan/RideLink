@@ -17,6 +17,7 @@ import androidx.compose.material.icons.rounded.Cloud
 import androidx.compose.material.icons.rounded.Dehaze
 import androidx.compose.material.icons.rounded.FlashOn
 import androidx.compose.material.icons.rounded.Grain
+import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material.icons.rounded.MusicNote
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
@@ -181,6 +182,48 @@ internal fun RideDataCard(t: DisplayTelemetry) {
                 Tile(stringResource(R.string.ride_avg_speed), v(t.averageSpeedKmh), stringResource(R.string.dash_kmh), content, Modifier.weight(1f))
                 Tile(stringResource(R.string.ride_top_speed), v(t.topSpeedKmh), stringResource(R.string.dash_kmh), content, Modifier.weight(1f))
                 Tile(stringResource(R.string.ride_mileage), v(t.averageEconomy), stringResource(R.string.unit_kmpl), content, Modifier.weight(1f))
+            }
+        }
+    }
+}
+
+/**
+ * Engine and electrics as the display reports them. Raw numbers; the engine-light row turns to the error role
+ * when the MIL code is non-zero.
+ */
+@Composable
+internal fun VehicleCard(t: DisplayTelemetry) {
+    val content = MaterialTheme.colorScheme.onSurface
+    fun v(x: Int?) = x?.toString() ?: "--"
+    Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+        shape = MaterialTheme.shapes.extraLarge,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(Modifier.padding(Dimens.xl), verticalArrangement = Arrangement.spacedBy(Dimens.sm)) {
+            Text(stringResource(R.string.vehicle_title), style = MaterialTheme.typography.titleMediumEmphasized, color = content)
+            val mil = t.milCode
+            if (mil != null && mil != 0) {
+                Row(
+                    Modifier.fillMaxWidth().clip(MaterialTheme.shapes.large).background(MaterialTheme.colorScheme.errorContainer).padding(Dimens.md),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(Icons.Rounded.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.onErrorContainer)
+                    Text(
+                        stringResource(R.string.vehicle_mil, mil),
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        modifier = Modifier.padding(start = Dimens.sm),
+                    )
+                }
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(Dimens.sm)) {
+                Tile(stringResource(R.string.vehicle_rpm), v(t.rpm), "", content, Modifier.weight(1f))
+                Tile(stringResource(R.string.vehicle_instant), v(t.instantEconomy), stringResource(R.string.unit_kmpl), content, Modifier.weight(1f))
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(Dimens.sm)) {
+                Tile(stringResource(R.string.vehicle_battery), v(t.batteryVoltage), "", content, Modifier.weight(1f))
+                Tile(stringResource(R.string.vehicle_engine_temp), v(t.engineTemp), "", content, Modifier.weight(1f))
+                Tile(stringResource(R.string.vehicle_service), v(t.serviceReminder), "", content, Modifier.weight(1f))
             }
         }
     }

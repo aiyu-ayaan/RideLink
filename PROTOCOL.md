@@ -209,6 +209,8 @@ only when they change, plus once on every connect.
 | `5A 18` speedometer 4 | engine load [2], MAP [5], intake temp [7], engine temp [8], battery voltage [11], engine run time [12..13], distance [14..15], injection volume [16..17] |
 
 The stock parser applies no scaling to odometer/trip/fuel; RideLink shows raw values until confirmed on the scooter.
+RideLink also keeps 5A 11 software version [7], MIL code [8], vehicle model [9] (shown in Settings to identify the
+model) and 5A 18 engine load, intake/engine temp, battery voltage and run time for the Vehicle card.
 
 ### Call accept/reject from the scooter switch (`TelephonyUtils.handleCallAcceptRejectAction`)
 `5A 10` [12]: 1 accept, 2 reject, 3 reject with SMS, 4 voice assistant; 64 = ignition change and 128 = vehicle off

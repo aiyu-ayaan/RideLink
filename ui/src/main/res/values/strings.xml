@@ -52,6 +52,13 @@
     <string name="ride_mileage">Mileage</string>
     <string name="unit_km">km</string>
     <string name="unit_kmpl">km/l</string>
+    <string name="vehicle_title">Vehicle</string>
+    <string name="vehicle_rpm">RPM</string>
+    <string name="vehicle_instant">Now</string>
+    <string name="vehicle_battery">Battery</string>
+    <string name="vehicle_engine_temp">Engine</string>
+    <string name="vehicle_service">Service</string>
+    <string name="vehicle_mil">Engine light on (code %1$d)</string>
     <string name="call_now">Incoming call</string>
     <string name="perm_bluetooth_title">Bluetooth access needed</string>
     <string name="perm_bluetooth_body">RideLink needs nearby devices access to find and talk to the scooter display.</string>
@@ -91,6 +98,9 @@
     <string name="settings_in_app">In the app</string>
     <string name="settings_ride_data">Ride data</string>
     <string name="settings_ride_data_hint">Odometer, trip, fuel, range, speeds and mileage from the display. Raw values until checked on the scooter.</string>
+    <string name="settings_vehicle">Vehicle health</string>
+    <string name="settings_vehicle_hint">RPM, battery, engine temperature, service reminder and engine light. Raw values.</string>
+    <string name="model_reported">Display reports model code %1$d (0x%1$02X), software %2$d</string>
     <string name="settings_paired">Paired with %1$s</string>
     <string name="settings_forget">Forget scooter</string>
     <string name="model_u716">Ntorq 125 (U716)</string>

@@ -50,6 +50,7 @@ private val ClusterModel.label
 fun SettingsScreen(vm: MainViewModel) {
     val s by vm.settings.collectAsStateWithLifecycle()
     val detected by vm.detected.collectAsStateWithLifecycle()
+    val telemetry by vm.telemetry.collectAsStateWithLifecycle()
     var rider by remember(s.riderName) { mutableStateOf(s.riderName) }
 
     Scaffold(topBar = { MediumFlexibleTopAppBar(title = { Text(stringResource(R.string.tab_forwarding)) }) }) { padding ->
@@ -70,6 +71,7 @@ fun SettingsScreen(vm: MainViewModel) {
 
             item { Section(R.string.settings_in_app) }
             item { SwitchRow(R.string.settings_ride_data, R.string.settings_ride_data_hint, s.showRideData, vm::setShowRideData) }
+            item { SwitchRow(R.string.settings_vehicle, R.string.settings_vehicle_hint, s.showVehicle, vm::setShowVehicle) }
 
             item { Section(R.string.settings_scooter) }
             item {
@@ -93,7 +95,17 @@ fun SettingsScreen(vm: MainViewModel) {
                 ListItem(
                     headlineContent = { Text(stringResource(R.string.model_auto)) },
                     supportingContent = {
-                        Text(stringResource(R.string.model_auto_using, stringResource((detected ?: ClusterModel.DEFAULT).label)))
+                        Column {
+                            Text(stringResource(R.string.model_auto_using, stringResource((detected ?: ClusterModel.DEFAULT).label)))
+                            // Raw 5A 11 bytes, to match against the TVS VehicleId table (38 = U577 premium, 39 = U812).
+                            val code = telemetry.vehicleModel
+                            if (code != null) {
+                                Text(
+                                    stringResource(R.string.model_reported, code, telemetry.softwareVersion ?: 0),
+                                    color = MaterialTheme.colorScheme.primary,
+                                )
+                            }
+                        }
                     },
                     leadingContent = { RadioButton(selected = auto, onClick = null) },
                     modifier = Modifier.selectable(selected = auto, role = Role.RadioButton) { vm.setModel(null) },

@@ -90,6 +90,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.aiyu.ridelink.core.ble.LinkState
 import com.aiyu.ridelink.core.protocol.ClusterProtocol.NavStep
 import com.aiyu.ridelink.core.protocol.Maneuver
+import com.aiyu.ridelink.core.protocol.hasHealth
 import com.aiyu.ridelink.ui.MainViewModel
 import com.aiyu.ridelink.ui.R
 import com.aiyu.ridelink.ui.bluetoothPermissions
@@ -162,6 +163,9 @@ fun RideScreen(vm: MainViewModel, onConnect: () -> Unit, onDisconnect: () -> Uni
             }
             AnimatedVisibility(settings.showRideData && telemetry.hasRideData, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
                 RideDataCard(telemetry)
+            }
+            AnimatedVisibility(settings.showVehicle && telemetry.hasHealth, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
+                VehicleCard(telemetry)
             }
             val showWeather = (weather != null && settings.showWeather) || (place != null && settings.showLocation)
             AnimatedVisibility(showWeather, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {

@@ -333,6 +333,8 @@ class ClusterController @Inject constructor(
                         _telemetry.value = DisplayTelemetry(
                             speedKmh = v, odometerKm = 12_345 + tick / 20, fuelLevel = 6, averageSpeedKmh = 34,
                             topSpeedKmh = 72, tripKm = 18 + tick / 20, averageEconomy = 48, rangeKm = 182 - tick / 20,
+                            rpm = 3_000 + v * 60, instantEconomy = 40 + tick % 12, batteryVoltage = 128, engineTemp = 92,
+                            serviceReminder = 0, milCode = 0, turnIndicators = 0,
                         )
                         onNavigation(ClusterProtocol.NavStep(d, (left / 8.0).toLong(), left, maneuver, text))
                         if (tick == 4) onIncomingCall("Mom") else if (tick == 9) onCallEnded()

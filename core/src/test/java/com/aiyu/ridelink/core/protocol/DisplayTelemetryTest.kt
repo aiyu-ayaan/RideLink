@@ -34,6 +34,25 @@ class DisplayTelemetryTest {
         assertEquals(180, t.rangeKm)
     }
 
+    @Test fun speedometer2Diagnostics() {
+        val t = DisplayTelemetry().merge(frame("5a 11 00 00 00 00 00 0c 05 27 00 00 00 00 00 00 00 00 00 ff"))
+        assertEquals(12, t.softwareVersion)
+        assertEquals(5, t.milCode)
+        assertEquals(true, t.hasHealth)
+    }
+
+    @Test fun speedometer4Health() {
+        // load 35, intake 0x2e, engine 0x5a, battery 0x7e = 126, run time 0x0258 = 600.
+        val t = DisplayTelemetry().merge(frame("5a 18 23 00 00 00 00 2e 5a 00 00 7e 02 58 00 00 00 00 00 ff"))
+        assertEquals(35, t.engineLoad)
+        assertEquals(0x2e, t.intakeTemp)
+        assertEquals(0x5a, t.engineTemp)
+        assertEquals(126, t.batteryVoltage)
+        assertEquals(600, t.engineRunTime)
+        assertEquals(true, t.hasHealth)
+        assertEquals(false, DisplayTelemetry().hasHealth)
+    }
+
     @Test fun shortAndForeignFramesAreIgnored() {
         val t = DisplayTelemetry(speedKmh = 30)
         assertSame(t, t.merge(frame("5a 6b 01")))
