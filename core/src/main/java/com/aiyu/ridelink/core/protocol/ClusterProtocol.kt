@@ -39,11 +39,11 @@ object ClusterProtocol {
     const val DID_PLAY_STATE = 0x60
 
     /** `5B DID <text, 17 bytes max> <zero pad> FF`, same sanitising as the stock app. */
-    fun text(did: Int, value: String): ByteArray {
-        val cleaned = value.map { c -> if (c.isLetterOrDigit() && c.code < 128 || c == ' ') c else 'X' }
-            .joinToString("").take(TEXT_MAX).trim()
-        return frame(START, did, cleaned.toByteArray(Charsets.US_ASCII))
-    }
+    fun text(did: Int, value: String): ByteArray = frame(START, did, displayText(value).toByteArray(Charsets.US_ASCII))
+
+    /** What a text frame will actually show: 17 chars, anything but `A-Z a-z 0-9 space` becomes `X`. */
+    fun displayText(value: String): String =
+        value.map { c -> if (c.isLetterOrDigit() && c.code < 128 || c == ' ') c else 'X' }.joinToString("").take(TEXT_MAX).trim()
 
     fun riderName(name: String) = text(DID_RIDER_NAME, name)
 
@@ -83,11 +83,12 @@ object ClusterProtocol {
     fun status(model: ClusterModel, s: PhoneStatus): ByteArray {
         val netBatt = (s.signalLevel.coerceIn(0, 9) shl 4) or batteryLevel(s.batteryPercent)
         val body = when (model.family) {
-            // BlePacketsProvider.sendJupiterMobileData; AM = 0, PM = 1; temp offset +40.
+            // BlePacketsProvider.sendJupiterMobileData; AM = 0, PM = 1; temp offset +40; missed calls in body[8].
             ClusterFamily.JUPITER -> byteArrayOf(
                 netBatt.toByte(), (s.overSpeedKmh ?: 120).toByte(), (s.temperatureC + 40).coerceIn(-128, 127).toByte(), 0,
                 s.hour12.toByte(), s.minute.toByte(), s.second.toByte(), (if (s.isPm) 1 else 0).toByte(),
-                0, s.networkType.toByte(), s.day.toByte(), s.month.toByte(), (s.year % 100).toByte(), 0, 0, 0,
+                // Stock sends 0 missed calls here; RideLink sends the real count so the call icon can show.
+                s.missedCalls.coerceIn(0, 255).toByte(), s.networkType.toByte(), s.day.toByte(), s.month.toByte(), (s.year % 100).toByte(), 0, 0, 0,
             )
             // BlePacketsProvider.sendNtorqMobileData; AM = 1, PM = 0; 0xFF = no overspeed alert.
             ClusterFamily.NTORQ -> {

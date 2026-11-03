@@ -7,6 +7,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -23,6 +24,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
+import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.ButtonDefaults
@@ -32,9 +34,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.Lifecycle
@@ -43,9 +47,11 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.semantics.Role
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.aiyu.ridelink.core.ble.LinkState
+import com.aiyu.ridelink.core.display.DisplayTemplate
 import com.aiyu.ridelink.core.phone.RejectMessage
 import com.aiyu.ridelink.core.protocol.ClusterModel
 import com.aiyu.ridelink.core.settings.Settings
+import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
 import com.aiyu.ridelink.ui.MainViewModel
 import com.aiyu.ridelink.ui.R
@@ -72,6 +78,9 @@ fun SettingsScreen(vm: MainViewModel) {
     var rider by remember(s.riderName) { mutableStateOf(s.riderName) }
     var line1 by remember(s.displayLine1) { mutableStateOf(s.displayLine1) }
     var line2 by remember(s.displayLine2) { mutableStateOf(s.displayLine2) }
+    // Which custom line the token chips add to; the previews refresh with the 2 s status tick.
+    var editing by remember { mutableIntStateOf(1) }
+    val tick by produceState(0) { while (true) { delay(2_000); value++ } }
     val link by vm.linkState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     var smsText by remember(s.rejectSmsText) { mutableStateOf(s.rejectSmsText) }
@@ -95,10 +104,20 @@ fun SettingsScreen(vm: MainViewModel) {
                 DisplayTextField(rider, R.string.settings_rider, R.string.settings_rider_hint) { rider = it; vm.setRiderName(it) }
             }
             item {
-                DisplayTextField(line1, R.string.settings_line1, R.string.settings_line1_hint) { line1 = it; vm.setDisplayLines(it, line2) }
+                TemplateField(line1, R.string.settings_line1, vm.preview(line1, tick), onFocus = { editing = 1 }) {
+                    line1 = it; vm.setDisplayLines(it, line2)
+                }
             }
             item {
-                DisplayTextField(line2, R.string.settings_line2, R.string.settings_line2_hint) { line2 = it; vm.setDisplayLines(line1, it) }
+                TemplateField(line2, R.string.settings_line2, vm.preview(line2, tick), onFocus = { editing = 2 }) {
+                    line2 = it; vm.setDisplayLines(line1, it)
+                }
+            }
+            item {
+                TokenChips { token ->
+                    if (editing == 2) { line2 = (line2 + token).take(TEMPLATE_MAX); vm.setDisplayLines(line1, line2) }
+                    else { line1 = (line1 + token).take(TEMPLATE_MAX); vm.setDisplayLines(line1, line2) }
+                }
             }
             item {
                 Row(Modifier.fillMaxWidth().padding(horizontal = Dimens.gutter), horizontalArrangement = Arrangement.End) {
@@ -230,6 +249,47 @@ private fun DisplayTextField(value: String, label: Int, hint: Int, onChange: (St
 }
 
 private const val TEXT_MAX = 17
+
+/** Templates can be longer than the 17 characters the display shows; the rendered text is cut, not the template. */
+private const val TEMPLATE_MAX = 60
+
+/** A custom-line template with the live result underneath, exactly as the display will show it. */
+@Composable
+private fun TemplateField(value: String, label: Int, preview: String, onFocus: () -> Unit, onChange: (String) -> Unit) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = { onChange(it.take(TEMPLATE_MAX)) },
+        label = { Text(stringResource(label)) },
+        supportingText = {
+            Text(
+                if (value.isBlank()) stringResource(R.string.settings_line_off) else stringResource(R.string.settings_line_preview, preview),
+            )
+        },
+        singleLine = true,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = Dimens.gutter)
+            .onFocusChanged { if (it.isFocused) onFocus() },
+    )
+}
+
+/** Tap to insert a live value into the line being edited. */
+@Composable
+private fun TokenChips(onPick: (String) -> Unit) {
+    Column(Modifier.padding(horizontal = Dimens.gutter)) {
+        Text(
+            stringResource(R.string.settings_tokens_hint),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(Dimens.sm)) {
+            SuggestionChip(onClick = { onPick("{caller|rider}") }, label = { Text("{caller|rider}") })
+            DisplayTemplate.Token.entries.forEach { t ->
+                SuggestionChip(onClick = { onPick("{${t.key}}") }, label = { Text("{${t.key}}") })
+            }
+        }
+    }
+}
 
 /** Limit in 5 km/h steps; saved when the finger lifts so DataStore is not written on every frame. */
 @Composable

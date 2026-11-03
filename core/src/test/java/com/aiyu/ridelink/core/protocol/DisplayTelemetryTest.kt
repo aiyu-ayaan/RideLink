@@ -12,12 +12,14 @@ class DisplayTelemetryTest {
         // switch 1, 0-60 0, trip 0x00 00 7b = 123, rpm 0x1f40 = 8000.
         val t = DisplayTelemetry().merge(frame("5a 10 3e 00 30 39 07 29 00 58 00 00 01 00 00 00 7b 1f 40 ff"))
         assertEquals(62, t.speedKmh)
-        assertEquals(12345, t.odometerKm)
+        assertEquals(12345, t.odometerTenths)
+        assertEquals(1234.5, t.odometerKm!!, 0.001)
         assertEquals(7, t.fuelLevel)
         assertEquals(41, t.averageSpeedKmh)
         assertEquals(88, t.topSpeedKmh)
         assertEquals(1, t.switchStatus)
-        assertEquals(123, t.tripKm)
+        assertEquals(123, t.tripTenths)
+        assertEquals(12.3, t.tripKm!!, 0.001)
         assertEquals(8000, t.rpm)
     }
 
@@ -60,7 +62,13 @@ class DisplayTelemetryTest {
         // A truncated 5A 10 keeps what it cannot read.
         val partial = t.merge(frame("5a 10 28 00"))
         assertEquals(40, partial.speedKmh)
-        assertEquals(null, partial.odometerKm)
+        assertEquals(null, partial.odometerTenths)
+    }
+
+    @Test fun riderOdometerReadsInTenths() {
+        // The rider's display showed 171.8 km while the raw 3-byte value was 1718 (0x0006b6).
+        val t = DisplayTelemetry().merge(frame("5a 10 00 00 06 b6 00 00 00 00 00 00 00 00 00 00 00 00 00 ff"))
+        assertEquals(171.8, t.odometerKm!!, 0.001)
     }
 
     @Test fun callButtons() {

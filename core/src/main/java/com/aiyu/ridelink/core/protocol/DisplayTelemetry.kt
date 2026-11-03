@@ -3,15 +3,18 @@ package com.aiyu.ridelink.core.protocol
 /**
  * Ride data the display notifies on `5354` (JupiterClusterDataReceiver / NtorqClusterDataReceiver).
  * Stock `@ParsingMeta(start = N)` is 1-based; the indexes below are 0-based into the frame.
- * Values are raw: the stock parser applies no scaling. shortcut: confirm units on the scooter.
+ * Odometer and trip come in 0.1 km steps (confirmed on the rider's Ntorq XT: raw 1718 = 171.8 km).
+ * Other values are raw: the stock parser applies no scaling. shortcut: confirm the remaining units on the scooter.
  */
 data class DisplayTelemetry(
     val speedKmh: Int? = null,
-    val odometerKm: Int? = null,
+    /** 0.1 km steps; see [odometerKm]. */
+    val odometerTenths: Int? = null,
     val fuelLevel: Int? = null,
     val averageSpeedKmh: Int? = null,
     val topSpeedKmh: Int? = null,
-    val tripKm: Int? = null,
+    /** 0.1 km steps; see [tripKm]. */
+    val tripTenths: Int? = null,
     val rpm: Int? = null,
     /** 5A 10 [12]: scooter buttons and ignition, see [CallButton.from]. */
     val switchStatus: Int? = null,
@@ -39,6 +42,9 @@ data class DisplayTelemetry(
     /** 5A 18 [12..13]. */
     val engineRunTime: Int? = null,
 ) {
+    val odometerKm: Double? get() = odometerTenths?.let { it / 10.0 }
+    val tripKm: Double? get() = tripTenths?.let { it / 10.0 }
+
     /** Folds one notified frame in; unknown frames return this unchanged. */
     fun merge(frame: ByteArray): DisplayTelemetry {
         if (frame.size < 3 || frame[0] != 0x5A.toByte()) return this
@@ -53,12 +59,12 @@ data class DisplayTelemetry(
             // Speedometer 1.
             0x10 -> copy(
                 speedKmh = u8(2) ?: speedKmh,
-                odometerKm = be(3, 3) ?: odometerKm,
+                odometerTenths = be(3, 3) ?: odometerTenths,
                 fuelLevel = u8(6) ?: fuelLevel,
                 averageSpeedKmh = u8(7) ?: averageSpeedKmh,
                 topSpeedKmh = u8(9) ?: topSpeedKmh,
                 switchStatus = u8(12) ?: switchStatus,
-                tripKm = be(14, 3) ?: tripKm,
+                tripTenths = be(14, 3) ?: tripTenths,
                 rpm = be(17, 2) ?: rpm,
             )
             // Speedometer 2.

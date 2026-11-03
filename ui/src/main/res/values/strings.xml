@@ -76,10 +76,11 @@
     <string name="model_auto">Auto (recommended)</string>
     <string name="model_auto_using">Using: %1$s. Switches to the older format if the display sends older-Ntorq frames.</string>
     <string name="settings_display_text">Display text</string>
-    <string name="settings_line1">Custom text, line 1</string>
-    <string name="settings_line1_hint">Sent on every connect. Letters, digits and spaces.</string>
-    <string name="settings_line2">Custom text, line 2</string>
-    <string name="settings_line2_hint">A playing song\'s artist replaces this line.</string>
+    <string name="settings_line1">Display line 1</string>
+    <string name="settings_line2">Display line 2</string>
+    <string name="settings_line_preview">Display shows: %1$s</string>
+    <string name="settings_line_off">Empty: not sent</string>
+    <string name="settings_tokens_hint">Live values. {caller|rider} shows the caller while ringing, your name otherwise. Line 2 is replaced by the artist while music plays. The display shows letters, digits and spaces only.</string>
     <string name="settings_send_text">Send to display</string>
     <string name="settings_rider">Rider name</string>
     <string name="settings_rider_hint">Shown on the display when the ride starts</string>
@@ -104,7 +105,7 @@
     <string name="settings_voice_button_hint">The scooter\'s voice button opens your phone\'s assistant</string>
     <string name="settings_voice_overlay">Allow RideLink to open the assistant from the background</string>
     <string name="settings_missed_calls">Missed-call badge</string>
-    <string name="settings_missed_calls_hint">Older Ntorq displays only. The 2025+ display has no missed-call field.</string>
+    <string name="settings_missed_calls_hint">Unread missed calls on the display\'s call icon. Needs call history access.</string>
     <string name="settings_overspeed">Overspeed alert</string>
     <string name="settings_overspeed_hint">The display warns when you ride faster than the limit</string>
     <string name="settings_overspeed_limit">Limit: %1$d km/h</string>

@@ -156,13 +156,14 @@ internal fun MusicCard(music: ClusterProtocol.Music) {
 }
 
 internal val DisplayTelemetry.hasRideData
-    get() = listOf(odometerKm, tripKm, fuelLevel, rangeKm, averageSpeedKmh, topSpeedKmh, averageEconomy).any { it != null }
+    get() = listOf(odometerTenths, tripTenths, fuelLevel, rangeKm, averageSpeedKmh, topSpeedKmh, averageEconomy).any { it != null }
 
 /** Odometer, trip, fuel, range, average/top speed and mileage as the display reports them (raw values). */
 @Composable
 internal fun RideDataCard(t: DisplayTelemetry) {
     val content = MaterialTheme.colorScheme.onSurface
     fun v(x: Int?) = x?.toString() ?: "--"
+    fun km(x: Double?) = x?.let { "%.1f".format(it) } ?: "--"
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
         shape = MaterialTheme.shapes.extraLarge,
@@ -171,8 +172,8 @@ internal fun RideDataCard(t: DisplayTelemetry) {
         Column(Modifier.padding(Dimens.xl), verticalArrangement = Arrangement.spacedBy(Dimens.sm)) {
             Text(stringResource(R.string.ride_data), style = MaterialTheme.typography.titleMediumEmphasized, color = content)
             Row(horizontalArrangement = Arrangement.spacedBy(Dimens.sm)) {
-                Tile(stringResource(R.string.ride_odometer), v(t.odometerKm), stringResource(R.string.unit_km), content, Modifier.weight(1f))
-                Tile(stringResource(R.string.ride_trip), v(t.tripKm), stringResource(R.string.unit_km), content, Modifier.weight(1f))
+                Tile(stringResource(R.string.ride_odometer), km(t.odometerKm), stringResource(R.string.unit_km), content, Modifier.weight(1f))
+                Tile(stringResource(R.string.ride_trip), km(t.tripKm), stringResource(R.string.unit_km), content, Modifier.weight(1f))
             }
             Row(horizontalArrangement = Arrangement.spacedBy(Dimens.sm)) {
                 Tile(stringResource(R.string.ride_fuel), v(t.fuelLevel), "", content, Modifier.weight(1f))

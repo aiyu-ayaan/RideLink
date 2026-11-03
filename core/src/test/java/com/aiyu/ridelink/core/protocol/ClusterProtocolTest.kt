@@ -175,10 +175,10 @@ class ClusterProtocolTest {
 
     @Test fun overspeedAndMissedCallsInStatus() {
         val alert = status.copy(overSpeedKmh = 80, missedCalls = 3)
-        // Jupiter family: limit in byte 3; missed calls always 0 (sendJupiterMobileData).
+        // Jupiter family: limit in byte 3; missed calls in byte 10 (stock always sends 0 there, RideLink the count).
         val jupiter = ClusterProtocol.status(ClusterModel.NTORQ_U812, alert)
         assertEquals(80, jupiter[3].toInt())
-        assertEquals(0, jupiter[10].toInt())
+        assertEquals(3, jupiter[10].toInt())
         // Older Ntorq: limit in byte 3 (0xFF = off), missed calls in byte 10.
         val ntorq = ClusterProtocol.status(ClusterModel.NTORQ_U577_PREMIUM, alert)
         assertEquals(80, ntorq[3].toInt())

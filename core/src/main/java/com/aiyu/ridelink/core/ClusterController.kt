@@ -6,10 +6,12 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.BatteryManager
+import android.telephony.SubscriptionManager
 import android.telephony.TelephonyManager
 import androidx.core.content.ContextCompat
 import com.aiyu.ridelink.core.ble.ClusterLink
 import com.aiyu.ridelink.core.ble.LinkState
+import com.aiyu.ridelink.core.display.DisplayTemplate
 import com.aiyu.ridelink.core.protocol.ClusterModel
 import com.aiyu.ridelink.core.protocol.ClusterProtocol
 import com.aiyu.ridelink.core.protocol.ClusterProtocol.CallState
@@ -172,7 +174,7 @@ class ClusterController @Inject constructor(
     private suspend fun onReady() {
         val s = settings.current()
         if (s.riderName.isNotBlank()) send(ClusterProtocol.riderName(s.riderName))
-        sendDisplayText(s)
+        sendDisplayText(s, force = true)
         sendSocial()
         sendMusic(force = true)
         startWeather()
@@ -181,6 +183,7 @@ class ClusterController @Inject constructor(
             while (isActive) {
                 val now = settings.current()
                 send(ClusterProtocol.status(model(now), phoneStatus(now)))
+                sendDisplayText(now, force = false)
                 delay(ClusterProtocol.STATUS_INTERVAL_MS)
             }
         }
@@ -277,6 +280,7 @@ class ClusterController @Inject constructor(
             if (!settings.current().forwardCalls) return@launch
             _caller.value = nameOrNumber
             callState = CallState.RINGING
+            sendDisplayText(settings.current(), force = false)
             val frame = ClusterProtocol.caller(nameOrNumber)
             // Stock app repeats the caller frame every 500 ms while ringing; cap it at 60 s.
             withTimeoutOrNull(60_000) {
@@ -293,6 +297,7 @@ class ClusterController @Inject constructor(
         _caller.value = null
         callState = CallState.ENDED
         scope.launch {
+            if (link.state.value is LinkState.Ready) sendDisplayText(settings.current(), force = false)
             delay(ClusterProtocol.STATUS_INTERVAL_MS * 2)
             callState = CallState.IDLE
         }
@@ -349,8 +354,8 @@ class ClusterController @Inject constructor(
                         val v = 28 + (tick * 7) % 24
                         _speed.value = v
                         _telemetry.value = DisplayTelemetry(
-                            speedKmh = v, odometerKm = 12_345 + tick / 20, fuelLevel = 6, averageSpeedKmh = 34,
-                            topSpeedKmh = 72, tripKm = 18 + tick / 20, averageEconomy = 48, rangeKm = 182 - tick / 20,
+                            speedKmh = v, odometerTenths = 17_180 + tick, fuelLevel = 6, averageSpeedKmh = 34,
+                            topSpeedKmh = 72, tripTenths = 182 + tick, averageEconomy = 48, rangeKm = 182 - tick / 20,
                             rpm = 3_000 + v * 60, instantEconomy = 40 + tick % 12, batteryVoltage = 128, engineTemp = 92,
                             serviceReminder = 0, milCode = 0, turnIndicators = 0,
                         )
@@ -367,17 +372,68 @@ class ClusterController @Inject constructor(
         }
     }
 
-    private suspend fun sendDisplayText(s: Settings) {
-        if (s.displayLine1.isNotBlank()) send(ClusterProtocol.customLine1(s.displayLine1))
-        if (s.displayLine2.isNotBlank()) send(ClusterProtocol.customLine2(s.displayLine2))
+    @Volatile private var sentLine1: String? = null
+    @Volatile private var sentLine2: String? = null
+
+    /**
+     * Custom lines are templates (see DisplayTemplate). Rendered on connect and every status tick; a line is
+     * written only when its text changed, or always with [force].
+     */
+    private suspend fun sendDisplayText(s: Settings, force: Boolean) {
+        if (s.displayLine1.isNotBlank()) {
+            val line = renderLine(s.displayLine1, s)
+            if (force || line != sentLine1) { send(ClusterProtocol.customLine1(line)); sentLine1 = line }
+        }
+        if (s.displayLine2.isNotBlank()) {
+            val line = renderLine(s.displayLine2, s)
+            if (force || line != sentLine2) { send(ClusterProtocol.customLine2(line)); sentLine2 = line }
+        }
     }
+
+    private fun renderLine(template: String, s: Settings) = ClusterProtocol.displayText(DisplayTemplate.render(template, templateValues(s)))
+
+    /** What a template shows on the display right now; for the live preview in Settings. */
+    fun previewLine(template: String, s: Settings): String = renderLine(template, s)
 
     /** Settings "Send to display": rider name and both custom lines right away. */
     fun sendDisplayTextNow() = scope.launch {
         val s = settings.current()
         if (s.riderName.isNotBlank()) send(ClusterProtocol.riderName(s.riderName))
-        sendDisplayText(s)
+        sendDisplayText(s, force = true)
     }
+
+    /** Live values for the template tokens. Text frames only show letters, digits and spaces, so no dots or colons. */
+    private fun templateValues(s: Settings): Map<DisplayTemplate.Token, String?> {
+        val now = LocalDateTime.now()
+        val t = _telemetry.value
+        val w = _weather.value?.takeIf { s.showWeather }
+        val m = _music.value?.takeIf { s.showMusic }
+        val hour12 = (now.hour % 12).let { if (it == 0) 12 else it }
+        return mapOf(
+            DisplayTemplate.Token.RIDER to s.riderName,
+            DisplayTemplate.Token.CALLER to _caller.value,
+            DisplayTemplate.Token.TIME to "%d %02d %s".format(hour12, now.minute, if (now.hour >= 12) "PM" else "AM"),
+            DisplayTemplate.Token.DATE to "${now.dayOfMonth} ${now.month.name.take(3).lowercase().replaceFirstChar { it.uppercase() }}",
+            DisplayTemplate.Token.BATTERY to batteryPercent().toString(),
+            DisplayTemplate.Token.TEMP to w?.let { "${it.temperatureC}C" },
+            DisplayTemplate.Token.WEATHER to w?.description,
+            DisplayTemplate.Token.AQI to w?.aqi?.toString(),
+            DisplayTemplate.Token.PLACE to _place.value?.takeIf { s.showLocation },
+            DisplayTemplate.Token.SONG to m?.title,
+            DisplayTemplate.Token.ARTIST to m?.artist,
+            DisplayTemplate.Token.SPEED to (t.speedKmh ?: _speed.value)?.toString(),
+            DisplayTemplate.Token.ODO to t.odometerKm?.toInt()?.toString(),
+            DisplayTemplate.Token.TRIP to t.tripKm?.toInt()?.toString(),
+            DisplayTemplate.Token.RANGE to t.rangeKm?.toString(),
+            DisplayTemplate.Token.FUEL to t.fuelLevel?.toString(),
+            DisplayTemplate.Token.MILEAGE to t.averageEconomy?.toString(),
+            DisplayTemplate.Token.WHATSAPP to _social.value.whatsappMessages.takeIf { it > 0 }?.toString(),
+            DisplayTemplate.Token.MISSED to (if (s.missedCalls) missedCalls.count() else 0).takeIf { it > 0 }?.toString(),
+        )
+    }
+
+    private fun batteryPercent() =
+        context.getSystemService(BatteryManager::class.java)?.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY) ?: 0
 
     /** Debug screen: write raw text to custom line 1. */
     fun sendTestText(text: String) = scope.launch { send(ClusterProtocol.text(ClusterProtocol.DID_TEXT_LINE_1, text)) }
@@ -418,12 +474,10 @@ class ClusterController @Inject constructor(
 
     @SuppressLint("MissingPermission")
     private fun phoneStatus(s: Settings): ClusterProtocol.PhoneStatus {
-        val battery = context.getSystemService(BatteryManager::class.java)?.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY) ?: 0
-        val tm = context.getSystemService(TelephonyManager::class.java)
-        // Stock app (sendJupiterMobileData) reads the level only with location granted.
-        val signal = if (granted(Manifest.permission.ACCESS_COARSE_LOCATION) && Build.VERSION.SDK_INT >= 28) {
-            runCatching { tm?.signalStrength?.level ?: 0 }.getOrDefault(0)
-        } else 0
+        val battery = batteryPercent()
+        val tm = dataTelephony()
+        // getSignalStrength needs no permission (the stock app gated it on location; that left the bars empty).
+        val signal = signalLevel(tm)
         // getDataNetworkType needs READ_PHONE_STATE; without it the cluster shows no network type.
         val network = if (granted(Manifest.permission.READ_PHONE_STATE)) {
             runCatching { ClusterProtocol.networkTypeCode(tm?.dataNetworkType ?: 0) }.getOrDefault(0)
@@ -445,6 +499,21 @@ class ClusterController @Inject constructor(
             overSpeedKmh = s.overSpeedKmh.takeIf { s.overSpeedAlert },
             missedCalls = if (s.missedCalls) missedCalls.count() else 0,
         )
+    }
+
+    /** TelephonyManager for the SIM that carries mobile data; on dual-SIM phones the default one may report nothing. */
+    private fun dataTelephony(): TelephonyManager? {
+        val base = context.getSystemService(TelephonyManager::class.java) ?: return null
+        val sub = SubscriptionManager.getDefaultDataSubscriptionId()
+        return if (sub != SubscriptionManager.INVALID_SUBSCRIPTION_ID) runCatching { base.createForSubscriptionId(sub) }.getOrDefault(base) else base
+    }
+
+    /** 0..4 bars: SignalStrength.getLevel, else the best cell in it (some phones report level 0 with valid cells). */
+    private fun signalLevel(tm: TelephonyManager?): Int {
+        if (tm == null || Build.VERSION.SDK_INT < 28) return 0
+        val strength = runCatching { tm.signalStrength }.getOrNull() ?: return 0
+        val cells = if (Build.VERSION.SDK_INT >= 29) runCatching { strength.cellSignalStrengths.maxOfOrNull { it.level } }.getOrNull() else null
+        return maxOf(strength.level, cells ?: 0).coerceIn(0, 4)
     }
 
     private fun granted(permission: String) = ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED

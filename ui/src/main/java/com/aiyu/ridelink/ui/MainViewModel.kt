@@ -59,6 +59,10 @@ class MainViewModel @Inject constructor(
     fun setRiderName(name: String) = viewModelScope.launch { repo.setRiderName(name) }
     fun setDisplayLines(line1: String, line2: String) = viewModelScope.launch { repo.setDisplayLines(line1, line2) }
     fun sendDisplayText() = controller.sendDisplayTextNow()
+
+    /** Rendered custom line for the Settings preview. [tick] only forces a recompute as live values change. */
+    @Suppress("UNUSED_PARAMETER")
+    fun preview(template: String, tick: Int): String = controller.previewLine(template, settings.value)
     fun setForwardNavigation(on: Boolean) = viewModelScope.launch { repo.setForwardNavigation(on) }
     fun setForwardCalls(on: Boolean) = viewModelScope.launch { repo.setForwardCalls(on) }
     fun setShowSocial(on: Boolean) = viewModelScope.launch { repo.setShowSocial(on) }
