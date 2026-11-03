@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256"><title>RideLink concept C</title>
+<path fill="none" stroke="#000" stroke-width="24" stroke-linecap="round" d="M28 116 Q128 196 228 116"/>
+<path fill="#000" fill-rule="evenodd" d="M80 52 H176 A24 24 0 0 1 200 76 V132 A24 24 0 0 1 176 156 H80 A24 24 0 0 1 56 132 V76 A24 24 0 0 1 80 52 Z
+ M108 140 V102 A14 14 0 0 1 122 88 H138 V72 L164 96 L138 120 V104 H124 V140 Z"/>
+</svg>
