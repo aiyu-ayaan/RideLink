@@ -76,6 +76,37 @@ FF
 ```
 U577 base/premium and Raider use a slightly different tail (call-state byte, padded to 20).
 
+### Cyclic status frame, Jupiter family (`BlePacketsProvider.sendJupiterMobileData`)
+Used for U812/N251/U458/U377 (and Jupiter/Zest). Padded to 20 bytes:
+```
+5B 4A
+[netStrength nibble | battery level nibble]
+overspeed limit (120 when alert off; Zest 70)
+temperature + 40
+00
+hour (12h)  minute  second  AM=0/PM=1      <- inverted vs the Ntorq family
+missed calls (always 0 for new Ntorq)
+network type
+day  month  year%100
+00
+voice-assist flag (0 for new Ntorq)
+find-my-vehicle flag
+00 FF
+```
+Battery level (`getIceBatteryLevel`): 0-9% 0, 10-19 1, 20-39 2, 40-59 3, 60-79 4, 80-100 5.
+Network type (`getNetworkType`, input `TelephonyManager.NETWORK_TYPE_*`): 3G types (2,3,8,10,15,16) -> 3,
+LTE (13) -> 4, NR (20) -> 5, else 0. Signal strength is `SignalStrength.getLevel()` (0..4).
+
+### Incoming call (`TelephonyUtils.writeNtorqCallerInformationToCluster` / `writeJupiterCallerInformationToCluster`)
+Text frame DID `0x43` with the contact name (or number with `+91` removed), no category byte.
+Repeated every 500 ms while ringing (`BleEngine.processingNtorqIncomingCallDataToCluster`).
+SMS senders are only sent to iQube/U388 displays, never to Ntorq.
+
+### Frames from the display (`NtorqFrameIdentifier`, `JupiterFrameIdentifier`)
+Keyed on byte 1 after `5A`: `10` speedometer 1, `11` speedometer 2 (software version), `19`, `18`,
+`37` calibration response, `54` doc-transfer ack. Older Ntorq only: `6B` music controls, `29` Wi-Fi password.
+Speedometer 1 (`@ParsingMeta`): speed byte 3, odometer 3 bytes from 4, fuel byte 7, RPM 2 bytes from 18.
+
 ### Navigation (new Ntorq/Jupiter path: `BleNavigationSendData.byteArrayForIceBikeNavigation`)
 Two frames. Sent **second first**, then sleep 400 ms, then first:
 
@@ -98,6 +129,19 @@ Pictogram mapping for NTORQ_U812/N251/U458/U377 (`getPictogramMappingForNtorqU81
 Mappls maneuver id -> cluster id:
 `0>0 1>1 2>2 3>10 4>11 5>12 6>19 7>57 8>22 11>0 12>10 13>0 14>10 15>7 16>17 17>1 18>11 19>7 20>17 21>57 22>0 23>7 24>10 25>17 36>23 41>19 50>24 51>38 52>10 53>36 54>24 55>35 56>0 57>40 65>27 66>28 67>29 68>48 69>31 70>32 71>33 72>61 73>0 74>8 75>18`
 Unmapped -> 0.
+
+The keys are Mappls `TurnTypeConstants`: 0 left, 1 sharp left, 2 slight left, 3 right, 4 sharp right,
+5 slight right, 6 U-turn, 7 continue, 8 destination, 15 fork left, 16 fork right, 41 right U-turn,
+68 roundabout, 72 rotary. So on 2025+ Ntorq: left 0, right 10, slight right 12, U-turn 19,
+straight 57, destination 22, roundabout 48.
+
+U577 premium (vehicle 38) uses its own table and the stock app parses the value as **hex**
+(`Integer.parseInt(value, 16)`): right "10" -> 0x10. U577 base (37) has a third table, default 5.
+
+## Model detection
+The display never reports its model; the stock app takes `VehicleId` from the TVS account.
+RideLink's Auto mode uses the 2025+ format and switches to the older Ntorq format when the display
+sends `5A 6B` or `5A 29`, which only older Ntorq displays send.
 
 ## Bike families (VehicleId from TVS account, stored in prefs `VehicleId`)
 

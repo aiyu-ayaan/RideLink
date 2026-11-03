@@ -1,0 +1,98 @@
+# RideLink
+
+RideLink is an Android companion app for TVS scooters with a SmartXonnect Bluetooth display
+(Ntorq 125, Ntorq XT, Race XP, 2025+ Ntorq). It replaces the official TVS Connect app for the
+riding features: it connects to the scooter display over BLE, shows Google Maps turn-by-turn
+directions on it, forwards incoming calls, and keeps the display's clock, phone battery and
+signal up to date. No TVS account or server is needed.
+
+The BLE protocol was recovered from TVS Connect 8.13.2. `PROTOCOL.md` is the source of truth
+for every byte the app sends. Personal-use project: never ship TVS code, assets or branding.
+
+## Stack
+
+Native Android, Kotlin, Jetpack Compose. Package `com.aiyu.ridelink` (debug: `.debug` suffix).
+Build setup mirrors `../Findex` (AGP 9.4, Kotlin 2.4, Compose BOM 2026.08, Material3 1.5 alpha, Hilt, KSP).
+
+Modules:
+
+- `app` => entry point: `MainActivity`, `RideLinkApp`, and the Android services
+  (`ClusterService` foreground service, `RideNotificationListener`, `BootReceiver`).
+- `core` => no UI. `protocol/` (frame encoder, models, turn tables), `ble/ClusterLink` (GATT),
+  `ClusterController` (ride session logic), `nav/MapsNotificationParser`, `settings/` (DataStore).
+- `ui` => all Compose screens, theme, and **all strings** (`ui/src/main/res/values/strings.xml`).
+  `core` and `app` hold no user-facing strings; the app module reads them via `com.aiyu.ridelink.ui.R`.
+
+`tools/` holds desktop test tools (system Python with python3-dbus + gi):
+- `fake_cluster.py` emulates the scooter display over BlueZ and decodes every frame it receives.
+- `central_test.py` plays the phone from a second adapter and writes the pinned test frames.
+
+## How it works
+
+1. Pair: scan for BLE names containing `TVS` (not `HUD`), save address in DataStore.
+2. Start ride: `ClusterService` (foreground, `connectedDevice`) calls `ClusterController.start()`.
+3. `ClusterLink` connects, requests MTU 512, enables notify on `5354`, then writes on `5352`
+   with response, one frame at a time. On drop it reconnects with `autoConnect = true`.
+4. On ready: rider name frame, then the `5B 4A` status frame every 2 s.
+5. `RideNotificationListener` turns Google Maps notifications into `NavStep`s
+   (nav text frame, 400 ms gap, nav control frame) and call notifications into a caller frame
+   repeated every 500 ms while ringing.
+6. Frames from the display are logged, used for Auto model detection and speed.
+
+## Design
+
+- Material 3 Expressive only: `MaterialExpressiveTheme`, `MotionScheme.expressive()`, dynamic color
+  on Android 12+, red tonal-spot fallback scheme. See `development/docs/DESIGN_SYSTEM.md`.
+- Bottom navigation with three tabs: Ride, Settings, Console. No drawer.
+- Ride screen: hero status card (cookie shape, `LoadingIndicator` while searching), turn-arrow
+  dashboard (big arrow, distance, ETA, left, speed), call card, one primary button.
+- Console is a real tool, not a debug leftover: manual text, test turn, test call, demo ride, frame log.
+
+## AI Agents
+
+- Never add yourself as co-author in any commit or PR. No `Co-Authored-By`, no session links.
+- Commit messages use `scope(Change) : Message`, e.g. `ui(Ride) : Add speed tile`.
+  Commit at each finished stage.
+- `development/` folder is for you. Docs in `development/docs/`, tasks in `development/TODO.md`.
+- You may update this file and other AI-brain files.
+- Use `codegraph` to scan code when a `.codegraph/` index exists.
+- For architecture changes, update the diagram in `development/docs/ARCHITECTURE.md`.
+- Protocol changes: change `PROTOCOL.md`, the encoder and `ClusterProtocolTest` together.
+  Every byte layout needs the stock-app class it came from.
+- Never commit the TVS APK, decompiled sources, `jadx/` or `captures/` (personal data).
+
+## Conventions
+
+- Compose only, `androidx.compose.material3` 1.5 alpha (Expressive opt-ins set in Gradle).
+- Colors only through `MaterialTheme.colorScheme` roles. No raw `Color(0x…)` in screens
+  (the fallback scheme in `ui/theme/Theme.kt` is the one exception).
+- Spacing through `Dimens`; shapes through `MaterialTheme.shapes` / `MaterialShapes`.
+- Motion through `MaterialTheme.motionScheme` specs, never ad-hoc `tween` durations.
+- Settings live in DataStore (`core/settings`). Nothing list-like in DataStore.
+- All BLE writes go through `ClusterController.send` -> `ClusterLink.send` (queued, with response).
+  Never write GATT from UI code.
+- Long-lived work (the ride session) runs in `ClusterService`, never on a ViewModel scope.
+- `shortcut:` comments mark known limits; list them before releases.
+
+## Commands
+
+- Unit tests: `./gradlew :core:testDebugUnitTest`
+- Build: `./gradlew :app:assembleDebug`
+- Run on emulator/device: `./run.sh` (`--logs` to follow logcat)
+- Fake display (needs a BLE adapter): `/usr/bin/python3 tools/fake_cluster.py --adapter hci0`
+- End-to-end BLE check (two adapters): run the fake on hci0, then
+  `/usr/bin/python3 tools/central_test.py --adapter hci1`
+
+## Testing without the scooter
+
+1. Console -> Demo ride: fake route, speed and call through the real encoder (UI + frames).
+2. `fake_cluster.py` on this PC + the app on a real phone: pair with `TVSBT01`, every frame is decoded
+   and logged to `captures/`. Type hex into the fake's stdin to send frames back (e.g. `5a 10 00 3e …`).
+3. The Android emulator has no host Bluetooth passthrough; BLE tests need a real phone.
+
+## Working docs
+
+- `PROTOCOL.md` — recovered BLE protocol with sources.
+- `development/docs/ARCHITECTURE.md` — module and data-flow diagrams.
+- `development/docs/DESIGN_SYSTEM.md` — color, shape, motion, layout rules.
+- `development/TODO.md` — open work.
