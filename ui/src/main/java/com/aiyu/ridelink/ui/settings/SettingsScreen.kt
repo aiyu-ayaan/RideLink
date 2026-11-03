@@ -58,6 +58,9 @@ fun SettingsScreen(vm: MainViewModel) {
             item { SwitchRow(R.string.settings_location, R.string.settings_location_hint, s.showLocation, vm::setShowLocation) }
             item { SwitchRow(R.string.settings_music, R.string.settings_music_hint, s.showMusic, vm::setShowMusic) }
 
+            item { Section(R.string.settings_in_app) }
+            item { SwitchRow(R.string.settings_ride_data, R.string.settings_ride_data_hint, s.showRideData, vm::setShowRideData) }
+
             item { Section(R.string.settings_scooter) }
             item {
                 OutlinedTextField(

@@ -31,6 +31,8 @@ data class Settings(
     val showMusic: Boolean = true,
     /** Accept / reject a ringing call with the scooter's switch (5A 10 byte 12). */
     val callButtons: Boolean = true,
+    /** Ride data card (odometer, trip, fuel, range, speeds, mileage) on the Ride screen. */
+    val showRideData: Boolean = true,
 )
 
 private val Context.store by preferencesDataStore("settings")
@@ -49,6 +51,7 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
         val location = booleanPreferencesKey("show_location")
         val music = booleanPreferencesKey("show_music")
         val callButtons = booleanPreferencesKey("call_buttons")
+        val rideData = booleanPreferencesKey("show_ride_data")
     }
 
     val settings: Flow<Settings> = context.store.data.map { p ->
@@ -64,6 +67,7 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
             showLocation = p[K.location] ?: true,
             showMusic = p[K.music] ?: true,
             callButtons = p[K.callButtons] ?: true,
+            showRideData = p[K.rideData] ?: true,
         )
     }
 
@@ -85,4 +89,5 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
     suspend fun setShowLocation(on: Boolean) { context.store.edit { it[K.location] = on } }
     suspend fun setShowMusic(on: Boolean) { context.store.edit { it[K.music] = on } }
     suspend fun setCallButtons(on: Boolean) { context.store.edit { it[K.callButtons] = on } }
+    suspend fun setShowRideData(on: Boolean) { context.store.edit { it[K.rideData] = on } }
 }

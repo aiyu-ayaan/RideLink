@@ -45,6 +45,7 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.aiyu.ridelink.core.protocol.ClusterProtocol
+import com.aiyu.ridelink.core.protocol.DisplayTelemetry
 import com.aiyu.ridelink.core.protocol.WeatherKind
 import com.aiyu.ridelink.ui.R
 import com.aiyu.ridelink.ui.theme.Dimens
@@ -150,5 +151,37 @@ internal fun MusicCard(music: ClusterProtocol.Music) {
             trailingContent = { Icon(state.first, contentDescription = stringResource(state.second)) },
             colors = ListItemDefaults.colors(containerColor = Color.Transparent),
         )
+    }
+}
+
+internal val DisplayTelemetry.hasRideData
+    get() = listOf(odometerKm, tripKm, fuelLevel, rangeKm, averageSpeedKmh, topSpeedKmh, averageEconomy).any { it != null }
+
+/** Odometer, trip, fuel, range, average/top speed and mileage as the display reports them (raw values). */
+@Composable
+internal fun RideDataCard(t: DisplayTelemetry) {
+    val content = MaterialTheme.colorScheme.onSurface
+    fun v(x: Int?) = x?.toString() ?: "--"
+    Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+        shape = MaterialTheme.shapes.extraLarge,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(Modifier.padding(Dimens.xl), verticalArrangement = Arrangement.spacedBy(Dimens.sm)) {
+            Text(stringResource(R.string.ride_data), style = MaterialTheme.typography.titleMediumEmphasized, color = content)
+            Row(horizontalArrangement = Arrangement.spacedBy(Dimens.sm)) {
+                Tile(stringResource(R.string.ride_odometer), v(t.odometerKm), stringResource(R.string.unit_km), content, Modifier.weight(1f))
+                Tile(stringResource(R.string.ride_trip), v(t.tripKm), stringResource(R.string.unit_km), content, Modifier.weight(1f))
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(Dimens.sm)) {
+                Tile(stringResource(R.string.ride_fuel), v(t.fuelLevel), "", content, Modifier.weight(1f))
+                Tile(stringResource(R.string.ride_range), v(t.rangeKm), stringResource(R.string.unit_km), content, Modifier.weight(1f))
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(Dimens.sm)) {
+                Tile(stringResource(R.string.ride_avg_speed), v(t.averageSpeedKmh), stringResource(R.string.dash_kmh), content, Modifier.weight(1f))
+                Tile(stringResource(R.string.ride_top_speed), v(t.topSpeedKmh), stringResource(R.string.dash_kmh), content, Modifier.weight(1f))
+                Tile(stringResource(R.string.ride_mileage), v(t.averageEconomy), stringResource(R.string.unit_kmpl), content, Modifier.weight(1f))
+            }
+        }
     }
 }

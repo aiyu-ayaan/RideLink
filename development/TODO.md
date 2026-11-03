@@ -18,8 +18,10 @@
 - [x] Current location name `5B 5C`
 - [x] Music: song `5B 62`, artist `5B 63`, play state `5B 60`
 - [x] Call accept/reject from scooter buttons (5A 10 byte 12) with ANSWER_PHONE_CALLS
-- [ ] Ride data on the Ride screen: odometer, trip, fuel, range, avg/top speed, economy
-- [ ] Settings toggles for each feature; update PROTOCOL.md, tests, screenshots
+- [x] Ride data on the Ride screen: odometer, trip, fuel, range, avg/top speed, economy
+- [x] Settings toggles for each feature; PROTOCOL.md and tests updated
+- [ ] Build the APK, run Demo ride on the emulator and refresh screenshots (blocked in the cloud session: dl.google.com not reachable)
+- [ ] Re-run fake_cluster.py with a real phone to check every new frame decodes
 
 ## Needs the real scooter
 - [ ] Pair the user's Ntorq XT (2026) and confirm the display accepts the 2025+ status frame

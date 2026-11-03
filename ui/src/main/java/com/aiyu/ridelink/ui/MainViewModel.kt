@@ -36,6 +36,7 @@ class MainViewModel @Inject constructor(
     val weather = controller.weather
     val place = controller.place
     val music = controller.music
+    val telemetry = controller.telemetry
 
     /** Set by the Disconnect button; stops auto-connect until the app process starts again. */
     var userStopped = false
@@ -63,6 +64,7 @@ class MainViewModel @Inject constructor(
     fun setShowLocation(on: Boolean) = viewModelScope.launch { repo.setShowLocation(on) }
     fun setShowMusic(on: Boolean) = viewModelScope.launch { repo.setShowMusic(on) }
     fun setCallButtons(on: Boolean) = viewModelScope.launch { repo.setCallButtons(on) }
+    fun setShowRideData(on: Boolean) = viewModelScope.launch { repo.setShowRideData(on) }
 
     fun setDemo(on: Boolean) = controller.setDemo(on)
     fun sendText(text: String) = controller.sendTestText(text)

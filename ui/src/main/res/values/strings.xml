@@ -42,6 +42,16 @@
     <string name="music_playing">Playing</string>
     <string name="music_paused">Paused</string>
     <string name="music_stopped">Stopped</string>
+    <string name="ride_data">Ride data</string>
+    <string name="ride_odometer">Odometer</string>
+    <string name="ride_trip">Trip</string>
+    <string name="ride_fuel">Fuel</string>
+    <string name="ride_range">Range</string>
+    <string name="ride_avg_speed">Average</string>
+    <string name="ride_top_speed">Top</string>
+    <string name="ride_mileage">Mileage</string>
+    <string name="unit_km">km</string>
+    <string name="unit_kmpl">km/l</string>
     <string name="call_now">Incoming call</string>
     <string name="perm_bluetooth_title">Bluetooth access needed</string>
     <string name="perm_bluetooth_body">RideLink needs nearby devices access to find and talk to the scooter display.</string>
@@ -73,6 +83,9 @@
     <string name="settings_music_hint">Song, artist and play state from any music app</string>
     <string name="settings_call_buttons">Answer calls from the scooter</string>
     <string name="settings_call_buttons_hint">Accept or reject a ringing call with the scooter\'s switch</string>
+    <string name="settings_in_app">In the app</string>
+    <string name="settings_ride_data">Ride data</string>
+    <string name="settings_ride_data_hint">Odometer, trip, fuel, range, speeds and mileage from the display. Raw values until checked on the scooter.</string>
     <string name="settings_paired">Paired with %1$s</string>
     <string name="settings_forget">Forget scooter</string>
     <string name="model_u716">Ntorq 125 (U716)</string>

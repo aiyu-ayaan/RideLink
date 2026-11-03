@@ -15,6 +15,7 @@ import com.aiyu.ridelink.core.protocol.ClusterProtocol
 import com.aiyu.ridelink.core.protocol.ClusterProtocol.CallState
 import com.aiyu.ridelink.core.protocol.ClusterProtocol.NavStep
 import com.aiyu.ridelink.core.protocol.Maneuver
+import com.aiyu.ridelink.core.protocol.WeatherKind
 import com.aiyu.ridelink.core.settings.Settings
 import com.aiyu.ridelink.core.phone.CallControl
 import com.aiyu.ridelink.core.protocol.CallButton
@@ -296,10 +297,21 @@ class ClusterController @Inject constructor(
         _demo.value = on
         if (!on) {
             _speed.value = null
+            _telemetry.value = DisplayTelemetry()
+            _weather.value = null
+            _place.value = null
+            onMusic(null)
+            onSocialCounts(ClusterProtocol.SocialCounts())
             onNavigationEnded()
             onCallEnded()
             return
         }
+        // Fake data for every TFT feature, sent through the same encoder and link as real data.
+        _weather.value = ClusterProtocol.Weather(WeatherKind.CLOUDY, temperatureC = 27, aqi = 84, rainPercent = 20, description = "Cloudy")
+        _place.value = "Indiranagar"
+        scope.launch { sendWeather() }
+        onSocialCounts(ClusterProtocol.SocialCounts(whatsappMessages = 5, whatsappChats = 2, facebookMessages = 1, instagram = 3))
+        onMusic(ClusterProtocol.Music("Kesariya", "Arijit Singh", ClusterProtocol.PlayState.PLAYING, 83_000, 268_000, 60))
         demoJob = scope.launch {
             val route = listOf(
                 Triple(Maneuver.RIGHT, "Turn right onto MG Road", 450),
@@ -314,7 +326,12 @@ class ClusterController @Inject constructor(
                 for ((maneuver, text, length) in route) {
                     var d = length
                     while (d > 0 && isActive) {
-                        _speed.value = 28 + (tick * 7) % 24
+                        val v = 28 + (tick * 7) % 24
+                        _speed.value = v
+                        _telemetry.value = DisplayTelemetry(
+                            speedKmh = v, odometerKm = 12_345 + tick / 20, fuelLevel = 6, averageSpeedKmh = 34,
+                            topSpeedKmh = 72, tripKm = 18 + tick / 20, averageEconomy = 48, rangeKm = 182 - tick / 20,
+                        )
                         onNavigation(ClusterProtocol.NavStep(d, (left / 8.0).toLong(), left, maneuver, text))
                         if (tick == 4) onIncomingCall("Mom") else if (tick == 9) onCallEnded()
                         tick++
