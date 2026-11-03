@@ -142,4 +142,34 @@ class ClusterProtocolTest {
         assertEquals("éééééééé", String(f, 2, 16, Charsets.UTF_8))
         assertEquals(0, f[18].toInt())
     }
+
+    private val music = ClusterProtocol.Music(
+        "Kesariya", "Arijit Singh", ClusterProtocol.PlayState.PAUSED,
+        positionMs = 83_000, durationMs = 268_000, volumePercent = 60,
+    )
+
+    @Test fun songAndArtistAreTextFrames() {
+        assertEquals("5b 62 4b 65 73 61 72 69 79 61 00 00 00 00 00 00 00 00 00 ff", hex(ClusterProtocol.song(music.title)))
+        assertEquals("5b 63 41 72 69 6a 69 74 20 53 69 6e 67 68 00 00 00 00 00 ff", hex(ClusterProtocol.artist(music.artist)))
+    }
+
+    @Test fun genericPlayStateFrame() {
+        assertEquals(
+            "5b 60 00 01 00 00 00 3c 00 00 00 00 00 00 00 00 00 00 00 ff",
+            hex(ClusterProtocol.playState(ClusterModel.NTORQ_U812, music)),
+        )
+        val stopped = ClusterProtocol.playState(ClusterModel.NTORQ_U812, music.copy(state = ClusterProtocol.PlayState.STOPPED))
+        assertEquals(4, stopped[3].toInt())
+        assertEquals(0, ClusterProtocol.playState(ClusterModel.NTORQ_U812, music.copy(state = ClusterProtocol.PlayState.PLAYING))[3].toInt())
+    }
+
+    @Test fun u577PlayStateCarriesProgress() {
+        // 83 s = 1:23, 268 s = 4:28, volume 60 = 0x3c.
+        assertEquals(
+            "5b 60 00 01 01 01 17 3c 00 00 00 00 04 1c 00 00 00 00 00 ff",
+            hex(ClusterProtocol.playState(ClusterModel.NTORQ_U577_PREMIUM, music)),
+        )
+        val stopped = ClusterProtocol.playState(ClusterModel.NTORQ_U577_BASE, music.copy(state = ClusterProtocol.PlayState.STOPPED))
+        assertEquals(254, stopped[3].toInt() and 0xFF)
+    }
 }

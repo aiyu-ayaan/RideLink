@@ -185,6 +185,17 @@ switch + weather frame are skipped while a route is active. Only sent to TFT mod
 `5B 5C <place name, up to 17 bytes UTF-8> <zero pad> FF`. RideLink cuts on character boundaries.
 Name from `Geocoder` (sub-locality, else locality) on the coarse network fix.
 
+### Music (`BlePacketsProvider`, `BleMusicDataSourceImpl`)
+- Song: text frame DID `0x62` (`returnMusicPacket(name, 98)`).
+- Artist: text frame DID `0x63` (Raider uses `0x65`).
+- Play state, generic (`returnPlayPauseState`): `5B 60 00 <state> 00 00 00 <volume %> <pad> FF`;
+  state pause 1, stop 4, else (playing) 0.
+- Play state, U577 base/premium (`returnPlayPauseStateU577`):
+  `5B 60 00 <state> 01 <cur min> <cur sec> <volume %> 00 00 00 00 <total min> <total sec> <pad> FF`; stop 254.
+
+RideLink reads the active `MediaSession` (needs the notification listener grant) and sends song/artist/state
+only when they change, plus once on every connect.
+
 ## Model detection
 The display never reports its model; the stock app takes `VehicleId` from the TVS account.
 RideLink's Auto mode uses the 2025+ format and switches to the older Ntorq format when the display

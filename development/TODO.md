@@ -16,7 +16,7 @@
 - [x] Social notification counts `5B 9C` (WhatsApp/Facebook/Instagram); drop the sender-name hack
 - [x] Weather + AQI `5B 5D` with screen switch `5B 4C 00 78` (Open-Meteo, no key) + temp in status
 - [x] Current location name `5B 5C`
-- [ ] Music: song `5B 62`, artist `5B 63`, play state `5B 60`
+- [x] Music: song `5B 62`, artist `5B 63`, play state `5B 60`
 - [ ] Call accept/reject from scooter buttons (5A 10 byte 12) with ANSWER_PHONE_CALLS
 - [ ] Ride data on the Ride screen: odometer, trip, fuel, range, avg/top speed, economy
 - [ ] Settings toggles for each feature; update PROTOCOL.md, tests, screenshots

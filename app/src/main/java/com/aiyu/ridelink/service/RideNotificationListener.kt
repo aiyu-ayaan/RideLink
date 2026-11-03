@@ -1,6 +1,7 @@
 package com.aiyu.ridelink.service
 
 import android.app.Notification
+import android.content.ComponentName
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import com.aiyu.ridelink.core.ClusterController
@@ -10,7 +11,7 @@ import com.aiyu.ridelink.core.protocol.ClusterProtocol
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
-/** Reads Google Maps directions, incoming calls and chat unread counts from notifications. */
+/** Reads Google Maps directions, incoming calls, chat unread counts and the playing song. */
 @AndroidEntryPoint
 class RideNotificationListener : NotificationListenerService() {
     @Inject lateinit var controller: ClusterController
@@ -44,7 +45,17 @@ class RideNotificationListener : NotificationListenerService() {
         }
     }
 
-    override fun onListenerConnected() = recountSocial()
+    private var music: MusicWatcher? = null
+
+    override fun onListenerConnected() {
+        recountSocial()
+        music = MusicWatcher(this, ComponentName(this, RideNotificationListener::class.java), controller).also { it.start() }
+    }
+
+    override fun onListenerDisconnected() {
+        music?.stop()
+        music = null
+    }
 
     /**
      * Rebuilds unread counts from what is still in the shade, so reading a chat clears its count.

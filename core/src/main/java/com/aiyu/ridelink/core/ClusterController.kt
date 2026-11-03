@@ -30,6 +30,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeoutOrNull
 import java.time.LocalDateTime
 import javax.inject.Inject
@@ -120,6 +122,7 @@ class ClusterController @Inject constructor(
         val s = settings.current()
         if (s.riderName.isNotBlank()) send(ClusterProtocol.riderName(s.riderName))
         sendSocial()
+        sendMusic(force = true)
         startWeather()
         statusJob?.cancel()
         statusJob = scope.launch {
@@ -165,6 +168,29 @@ class ClusterController @Inject constructor(
             send(ClusterProtocol.weather(m, w))
         }
         _place.value?.takeIf { s.showLocation }?.let { send(ClusterProtocol.location(it)) }
+    }
+
+    private val _music = MutableStateFlow<ClusterProtocol.Music?>(null)
+    val music: StateFlow<ClusterProtocol.Music?> = _music.asStateFlow()
+    private var sentMusic: ClusterProtocol.Music? = null
+
+    /** Current media session, or null when nothing is playing. Frames go out only for what changed. */
+    fun onMusic(m: ClusterProtocol.Music?) {
+        _music.value = m
+        scope.launch { sendMusic(force = false) }
+    }
+
+    private val musicLock = Mutex()
+
+    private suspend fun sendMusic(force: Boolean) = musicLock.withLock {
+        val s = settings.current()
+        val m = _music.value ?: return@withLock
+        if (!s.showMusic || link.state.value !is LinkState.Ready) return@withLock
+        val last = sentMusic.takeUnless { force }
+        if (last?.title != m.title) send(ClusterProtocol.song(m.title))
+        if (last?.artist != m.artist) send(ClusterProtocol.artist(m.artist))
+        if (last?.state != m.state || last?.volumePercent != m.volumePercent) send(ClusterProtocol.playState(model(s), m))
+        sentMusic = m
     }
 
     fun onNavigation(step: NavStep) = scope.launch {

@@ -40,7 +40,7 @@ SCREENS = {0x00: "default", 0x78: "weather", 0x79: "cricket", 0x80: "football"}
 TEXT_DIDS = {
     0x52: "rider-name",
     0x4C: "text-line-1/nav-text",
-    0x63: "text-line-2/artist-old",
+    0x63: "artist/text-line-2",
     0x61: "album",
     0x62: "song",
     0x65: "artist",
@@ -96,6 +96,11 @@ def decode(frame):
     if start == 0x5B and did == 0x5C:
         place = bytes(body).rstrip(b"\x00").decode("utf-8", "replace")
         return f"LOCATION '{place}'"
+    if start == 0x5B and did == 0x60 and len(body) >= 6:
+        state = {0: "playing", 1: "paused", 4: "stopped", 254: "stopped"}.get(body[1], hex(body[1]))
+        if body[2] == 1 and len(body) >= 12:
+            return (f"PLAY-STATE(U577) {state} {body[3]}:{body[4]:02d}/{body[10]}:{body[11]:02d} vol={body[5]}%")
+        return f"PLAY-STATE {state} vol={body[5]}%"
     if start == 0x5B and did == 0x22:
         return f"USER-ID {bytes(body).hex(' ')}"
     return f"UNKNOWN start={start:#04x} did={did:#04x} ({chr(did) if 32 <= did < 127 else '?'})"

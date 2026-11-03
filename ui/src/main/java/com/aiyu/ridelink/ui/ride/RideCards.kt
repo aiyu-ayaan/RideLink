@@ -17,12 +17,18 @@ import androidx.compose.material.icons.rounded.Cloud
 import androidx.compose.material.icons.rounded.Dehaze
 import androidx.compose.material.icons.rounded.FlashOn
 import androidx.compose.material.icons.rounded.Grain
+import androidx.compose.material.icons.rounded.MusicNote
+import androidx.compose.material.icons.rounded.Pause
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Stop
 import androidx.compose.material.icons.rounded.Place
 import androidx.compose.material.icons.rounded.Umbrella
 import androidx.compose.material.icons.rounded.WbSunny
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -116,3 +122,33 @@ internal fun WeatherCard(weather: ClusterProtocol.Weather?, place: String?) {
     }
 }
 
+
+/** Song the display shows, with the play state it was told. */
+@Composable
+internal fun MusicCard(music: ClusterProtocol.Music) {
+    val state = when (music.state) {
+        ClusterProtocol.PlayState.PLAYING -> Icons.Rounded.PlayArrow to R.string.music_playing
+        ClusterProtocol.PlayState.PAUSED -> Icons.Rounded.Pause to R.string.music_paused
+        ClusterProtocol.PlayState.STOPPED -> Icons.Rounded.Stop to R.string.music_stopped
+    }
+    Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+        shape = MaterialTheme.shapes.large,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        ListItem(
+            headlineContent = { Text(music.title, maxLines = 1) },
+            supportingContent = { if (music.artist.isNotBlank()) Text(music.artist, maxLines = 1) },
+            leadingContent = {
+                Box(
+                    Modifier.size(48.dp).clip(MaterialShapes.Cookie6Sided.toShape()).background(MaterialTheme.colorScheme.primaryContainer),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(Icons.Rounded.MusicNote, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer)
+                }
+            },
+            trailingContent = { Icon(state.first, contentDescription = stringResource(state.second)) },
+            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+        )
+    }
+}

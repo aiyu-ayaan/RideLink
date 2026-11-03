@@ -39,6 +39,9 @@
     <string name="weather_temp">%1$d°C</string>
     <string name="weather_aqi">AQI</string>
     <string name="weather_rain">Rain</string>
+    <string name="music_playing">Playing</string>
+    <string name="music_paused">Paused</string>
+    <string name="music_stopped">Stopped</string>
     <string name="call_now">Incoming call</string>
     <string name="perm_bluetooth_title">Bluetooth access needed</string>
     <string name="perm_bluetooth_body">RideLink needs nearby devices access to find and talk to the scooter display.</string>
@@ -66,6 +69,8 @@
     <string name="settings_weather_hint">Open-Meteo, refreshed every 15 minutes. Also sets the temperature on the display.</string>
     <string name="settings_location">Current location</string>
     <string name="settings_location_hint">Area name from your approximate location</string>
+    <string name="settings_music">Now playing</string>
+    <string name="settings_music_hint">Song, artist and play state from any music app</string>
     <string name="settings_paired">Paired with %1$s</string>
     <string name="settings_forget">Forget scooter</string>
     <string name="model_u716">Ntorq 125 (U716)</string>

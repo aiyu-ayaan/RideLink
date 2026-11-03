@@ -34,6 +34,9 @@ object ClusterProtocol {
     const val DID_SCREEN = 0x4C
     const val DID_WEATHER = 0x5D
     const val DID_LOCATION = 0x5C
+    const val DID_SONG = 0x62
+    const val DID_ARTIST = 0x63
+    const val DID_PLAY_STATE = 0x60
 
     /** `5B DID <text, 17 bytes max> <zero pad> FF`, same sanitising as the stock app. */
     fun text(did: Int, value: String): ByteArray {
@@ -191,6 +194,46 @@ object ClusterProtocol {
             i += Character.charCount(cp)
         }
         return out.toByteArray()
+    }
+
+    /** Song title (`BlePacketsProvider.returnMusicPacket(name, 98)`). */
+    fun song(title: String) = text(DID_SONG, title)
+
+    /** Artist (`BleMusicDataSourceImpl`; Raider uses 0x65, Ntorq 0x63). */
+    fun artist(name: String) = text(DID_ARTIST, name)
+
+    enum class PlayState { PLAYING, PAUSED, STOPPED }
+
+    data class Music(
+        val title: String,
+        val artist: String,
+        val state: PlayState,
+        val positionMs: Long = 0,
+        val durationMs: Long = 0,
+        val volumePercent: Int = 0,
+    )
+
+    /**
+     * Generic (`returnPlayPauseState`): `5B 60 00 <state> 00 00 00 <volume %> <pad> FF`, state pause 1, stop 4, else 0.
+     * U577 (`returnPlayPauseStateU577`): `5B 60 00 <state> 01 <cur min> <cur sec> <volume> 00 00 00 00 <total min> <total sec>
+     * <pad> FF`, stop 254.
+     */
+    fun playState(model: ClusterModel, m: Music): ByteArray {
+        val vol = m.volumePercent.coerceIn(0, 100).toByte()
+        val u577 = model == ClusterModel.NTORQ_U577_BASE || model == ClusterModel.NTORQ_U577_PREMIUM
+        val state = when (m.state) {
+            PlayState.PLAYING -> 0
+            PlayState.PAUSED -> 1
+            PlayState.STOPPED -> if (u577) 254 else 4
+        }.toByte()
+        if (!u577) return frame(START, DID_PLAY_STATE, byteArrayOf(0, state, 0, 0, 0, vol))
+        fun minSec(ms: Long): Pair<Byte, Byte> {
+            val total = (ms.coerceAtLeast(0) / 1000).coerceAtMost(255L * 60 + 59)
+            return (total / 60).toInt().toByte() to (total % 60).toInt().toByte()
+        }
+        val (curMin, curSec) = minSec(m.positionMs)
+        val (totMin, totSec) = minSec(m.durationMs)
+        return frame(START, DID_PLAY_STATE, byteArrayOf(0, state, 1, curMin, curSec, vol, 0, 0, 0, 0, totMin, totSec))
     }
 
     /**
