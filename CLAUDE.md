@@ -17,9 +17,11 @@ Build setup mirrors `../Findex` (AGP 9.4, Kotlin 2.4, Compose BOM 2026.08, Mater
 Modules:
 
 - `app` => entry point: `MainActivity`, `RideLinkApp`, and the Android services
-  (`ClusterService` foreground service, `RideNotificationListener`, `BootReceiver`).
-- `core` => no UI. `protocol/` (frame encoder, models, turn tables), `ble/ClusterLink` (GATT),
-  `ClusterController` (ride session logic), `nav/MapsNotificationParser`, `settings/` (DataStore).
+  (`ClusterService` foreground service, `RideNotificationListener` + `MusicWatcher`, `BootReceiver`).
+- `core` => no UI. `protocol/` (frame encoder, models, turn/weather tables, `DisplayTelemetry` parser),
+  `ble/ClusterLink` (GATT), `ClusterController` (ride session logic), `nav/MapsNotificationParser`,
+  `notify/SocialNotificationParser`, `weather/WeatherRepository` (Open-Meteo + coarse location + Geocoder),
+  `phone/CallControl` (TelecomManager), `settings/` (DataStore).
 - `ui` => all Compose screens, theme, and **all strings** (`ui/src/main/res/values/strings.xml`).
   `core` and `app` hold no user-facing strings; the app module reads them via `com.aiyu.ridelink.ui.R`.
 
@@ -35,11 +37,17 @@ Modules:
    The service calls `ClusterController.start()`. The Ride button is Disconnect / Connect.
 3. `ClusterLink` connects, requests MTU 512, enables notify on `5354`, then writes on `5352`
    with response, one frame at a time. On drop it reconnects with `autoConnect = true`.
-4. On ready: rider name frame, then the `5B 4A` status frame every 2 s.
+4. On ready: rider name, social counts and music frames, then the `5B 4A` status frame every 2 s
+   and (TFT models) weather + AQI + place name every 15 min.
 5. `RideNotificationListener` turns Google Maps notifications into `NavStep`s
-   (nav text frame, 400 ms gap, nav control frame) and call notifications into a caller frame
-   repeated every 500 ms while ringing.
-6. Frames from the display are logged, used for Auto model detection and speed.
+   (nav text frame, 400 ms gap, nav control frame), call notifications into a caller frame
+   repeated every 500 ms while ringing, and WhatsApp/Facebook/Instagram notifications into `5B 9C`
+   counts. `MusicWatcher` follows the active media session (`5B 62/63/60`).
+6. Frames from the display are logged and folded into `DisplayTelemetry` (speed, odometer, trip, fuel,
+   range, speeds, mileage). A change of `5A 10` byte 12 accepts/rejects the ringing call. Also used for
+   Auto model detection.
+7. Every TFT feature has a Settings toggle. Runtime grants: Bluetooth (required), notification access,
+   and the optional READ_PHONE_STATE + ACCESS_COARSE_LOCATION + ANSWER_PHONE_CALLS card.
 
 ## Design
 
@@ -47,7 +55,8 @@ Modules:
   on Android 12+, red tonal-spot fallback scheme. See `development/docs/DESIGN_SYSTEM.md`.
 - Bottom navigation with three tabs: Ride, Settings, Console. No drawer.
 - Ride screen: hero status card (cookie shape, `LoadingIndicator` while searching), turn-arrow
-  dashboard (big arrow, distance, ETA, left, speed), call card, one primary button.
+  dashboard (big arrow, distance, ETA, left, speed), ride data card, weather card, music card, call card,
+  one primary button (Connect / Disconnect). New cards live in `ui/ride/RideCards.kt`.
 - Console is a real tool, not a debug leftover: manual text, test turn, test call, demo ride, frame log.
 
 ## AI Agents
@@ -79,6 +88,8 @@ Modules:
 ## Commands
 
 - Unit tests: `./gradlew :core:testDebugUnitTest`
+  (protocol, nav, social and telemetry tests are pure Kotlin; they also run in a plain Kotlin/JVM project
+  when the Android SDK is not available)
 - Build: `./gradlew :app:assembleDebug`
 - Run on emulator/device: `./run.sh` (`--logs` to follow logcat)
 - Fake display (needs a BLE adapter): `/usr/bin/python3 tools/fake_cluster.py --adapter hci0`

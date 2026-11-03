@@ -1,6 +1,44 @@
-# Handoff — 2026-11-04
+# Handoff — 2026-11-03 (day 2, cloud session)
 
-State at the end of day 1. Read this, then `CLAUDE.md`, `PROTOCOL.md`, `development/TODO.md`.
+Read this, then `CLAUDE.md`, `PROTOCOL.md`, `development/TODO.md`. Day-1 notes follow below.
+
+## Done today (one commit per stage, `git log --oneline`)
+
+1. Speed byte fixed: `frame[2]` (ParsingMeta is 1-based), test updated.
+2. Auto-connect: `RideLinkRoot.AutoConnect` starts `ClusterService` when a device is saved and Bluetooth is
+   granted (app start, after pairing, after granting). Ride button is Disconnect / Connect; Disconnect holds
+   until the app process restarts (`MainViewModel.userStopped`).
+3. Optional permission card: READ_PHONE_STATE (network type), ACCESS_COARSE_LOCATION (signal level, weather,
+   place), ANSWER_PHONE_CALLS (scooter buttons). Status frame sends 0 for what is not granted.
+4. TFT features, each with a Settings toggle: social counts `5B 9C` (sender-name hack removed), weather + AQI
+   `5B 5D` after screen switch `5B 4C 00 78` and temperature in the status frame (Open-Meteo, 15 min, TFT
+   models only, skipped while navigating), place name `5B 5C`, music `5B 62/63/60`, call accept/reject from
+   `5A 10` byte 12, ride data card from `DisplayTelemetry` (5A 10/11/19).
+5. Demo ride now fills every card (weather, music, social counts, ride data) through the real encoder.
+6. `fake_cluster.py` decodes `9C`, screen switch, `5D`, `5C`, `60` (generic + U577).
+7. Version 0.2.0 (versionCode 2).
+
+## Not verified (cloud session had no Android SDK)
+
+The cloud environment's network policy blocked `dl.google.com` (Google Maven + SDK), so the Android modules
+were **never compiled** today, the emulator/screenshots were not run, and there is no
+`dist/RideLink-0.2.0-debug.apk`. The container also has no Bluetooth, so `fake_cluster.py` was only checked
+by feeding it the exact frames the unit tests pin.
+What was verified: all pure-Kotlin code (`protocol/`, `nav/`, `notify/`) compiled and its 34 unit tests passed
+in a plain Kotlin/JVM Gradle project (Kotlin 2.4.10, JUnit 4.13.2) that points at `core/src`.
+
+First thing next session, on a machine with the SDK:
+1. `./gradlew :core:testDebugUnitTest :app:assembleDebug` and fix any compile errors in the Android code
+   (watch: Compose icon names in `RideCards.kt`, `MaterialShapes.Sunny`/`Cookie6Sided`, emphasized type styles,
+   `Lifecycle.currentStateFlow`, `LocationManagerCompat.getCurrentLocation`).
+2. Console -> Demo ride on the emulator, screenshots of Ride (all cards), Settings (new toggles), Console.
+3. Copy the APK to `dist/RideLink-0.2.0-debug.apk`.
+4. On the scooter: check weather screen switch does not stick over navigation, raw units of odometer/trip/fuel/
+   range/mileage, and that byte 12 really changes when the switch is pressed while ringing.
+
+---
+
+# Handoff — day 1
 
 ## Where things stand
 
