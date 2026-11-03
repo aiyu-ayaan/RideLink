@@ -105,7 +105,8 @@ SMS senders are only sent to iQube/U388 displays, never to Ntorq.
 ### Frames from the display (`NtorqFrameIdentifier`, `JupiterFrameIdentifier`)
 Keyed on byte 1 after `5A`: `10` speedometer 1, `11` speedometer 2 (software version), `19`, `18`,
 `37` calibration response, `54` doc-transfer ack. Older Ntorq only: `6B` music controls, `29` Wi-Fi password.
-Speedometer 1 (`@ParsingMeta`): speed byte 3, odometer 3 bytes from 4, fuel byte 7, RPM 2 bytes from 18.
+Speedometer 1 (`@ParsingMeta`, **1-based**: `DataParser.parseData` reads `start - 1`): speed `frame[2]`,
+odometer 3 bytes from `frame[3]`, fuel `frame[6]`, RPM 2 bytes from `frame[17]` (0-based indexes).
 
 ### Navigation (new Ntorq/Jupiter path: `BleNavigationSendData.byteArrayForIceBikeNavigation`)
 Two frames. Sent **second first**, then sleep 400 ms, then first:

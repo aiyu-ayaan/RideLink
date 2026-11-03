@@ -65,7 +65,10 @@ class ClusterProtocolTest {
     }
 
     @Test fun speedFromSpeedometerFrame() {
-        assertEquals(62, ClusterProtocol.speedKmh(byteArrayOf(0x5A, 0x10, 0, 62, 0)))
-        assertEquals(null, ClusterProtocol.speedKmh(byteArrayOf(0x5A, 0x11, 0, 62)))
+        // ParsingMeta(start = 3) is 1-based: speed is index 2, odometer starts at index 3.
+        assertEquals(62, ClusterProtocol.speedKmh(byteArrayOf(0x5A, 0x10, 62, 0, 0x30, 0x39)))
+        assertEquals(200, ClusterProtocol.speedKmh(byteArrayOf(0x5A, 0x10, 200.toByte(), 0)))
+        assertEquals(null, ClusterProtocol.speedKmh(byteArrayOf(0x5A, 0x11, 62, 0)))
+        assertEquals(null, ClusterProtocol.speedKmh(byteArrayOf(0x5A, 0x10)))
     }
 }
