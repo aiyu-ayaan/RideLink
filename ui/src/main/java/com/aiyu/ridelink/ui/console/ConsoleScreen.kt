@@ -2,6 +2,7 @@ package com.aiyu.ridelink.ui.console
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,6 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.ErrorOutline
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonGroupDefaults
 import androidx.compose.material3.Icon
@@ -34,6 +36,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.aiyu.ridelink.core.ClusterController
 import com.aiyu.ridelink.ui.MainViewModel
 import com.aiyu.ridelink.ui.R
 import com.aiyu.ridelink.ui.theme.Dimens
@@ -83,6 +86,17 @@ fun ConsoleScreen(vm: MainViewModel) {
                     modifier = Modifier.weight(1f),
                 ) { Text(stringResource(R.string.console_demo)) }
             }
+            // One button per TFT frame, so each can be checked on the display on its own.
+            FlowRow(
+                Modifier.padding(horizontal = Dimens.gutter).fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(Dimens.sm),
+            ) {
+                TestFrameChip(R.string.console_weather) { vm.sendTest(ClusterController.TestFrame.WEATHER) }
+                TestFrameChip(R.string.console_location) { vm.sendTest(ClusterController.TestFrame.LOCATION) }
+                TestFrameChip(R.string.console_social) { vm.sendTest(ClusterController.TestFrame.SOCIAL) }
+                TestFrameChip(R.string.console_music) { vm.sendTest(ClusterController.TestFrame.MUSIC) }
+                TestFrameChip(R.string.console_default_screen) { vm.sendTest(ClusterController.TestFrame.DEFAULT_SCREEN) }
+            }
             if (log.isEmpty()) {
                 Text(
                     stringResource(R.string.console_empty),
@@ -122,4 +136,9 @@ fun ConsoleScreen(vm: MainViewModel) {
             }
         }
     }
+}
+
+@Composable
+private fun TestFrameChip(label: Int, onClick: () -> Unit) {
+    AssistChip(onClick = onClick, label = { Text(stringResource(label)) })
 }

@@ -117,6 +117,11 @@
     <string name="console_test_turn">Send test turn</string>
     <string name="console_test_call">Test call</string>
     <string name="console_demo">Demo ride</string>
+    <string name="console_weather">Weather</string>
+    <string name="console_location">Location</string>
+    <string name="console_social">Chat counts</string>
+    <string name="console_music">Music</string>
+    <string name="console_default_screen">Default screen</string>
     <string name="console_empty">Frames sent to the scooter show up here.</string>
     <string name="console_failed">Not delivered</string>
     <string name="console_delivered">Delivered</string>

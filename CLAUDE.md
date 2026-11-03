@@ -55,9 +55,10 @@ Modules:
   on Android 12+, red tonal-spot fallback scheme. See `development/docs/DESIGN_SYSTEM.md`.
 - Bottom navigation with three tabs: Ride, Settings, Console. No drawer.
 - Ride screen: hero status card (cookie shape, `LoadingIndicator` while searching), turn-arrow
-  dashboard (big arrow, distance, ETA, left, speed), ride data card, weather card, music card, call card,
+  dashboard (big arrow, distance, ETA, left, speed), ride data card, vehicle card, weather card, music card, call card,
   one primary button (Connect / Disconnect). New cards live in `ui/ride/RideCards.kt`.
-- Console is a real tool, not a debug leftover: manual text, test turn, test call, demo ride, frame log.
+- Console is a real tool, not a debug leftover: manual text, test turn, test call, demo ride, one chip per TFT
+  frame (weather, location, chat counts, music, default screen), frame log.
 
 ## AI Agents
 

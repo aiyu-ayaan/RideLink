@@ -181,7 +181,8 @@ clouds 1, clear sky 2, thunderstorm 3, snow 4, rain 5, fog 9, else 0.
 Temperature goes in the status frame (Jupiter family: `temp + 40`).
 RideLink source: Open-Meteo `current=temperature_2m,weather_code,is_day`, hourly `precipitation_probability`,
 air-quality `us_aqi`; WMO code -> `WeatherKind` -> icon. Refreshed every 15 min while connected; the screen
-switch + weather frame are skipped while a route is active. Only sent to TFT models (2025+ family, U577 premium).
+switch + weather frame are skipped while a route is active, and the next nav step after a weather switch is preceded
+by `5B 4C 00 00` (default screen). Only sent to TFT models (2025+ family, U577 premium).
 
 ### Current location, DID `0x5C` (`BluetoothUtil.createCurrentLocationArray`, `BleEngine.sendAddressDataToCluster`)
 `5B 5C <place name, up to 17 bytes UTF-8> <zero pad> FF`. RideLink cuts on character boundaries.

@@ -17,6 +17,11 @@ Read this, then `CLAUDE.md`, `PROTOCOL.md`, `development/TODO.md`. Day-1 notes f
 5. Demo ride now fills every card (weather, music, social counts, ride data) through the real encoder.
 6. `fake_cluster.py` decodes `9C`, screen switch, `5D`, `5C`, `60` (generic + U577).
 7. Version 0.2.0 (versionCode 2).
+8. Follow-up pass: overspeed alert limit (Settings slider) and missed-call badge (older Ntorq, READ_CALL_LOG)
+   in the status frame; Vehicle card from 5A 18 + 5A 11 diagnostics (RPM, battery, engine temp, service,
+   engine light); Settings shows the model code and software version the display reports (use it to settle
+   U577 premium 38 vs U812 39); default screen `5B 4C 00 00` before nav after a weather switch; Console chips
+   send each TFT frame on its own.
 
 ## Not verified (cloud session had no Android SDK)
 
@@ -25,7 +30,8 @@ were **never compiled** today, the emulator/screenshots were not run, and there 
 `dist/RideLink-0.2.0-debug.apk`. The container also has no Bluetooth, so `fake_cluster.py` was only checked
 by feeding it the exact frames the unit tests pin.
 What was verified: all pure-Kotlin code (`protocol/`, `nav/`, `notify/`) compiled and its 34 unit tests passed
-in a plain Kotlin/JVM Gradle project (Kotlin 2.4.10, JUnit 4.13.2) that points at `core/src`.
+in a plain Kotlin/JVM Gradle project (Kotlin 2.4.10, JUnit 4.13.2) that points at `core/src` (37 tests after the
+follow-up pass).
 
 First thing next session, on a machine with the SDK:
 1. `./gradlew :core:testDebugUnitTest :app:assembleDebug` and fix any compile errors in the Android code

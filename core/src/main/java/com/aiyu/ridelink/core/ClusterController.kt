@@ -196,9 +196,12 @@ class ClusterController @Inject constructor(
         sendWeather()
     }
 
+    /** Set when we switched the display to the weather screen; cleared when nav switches it back. */
+    @Volatile private var weatherScreenOn = false
+
     /**
-     * Screen switch to weather, then the weather frame, then the place name. Skipped while navigating so the
-     * weather screen never covers the turn arrow. shortcut: whether the display returns to nav on its own is unconfirmed.
+     * Screen switch to weather, then the weather frame, then the place name. Skipped while navigating, and
+     * [onNavigation] switches back to the default screen first, so weather never covers the turn arrow.
      */
     private suspend fun sendWeather() {
         val s = settings.current()
@@ -207,6 +210,7 @@ class ClusterController @Inject constructor(
         val w = _weather.value
         if (s.showWeather && w != null && _nav.value == null) {
             send(ClusterProtocol.screen(ClusterProtocol.Screen.WEATHER))
+            weatherScreenOn = true
             send(ClusterProtocol.weather(m, w))
         }
         _place.value?.takeIf { s.showLocation }?.let { send(ClusterProtocol.location(it)) }
@@ -239,6 +243,10 @@ class ClusterController @Inject constructor(
         val s = settings.current()
         if (!s.forwardNavigation) return@launch
         _nav.value = step
+        if (weatherScreenOn) {
+            weatherScreenOn = false
+            send(ClusterProtocol.screen(ClusterProtocol.Screen.DEFAULT))
+        }
         val (text, control) = ClusterProtocol.navigation(model(s), step)
         send(text)
         delay(ClusterProtocol.NAV_FRAME_GAP_MS)
@@ -351,6 +359,33 @@ class ClusterController @Inject constructor(
 
     /** Debug screen: write raw text to custom line 1. */
     fun sendTestText(text: String) = scope.launch { send(ClusterProtocol.text(ClusterProtocol.DID_TEXT_LINE_1, text)) }
+
+    /** Console test frames, one feature at a time, for checking each on the real display. */
+    enum class TestFrame { WEATHER, LOCATION, SOCIAL, MUSIC, DEFAULT_SCREEN }
+
+    fun sendTest(which: TestFrame) = scope.launch {
+        val m = model(settings.current())
+        when (which) {
+            TestFrame.WEATHER -> {
+                val w = _weather.value ?: ClusterProtocol.Weather(WeatherKind.RAIN, 24, aqi = 120, rainPercent = 70, description = "Rain")
+                send(ClusterProtocol.screen(ClusterProtocol.Screen.WEATHER))
+                weatherScreenOn = true
+                send(ClusterProtocol.weather(m, w))
+            }
+            TestFrame.LOCATION -> send(ClusterProtocol.location(_place.value ?: "Test place"))
+            TestFrame.SOCIAL -> send(ClusterProtocol.socialCounts(ClusterProtocol.SocialCounts(3, 2, 1, 4)))
+            TestFrame.MUSIC -> {
+                val music = _music.value ?: ClusterProtocol.Music("Test song", "Test artist", ClusterProtocol.PlayState.PLAYING, 60_000, 200_000, 50)
+                send(ClusterProtocol.song(music.title))
+                send(ClusterProtocol.artist(music.artist))
+                send(ClusterProtocol.playState(m, music))
+            }
+            TestFrame.DEFAULT_SCREEN -> {
+                weatherScreenOn = false
+                send(ClusterProtocol.screen(ClusterProtocol.Screen.DEFAULT))
+            }
+        }
+    }
 
     private suspend fun send(frame: ByteArray): Boolean = link.send(frame).also { log(frame, it) }
 

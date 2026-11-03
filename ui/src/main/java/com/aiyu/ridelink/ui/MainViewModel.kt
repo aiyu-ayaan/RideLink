@@ -72,6 +72,7 @@ class MainViewModel @Inject constructor(
 
     fun setDemo(on: Boolean) = controller.setDemo(on)
     fun sendText(text: String) = controller.sendTestText(text)
+    fun sendTest(which: ClusterController.TestFrame) = controller.sendTest(which)
     fun sendTestTurn() = controller.onNavigation(NavStep(250, 540, 3_400, Maneuver.RIGHT, "Turn right test"))
     fun testCall(start: Boolean) = if (start) controller.onIncomingCall("Test caller") else controller.onCallEnded()
 }
