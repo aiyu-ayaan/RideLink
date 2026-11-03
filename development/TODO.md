@@ -9,6 +9,18 @@
 - [x] Auto model detection (older Ntorq via 5A 6B / 5A 29 frames)
 - [x] Ride dashboard (turn arrow, distance, ETA, left, speed), demo ride, console
 
+## Next (see development/HANDOFF.md for byte layouts)
+- [ ] Fix speed byte index: `frame[2]`, not `frame[3]` (ParsingMeta is 1-based)
+- [ ] Auto-connect when paired (no "Start ride" needed); button becomes Disconnect
+- [ ] Request READ_PHONE_STATE + ACCESS_COARSE_LOCATION so signal and network type are real
+- [ ] Social notification counts `5B 9C` (WhatsApp/Facebook/Instagram); drop the sender-name hack
+- [ ] Weather + AQI `5B 5D` with screen switch `5B 4C 00 78` (Open-Meteo, no key) + temp in status
+- [ ] Current location name `5B 5C`
+- [ ] Music: song `5B 62`, artist `5B 63`, play state `5B 60`
+- [ ] Call accept/reject from scooter buttons (5A 10 byte 12) with ANSWER_PHONE_CALLS
+- [ ] Ride data on the Ride screen: odometer, trip, fuel, range, avg/top speed, economy
+- [ ] Settings toggles for each feature; update PROTOCOL.md, tests, screenshots
+
 ## Needs the real scooter
 - [ ] Pair the user's Ntorq XT (2026) and confirm the display accepts the 2025+ status frame
 - [ ] Confirm turn arrows show the right pictogram for each maneuver
