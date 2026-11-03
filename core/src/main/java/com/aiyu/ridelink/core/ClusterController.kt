@@ -19,6 +19,7 @@ import com.aiyu.ridelink.core.protocol.WeatherKind
 import com.aiyu.ridelink.core.settings.Settings
 import com.aiyu.ridelink.core.phone.CallControl
 import com.aiyu.ridelink.core.phone.MissedCalls
+import com.aiyu.ridelink.core.phone.RejectMessage
 import com.aiyu.ridelink.core.protocol.CallButton
 import com.aiyu.ridelink.core.protocol.DisplayTelemetry
 import com.aiyu.ridelink.core.settings.SettingsRepository
@@ -85,17 +86,25 @@ class ClusterController @Inject constructor(
 
     /**
      * Scooter buttons arrive as a level in every 5A 10 frame, so act only when the action changes.
-     * Accept and reject only touch a call we are showing as ringing.
-     * shortcut: "reject with SMS" rejects without the SMS; voice assistant is ignored (no background activity start).
+     * Accept and reject only touch a call we are showing as ringing; the voice button works any time.
      */
     private fun onSwitchStatus(old: Int?, new: Int?) {
         val button = CallButton.from(new) ?: return
         if (button == CallButton.from(old)) return
         scope.launch {
-            if (!settings.current().callButtons || _caller.value == null) return@launch
+            val s = settings.current()
+            if (button == CallButton.VOICE_ASSISTANT) {
+                if (s.voiceButton) calls.openAssistant()
+                return@launch
+            }
+            if (!s.callButtons || _caller.value == null) return@launch
             when (button) {
                 CallButton.ACCEPT -> if (calls.accept()) onCallAnswered()
-                CallButton.REJECT, CallButton.REJECT_WITH_SMS -> if (calls.end()) onCallEnded()
+                CallButton.REJECT -> if (calls.end()) onCallEnded()
+                CallButton.REJECT_WITH_SMS -> if (calls.end()) {
+                    onCallEnded()
+                    if (s.rejectSms) calls.smsLastCaller(RejectMessage.text(s.rejectSmsText))
+                }
                 CallButton.VOICE_ASSISTANT -> Unit
             }
         }

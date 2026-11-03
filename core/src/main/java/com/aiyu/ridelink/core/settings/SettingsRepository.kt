@@ -35,6 +35,11 @@ data class Settings(
     val showMusic: Boolean = true,
     /** Accept / reject a ringing call with the scooter's switch (5A 10 byte 12). */
     val callButtons: Boolean = true,
+    /** "Reject with SMS" on the scooter texts the caller [rejectSmsText] (blank = RejectMessage.DEFAULT). */
+    val rejectSms: Boolean = false,
+    val rejectSmsText: String = "",
+    /** Scooter voice button opens the phone's assistant. */
+    val voiceButton: Boolean = true,
     /** Ride data card (odometer, trip, fuel, range, speeds, mileage) on the Ride screen. */
     val showRideData: Boolean = true,
     /** Vehicle card (RPM, battery, engine temperature, service, engine light) on the Ride screen. */
@@ -69,6 +74,9 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
         val location = booleanPreferencesKey("show_location")
         val music = booleanPreferencesKey("show_music")
         val callButtons = booleanPreferencesKey("call_buttons")
+        val rejectSms = booleanPreferencesKey("reject_sms")
+        val rejectSmsText = stringPreferencesKey("reject_sms_text")
+        val voiceButton = booleanPreferencesKey("voice_button")
         val rideData = booleanPreferencesKey("show_ride_data")
         val vehicle = booleanPreferencesKey("show_vehicle")
         val overSpeedAlert = booleanPreferencesKey("overspeed_alert")
@@ -91,6 +99,9 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
             showLocation = p[K.location] ?: true,
             showMusic = p[K.music] ?: true,
             callButtons = p[K.callButtons] ?: true,
+            rejectSms = p[K.rejectSms] ?: false,
+            rejectSmsText = p[K.rejectSmsText] ?: "",
+            voiceButton = p[K.voiceButton] ?: true,
             showRideData = p[K.rideData] ?: true,
             showVehicle = p[K.vehicle] ?: true,
             overSpeedAlert = p[K.overSpeedAlert] ?: false,
@@ -123,6 +134,9 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
     suspend fun setShowLocation(on: Boolean) { context.store.edit { it[K.location] = on } }
     suspend fun setShowMusic(on: Boolean) { context.store.edit { it[K.music] = on } }
     suspend fun setCallButtons(on: Boolean) { context.store.edit { it[K.callButtons] = on } }
+    suspend fun setRejectSms(on: Boolean) { context.store.edit { it[K.rejectSms] = on } }
+    suspend fun setRejectSmsText(text: String) { context.store.edit { it[K.rejectSmsText] = text } }
+    suspend fun setVoiceButton(on: Boolean) { context.store.edit { it[K.voiceButton] = on } }
     suspend fun setShowRideData(on: Boolean) { context.store.edit { it[K.rideData] = on } }
     suspend fun setShowVehicle(on: Boolean) { context.store.edit { it[K.vehicle] = on } }
     suspend fun setOverSpeedAlert(on: Boolean) { context.store.edit { it[K.overSpeedAlert] = on } }

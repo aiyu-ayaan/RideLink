@@ -22,6 +22,8 @@
 - [x] Settings toggles for each feature; PROTOCOL.md and tests updated
 - [x] Overspeed alert limit and missed-call badge in the status frame
 - [x] Vehicle card (5A 18 + diagnostics) and model code reported by the display in Settings
+- [x] Custom display text lines, reject-with-SMS message, voice assistant button
+- [ ] Cricket / football / news, vehicle settings, image transfer, 5A 6B music controls (need the decompile shared)
 - [ ] Build the APK, run Demo ride on the emulator and refresh screenshots (blocked in the cloud session: dl.google.com not reachable)
 - [ ] Re-run fake_cluster.py with a real phone to check every new frame decodes
 

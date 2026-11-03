@@ -22,6 +22,16 @@ Read this, then `CLAUDE.md`, `PROTOCOL.md`, `development/TODO.md`. Day-1 notes f
    engine light); Settings shows the model code and software version the display reports (use it to settle
    U577 premium 38 vs U812 39); default screen `5B 4C 00 00` before nav after a weather switch; Console chips
    send each TFT frame on its own.
+9. User decisions applied: Settings -> Display text (rider name + custom lines 1/2, sent on connect and with
+   "Send to display"); reject-with-SMS texts an editable message (default "Riding now, will call you back.");
+   the voice button opens the phone assistant (needs "display over other apps").
+
+## Waiting on the user
+- Share the decompile folder (`ntorq-app`, or the jadx output) with this session through Remote Control in the
+  Claude desktop app (Settings -> Claude Code -> Remote Control). Then port: cricket `5B 81`, football `5B 91`,
+  news `5B 96` (needs a data source: free score/news feeds), vehicle settings `5A F1` / calibration `5B 73`
+  (only with care, they change scooter settings), image/doc transfer, older-Ntorq music controls `5A 6B`.
+- Non-English Maps: needs sample notifications in the rider's language.
 
 ## Not verified (cloud session had no Android SDK)
 

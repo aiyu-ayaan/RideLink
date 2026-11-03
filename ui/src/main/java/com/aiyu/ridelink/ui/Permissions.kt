@@ -39,3 +39,8 @@ internal val phonePermissions = arrayOf(
 )
 
 internal fun Context.hasPhoneState() = phonePermissions.all { granted(it) }
+
+/** "Reject with SMS": send the text, and find the caller's number in the call log. Asked from Settings. */
+internal val smsPermissions = arrayOf(Manifest.permission.SEND_SMS, Manifest.permission.READ_CALL_LOG)
+
+internal fun Context.hasSms() = smsPermissions.all { granted(it) }

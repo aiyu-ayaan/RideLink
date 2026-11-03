@@ -96,6 +96,13 @@
     <string name="settings_music_hint">Song, artist and play state from any music app</string>
     <string name="settings_call_buttons">Answer calls from the scooter</string>
     <string name="settings_call_buttons_hint">Accept or reject a ringing call with the scooter\'s switch</string>
+    <string name="settings_reject_sms">Text the caller on "reject with SMS"</string>
+    <string name="settings_reject_sms_hint">Sends your message to the caller you rejected from the scooter</string>
+    <string name="settings_reject_sms_text">Message</string>
+    <string name="settings_reject_sms_perm">Needs SMS and call log access. Turn the switch off and on to ask again.</string>
+    <string name="settings_voice_button">Voice assistant button</string>
+    <string name="settings_voice_button_hint">The scooter\'s voice button opens your phone\'s assistant</string>
+    <string name="settings_voice_overlay">Allow RideLink to open the assistant from the background</string>
     <string name="settings_missed_calls">Missed-call badge</string>
     <string name="settings_missed_calls_hint">Older Ntorq displays only. The 2025+ display has no missed-call field.</string>
     <string name="settings_overspeed">Overspeed alert</string>

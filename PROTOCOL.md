@@ -220,7 +220,9 @@ model) and 5A 18 engine load, intake/engine temp, battery voltage and run time f
 are flags in the same byte (RideLink reads the action from the low 6 bits). The byte is a level repeated in every
 frame, so RideLink acts on a change only, and only while it is showing a ringing call. Accept uses
 `TelecomManager.acceptRingingCall()`, reject `endCall()` (Android 9+); both need `ANSWER_PHONE_CALLS`.
-Reject-with-SMS rejects without the SMS; voice assistant is not handled.
+Reject with SMS (3) rejects, then (if enabled) texts the newest call-log number of the last 2 min with the
+Settings message (`SEND_SMS` + `READ_CALL_LOG`). Voice assistant (4) opens `ACTION_VOICE_COMMAND` / `ACTION_ASSIST`
+at any time; needs the "display over other apps" grant to start from the background.
 
 ## Model detection
 The display never reports its model; the stock app takes `VehicleId` from the TVS account.

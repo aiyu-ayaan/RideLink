@@ -1,5 +1,10 @@
 package com.aiyu.ridelink.ui.settings
 
+import android.content.Intent
+import android.net.Uri
+import android.provider.Settings as AndroidSettings
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -22,21 +27,30 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.semantics.Role
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.aiyu.ridelink.core.ble.LinkState
+import com.aiyu.ridelink.core.phone.RejectMessage
 import com.aiyu.ridelink.core.protocol.ClusterModel
 import com.aiyu.ridelink.core.settings.Settings
 import kotlin.math.roundToInt
 import com.aiyu.ridelink.ui.MainViewModel
 import com.aiyu.ridelink.ui.R
+import com.aiyu.ridelink.ui.hasSms
+import com.aiyu.ridelink.ui.smsPermissions
 import com.aiyu.ridelink.ui.theme.Dimens
 
 private val ClusterModel.label
@@ -59,6 +73,19 @@ fun SettingsScreen(vm: MainViewModel) {
     var line1 by remember(s.displayLine1) { mutableStateOf(s.displayLine1) }
     var line2 by remember(s.displayLine2) { mutableStateOf(s.displayLine2) }
     val link by vm.linkState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    var smsText by remember(s.rejectSmsText) { mutableStateOf(s.rejectSmsText) }
+    // Re-checked on every resume: both grants are given in system screens.
+    var refresh by remember { mutableIntStateOf(0) }
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    DisposableEffect(lifecycle) {
+        val obs = LifecycleEventObserver { _, e -> if (e == Lifecycle.Event.ON_RESUME) refresh++ }
+        lifecycle.addObserver(obs)
+        onDispose { lifecycle.removeObserver(obs) }
+    }
+    val smsOk = remember(refresh) { context.hasSms() }
+    val overlayOk = remember(refresh) { AndroidSettings.canDrawOverlays(context) }
+    val askSms = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { refresh++ }
     val linkReady = link is LinkState.Ready
 
     Scaffold(topBar = { MediumFlexibleTopAppBar(title = { Text(stringResource(R.string.tab_forwarding)) }) }) { padding ->
@@ -83,6 +110,41 @@ fun SettingsScreen(vm: MainViewModel) {
             item { SwitchRow(R.string.settings_nav, null, s.forwardNavigation, vm::setForwardNavigation) }
             item { SwitchRow(R.string.settings_calls, null, s.forwardCalls, vm::setForwardCalls) }
             item { SwitchRow(R.string.settings_call_buttons, R.string.settings_call_buttons_hint, s.callButtons, vm::setCallButtons) }
+            if (s.callButtons) {
+                item {
+                    SwitchRow(R.string.settings_reject_sms, R.string.settings_reject_sms_hint, s.rejectSms) { on ->
+                        if (on && !context.hasSms()) askSms.launch(smsPermissions)
+                        vm.setRejectSms(on)
+                    }
+                }
+                if (s.rejectSms) {
+                    item {
+                        OutlinedTextField(
+                            value = smsText,
+                            onValueChange = { smsText = it.take(RejectMessage.MAX); vm.setRejectSmsText(smsText) },
+                            label = { Text(stringResource(R.string.settings_reject_sms_text)) },
+                            placeholder = { Text(RejectMessage.DEFAULT) },
+                            supportingText = { if (!smsOk) Text(stringResource(R.string.settings_reject_sms_perm), color = MaterialTheme.colorScheme.error) },
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = Dimens.gutter),
+                        )
+                    }
+                }
+            }
+            item { SwitchRow(R.string.settings_voice_button, R.string.settings_voice_button_hint, s.voiceButton, vm::setVoiceButton) }
+            if (s.voiceButton && !overlayOk) {
+                item {
+                    ListItem(
+                        headlineContent = { Text(stringResource(R.string.settings_voice_overlay)) },
+                        trailingContent = {
+                            FilledTonalButton(onClick = {
+                                context.startActivity(
+                                    Intent(AndroidSettings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:${context.packageName}")),
+                                )
+                            }) { Text(stringResource(R.string.perm_grant)) }
+                        },
+                    )
+                }
+            }
             item { SwitchRow(R.string.settings_missed_calls, R.string.settings_missed_calls_hint, s.missedCalls, vm::setMissedCalls) }
             item { SwitchRow(R.string.settings_overspeed, R.string.settings_overspeed_hint, s.overSpeedAlert, vm::setOverSpeedAlert) }
             if (s.overSpeedAlert) {

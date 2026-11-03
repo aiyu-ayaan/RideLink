@@ -20,6 +20,10 @@
     <uses-permission android:name="android.permission.ANSWER_PHONE_CALLS" />
     <!-- Missed-call badge on older Ntorq displays. -->
     <uses-permission android:name="android.permission.READ_CALL_LOG" />
+    <!-- "Reject with SMS" from the scooter switch. -->
+    <uses-permission android:name="android.permission.SEND_SMS" />
+    <!-- Lets the scooter's voice button open the assistant while RideLink is in the background. -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
     <!-- Weather and AQI from Open-Meteo. -->
     <uses-permission android:name="android.permission.INTERNET" />
