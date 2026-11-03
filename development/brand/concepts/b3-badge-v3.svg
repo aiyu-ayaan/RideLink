@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256"><title>RideLink concept B3 v3</title><path fill="none" stroke="#000" stroke-width="20" stroke-linecap="round" d="M223.7 87.4 A104 104 0 1 1 168.6 32.3"/><circle fill="#000" cx="205.8" cy="50.2" r="14"/><g transform="translate(128 132) scale(0.72) translate(-117 -146)"><path fill="#000" d="M18 150 C22 134 36 124 56 120 L122 120 C132 120 136 128 134 136 L130 158 H156 L178 106 C182 98 192 98 196 106 L216 150 C220 162 214 172 202 172 H40 C26 172 18 164 18 150 Z"/>
+<path fill="none" stroke="#000" stroke-width="15" stroke-linecap="round" d="M186 102 L180 72 M164 70 H198"/>
+<circle cx="62" cy="186" r="38.0" fill="#fff"/>
+<circle cx="196" cy="186" r="38.0" fill="#fff"/>
+<circle cx="62" cy="186" r="24" fill="none" stroke="#000" stroke-width="16"/>
+<circle cx="196" cy="186" r="24" fill="none" stroke="#000" stroke-width="16"/></g></svg>
