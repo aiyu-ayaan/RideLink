@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">RideLink</string>
+
+    <!-- Service notification -->
+    <string name="channel_ride">Ride session</string>
+    <string name="status_connecting">Connecting to your scooter…</string>
+    <string name="status_waiting">Waiting for scooter. Turn the ignition on.</string>
+    <string name="status_connected">Connected to %1$s</string>
+    <string name="status_idle">Not connected</string>
+    <string name="action_end_ride">End ride</string>
+
+    <!-- Navigation bar -->
+    <string name="tab_ride">Ride</string>
+    <string name="tab_forwarding">Settings</string>
+    <string name="tab_console">Console</string>
+
+    <!-- Ride screen -->
+    <string name="hero_no_scooter">No scooter paired</string>
+    <string name="hero_ready">Connected</string>
+    <string name="hero_connecting">Searching</string>
+    <string name="hero_idle">Ride not started</string>
+    <string name="hero_failed">Connection problem</string>
+    <string name="start_ride">Start ride</string>
+    <string name="end_ride">End ride</string>
+    <string name="pair_scooter">Pair scooter</string>
+    <string name="pair_title">Pair your scooter</string>
+    <string name="pair_hint">Turn the scooter ignition on and keep the phone close. Scooter displays show up with names starting with TVS.</string>
+    <string name="pair_scanning">Scanning…</string>
+    <string name="pair_none">Nothing found yet</string>
+    <string name="pair_rescan">Scan again</string>
+    <string name="nav_now">Navigation</string>
+    <string name="call_now">Incoming call</string>
+    <string name="perm_bluetooth_title">Bluetooth access needed</string>
+    <string name="perm_bluetooth_body">RideLink needs nearby devices access to find and talk to the scooter display.</string>
+    <string name="perm_grant">Allow</string>
+    <string name="perm_listener_title">Notification access needed</string>
+    <string name="perm_listener_body">Lets RideLink read Google Maps directions and incoming calls to show them on the scooter.</string>
+    <string name="perm_open_settings">Open settings</string>
+
+    <!-- Settings screen -->
+    <string name="settings_scooter">Scooter</string>
+    <string name="settings_model">Model</string>
+    <string name="settings_model_hint">Picks the message format. 2025+ Ntorq and new XT use the newer format.</string>
+    <string name="settings_rider">Rider name</string>
+    <string name="settings_rider_hint">Shown on the display when the ride starts</string>
+    <string name="settings_forwarding">Show on the display</string>
+    <string name="settings_nav">Google Maps directions</string>
+    <string name="settings_calls">Incoming calls</string>
+    <string name="settings_messages">Message senders (experimental)</string>
+    <string name="settings_messages_hint">WhatsApp, Messages and Telegram. The stock app never does this, so the display may ignore it.</string>
+    <string name="settings_paired">Paired with %1$s</string>
+    <string name="settings_forget">Forget scooter</string>
+    <string name="model_u716">Ntorq 125 (U716)</string>
+    <string name="model_u577_base">Ntorq XT / Race XP, LCD (U577 base)</string>
+    <string name="model_u577_premium">Ntorq XT, TFT (U577 premium)</string>
+    <string name="model_u812">Ntorq 125, 2025+ (U812)</string>
+    <string name="model_n251">Ntorq 125 Standard, 2025+ (N251)</string>
+    <string name="model_u458">Ntorq 125 Race, 2025+ (U458)</string>
+    <string name="model_u377">Ntorq 125 Super Squad, 2025+ (U377)</string>
+
+    <!-- Console screen -->
+    <string name="console_text_label">Text for display line 1</string>
+    <string name="console_send">Send</string>
+    <string name="console_test_turn">Send test turn</string>
+    <string name="console_test_call">Test call</string>
+    <string name="console_empty">Frames sent to the scooter show up here.</string>
+    <string name="console_failed">Not delivered</string>
+    <string name="console_delivered">Delivered</string>
+</resources>
