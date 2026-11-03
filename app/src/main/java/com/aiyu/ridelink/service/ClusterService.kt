@@ -54,7 +54,7 @@ class ClusterService : LifecycleService() {
         val open = PendingIntent.getActivity(this, 0, Intent(this, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE)
         val stop = PendingIntent.getService(this, 1, Intent(this, ClusterService::class.java).setAction(ACTION_STOP), PendingIntent.FLAG_IMMUTABLE)
         return NotificationCompat.Builder(this, CHANNEL)
-            .setSmallIcon(R.drawable.ic_scooter)
+            .setSmallIcon(R.drawable.ic_ridelink)
             .setContentTitle(getString(R.string.app_name))
             .setContentText(text)
             .setOngoing(true)

@@ -29,6 +29,8 @@
 
 - [x] Analytics tab: automatic ride recording, period stats, charts, records, ride history, CSV export, sample rides
 
+- [x] Logo ("Closed loop"), launcher + themed + notification icons, animated splash screen
+
 ## Needs the real scooter
 - [ ] Analytics: check recorded distance against the scooter's trip meter on a real ride
 - [ ] Trip meter: 5A 10 [14..16] reads empty on the rider's XT; get a Console "Copy log" with RX frames

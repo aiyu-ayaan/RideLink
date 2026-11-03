@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="ic_launcher_background">#B3261E</color>
+    <!-- Brand palette (development/brand/BRAND.md). -->
+    <color name="brand_red">#B3261E</color>
+    <color name="ic_launcher_background">@color/brand_red</color>
 </resources>
