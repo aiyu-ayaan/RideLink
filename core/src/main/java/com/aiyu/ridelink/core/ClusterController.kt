@@ -109,6 +109,7 @@ class ClusterController @Inject constructor(
     private suspend fun onReady() {
         val s = settings.current()
         if (s.riderName.isNotBlank()) send(ClusterProtocol.riderName(s.riderName))
+        sendSocial()
         statusJob?.cancel()
         statusJob = scope.launch {
             while (isActive) {
@@ -163,8 +164,18 @@ class ClusterController @Inject constructor(
         }
     }
 
-    fun onMessage(sender: String) = scope.launch {
-        if (settings.current().forwardMessages) send(ClusterProtocol.text(ClusterProtocol.DID_TEXT_LINE_2, sender))
+    private val _social = MutableStateFlow(ClusterProtocol.SocialCounts())
+    val social: StateFlow<ClusterProtocol.SocialCounts> = _social.asStateFlow()
+
+    /** Unread chat counts; sent when they change and again on every (re)connect. */
+    fun onSocialCounts(counts: ClusterProtocol.SocialCounts) {
+        if (counts == _social.value) return
+        _social.value = counts
+        scope.launch { sendSocial() }
+    }
+
+    private suspend fun sendSocial() {
+        if (settings.current().showSocial && link.state.value is LinkState.Ready) send(ClusterProtocol.socialCounts(_social.value))
     }
 
     fun setDemo(on: Boolean) {

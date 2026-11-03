@@ -21,8 +21,8 @@ data class Settings(
     val riderName: String = "",
     val forwardNavigation: Boolean = true,
     val forwardCalls: Boolean = true,
-    /** Off by default: the stock app never sends message senders to Ntorq clusters. */
-    val forwardMessages: Boolean = false,
+    /** WhatsApp / Facebook / Instagram unread counts (`5B 9C`). */
+    val showSocial: Boolean = true,
 )
 
 private val Context.store by preferencesDataStore("settings")
@@ -36,7 +36,7 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
         val rider = stringPreferencesKey("rider_name")
         val nav = booleanPreferencesKey("forward_nav")
         val calls = booleanPreferencesKey("forward_calls")
-        val messages = booleanPreferencesKey("forward_messages")
+        val social = booleanPreferencesKey("show_social")
     }
 
     val settings: Flow<Settings> = context.store.data.map { p ->
@@ -47,7 +47,7 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
             riderName = p[K.rider] ?: "",
             forwardNavigation = p[K.nav] ?: true,
             forwardCalls = p[K.calls] ?: true,
-            forwardMessages = p[K.messages] ?: false,
+            showSocial = p[K.social] ?: true,
         )
     }
 
@@ -64,5 +64,5 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
     suspend fun setRiderName(name: String) { context.store.edit { it[K.rider] = name } }
     suspend fun setForwardNavigation(on: Boolean) { context.store.edit { it[K.nav] = on } }
     suspend fun setForwardCalls(on: Boolean) { context.store.edit { it[K.calls] = on } }
-    suspend fun setForwardMessages(on: Boolean) { context.store.edit { it[K.messages] = on } }
+    suspend fun setShowSocial(on: Boolean) { context.store.edit { it[K.social] = on } }
 }

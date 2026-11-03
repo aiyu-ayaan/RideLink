@@ -84,6 +84,8 @@ def decode(frame):
         return f"CALLER {cat} '{ascii_payload(body[1:])}'"
     if start == 0x5B and did in TEXT_DIDS:
         return f"TEXT {TEXT_DIDS[did]} '{ascii_payload(body)}'"
+    if start == 0x5B and did == 0x9C and len(body) >= 3:
+        return f"SOCIAL whatsapp={body[0] >> 3}msgs/{body[0] & 7}chats facebook={body[1] >> 4}/{body[1] & 0xF} instagram={body[2]}"
     if start == 0x5B and did == 0x22:
         return f"USER-ID {bytes(body).hex(' ')}"
     return f"UNKNOWN start={start:#04x} did={did:#04x} ({chr(did) if 32 <= did < 127 else '?'})"

@@ -141,6 +141,24 @@ straight 57, destination 22, roundabout 48.
 U577 premium (vehicle 38) uses its own table and the stock app parses the value as **hex**
 (`Integer.parseInt(value, 16)`): right "10" -> 0x10. U577 base (37) has a third table, default 5.
 
+## TFT features (2025+ Ntorq `JupiterMobileToCluster`, U577 `NtorqMobileToCluster`)
+
+All 20 bytes, end with `FF`, written on `5352` with response.
+
+### Social unread counts, DID `0x9C` (`BleWriteSocialMediaNotificationDataSrcImpl`, `BluetoothUtil.getSocialMediaDataToWriteToCluster`)
+```
+5B 9C
+WA   (msgs & 0x1F) << 3 | (chats & 0x07)
+FB   (msgs & 0x0F) << 4 | (chats & 0x0F)      stock passes msgs for both halves
+IG   count (0..255)
+00 ... 00 FF
+```
+DID is `SampleGattAttributes.DATA_ID_MESSAGE5 = -100`. Telegram is counted by the stock app but never sent.
+WhatsApp counts (`NotificationListenerService`, only when `sbn.tag == null`): summary title `WhatsApp` with
+text `N messages from M chats`; else `^(\d+) new messages$` = N messages in 1 chat; else 1/1.
+RideLink rebuilds the counts from the active notifications on every post/remove (reading a chat clears it);
+Facebook (`com.facebook.katana`, `com.facebook.orca`) and Instagram count visible non-summary notifications.
+
 ## Model detection
 The display never reports its model; the stock app takes `VehicleId` from the TVS account.
 RideLink's Auto mode uses the 2025+ format and switches to the older Ntorq format when the display

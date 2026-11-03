@@ -32,6 +32,7 @@ class MainViewModel @Inject constructor(
     val detected = controller.detected
     val speed = controller.speed
     val demo = controller.demo
+    val social = controller.social
 
     /** Set by the Disconnect button; stops auto-connect until the app process starts again. */
     var userStopped = false
@@ -54,7 +55,7 @@ class MainViewModel @Inject constructor(
     fun setRiderName(name: String) = viewModelScope.launch { repo.setRiderName(name) }
     fun setForwardNavigation(on: Boolean) = viewModelScope.launch { repo.setForwardNavigation(on) }
     fun setForwardCalls(on: Boolean) = viewModelScope.launch { repo.setForwardCalls(on) }
-    fun setForwardMessages(on: Boolean) = viewModelScope.launch { repo.setForwardMessages(on) }
+    fun setShowSocial(on: Boolean) = viewModelScope.launch { repo.setShowSocial(on) }
 
     fun setDemo(on: Boolean) = controller.setDemo(on)
     fun sendText(text: String) = controller.sendTestText(text)

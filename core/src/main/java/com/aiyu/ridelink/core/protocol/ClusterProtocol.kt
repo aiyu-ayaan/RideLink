@@ -30,6 +30,7 @@ object ClusterProtocol {
     const val DID_CALLER = 0x43
     const val DID_NAV_TEXT = 0x4F
     const val DID_NAV_CONTROL = 0x4E
+    const val DID_SOCIAL = 0x9C
 
     /** `5B DID <text, 17 bytes max> <zero pad> FF`, same sanitising as the stock app. */
     fun text(did: Int, value: String): ByteArray {
@@ -120,6 +121,27 @@ object ClusterProtocol {
             0, 0, 0, 0, 0, 0, 0,
         )
         return listOf(textFrame, frame(START_NAV, DID_NAV_CONTROL, control))
+    }
+
+    /** Unread counts per app. Telegram is counted by the stock app but never sent. */
+    data class SocialCounts(
+        val whatsappMessages: Int = 0,
+        val whatsappChats: Int = 0,
+        val facebookMessages: Int = 0,
+        val instagram: Int = 0,
+    )
+
+    /**
+     * `5B 9C <WA> <FB> <IG> <zero pad> FF` (BleWriteSocialMediaNotificationDataSrcImpl,
+     * BluetoothUtil.getSocialMediaDataToWriteToCluster, DID SampleGattAttributes.DATA_ID_MESSAGE5 = -100).
+     * WA = msgs (5 bits) << 3 | chats (3 bits). FB = msgs (4 bits) << 4 | chats (4 bits); the stock app passes
+     * the message count for both FB fields, so we do too.
+     */
+    fun socialCounts(c: SocialCounts): ByteArray {
+        val wa = (c.whatsappMessages.coerceIn(0, 0x1F) shl 3) or c.whatsappChats.coerceIn(0, 0x07)
+        val fbCount = c.facebookMessages.coerceIn(0, 0x0F)
+        val fb = (fbCount shl 4) or fbCount
+        return frame(START, DID_SOCIAL, byteArrayOf(wa.toByte(), fb.toByte(), c.instagram.coerceIn(0, 0xFF).toByte()))
     }
 
     /**

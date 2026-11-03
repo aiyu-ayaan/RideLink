@@ -57,8 +57,8 @@
     <string name="settings_forwarding">Show on the display</string>
     <string name="settings_nav">Google Maps directions</string>
     <string name="settings_calls">Incoming calls</string>
-    <string name="settings_messages">Message senders (experimental)</string>
-    <string name="settings_messages_hint">WhatsApp, Messages and Telegram. The stock app never does this, so the display may ignore it.</string>
+    <string name="settings_social">Unread chat counts</string>
+    <string name="settings_social_hint">WhatsApp, Facebook and Instagram badges on the display</string>
     <string name="settings_paired">Paired with %1$s</string>
     <string name="settings_forget">Forget scooter</string>
     <string name="model_u716">Ntorq 125 (U716)</string>

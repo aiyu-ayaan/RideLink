@@ -52,7 +52,7 @@ fun SettingsScreen(vm: MainViewModel) {
             item { Section(R.string.settings_forwarding) }
             item { SwitchRow(R.string.settings_nav, null, s.forwardNavigation, vm::setForwardNavigation) }
             item { SwitchRow(R.string.settings_calls, null, s.forwardCalls, vm::setForwardCalls) }
-            item { SwitchRow(R.string.settings_messages, R.string.settings_messages_hint, s.forwardMessages, vm::setForwardMessages) }
+            item { SwitchRow(R.string.settings_social, R.string.settings_social_hint, s.showSocial, vm::setShowSocial) }
 
             item { Section(R.string.settings_scooter) }
             item {

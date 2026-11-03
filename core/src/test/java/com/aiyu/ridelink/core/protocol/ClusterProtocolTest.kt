@@ -71,4 +71,20 @@ class ClusterProtocolTest {
         assertEquals(null, ClusterProtocol.speedKmh(byteArrayOf(0x5A, 0x11, 62, 0)))
         assertEquals(null, ClusterProtocol.speedKmh(byteArrayOf(0x5A, 0x10)))
     }
+
+    @Test fun socialCountsFrame() {
+        // WA 5 msgs / 2 chats -> 0b00101_010 = 0x2a; FB 3 -> 0x33; IG 9.
+        assertEquals(
+            "5b 9c 2a 33 09 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ff",
+            hex(ClusterProtocol.socialCounts(ClusterProtocol.SocialCounts(5, 2, 3, 9))),
+        )
+    }
+
+    @Test fun socialCountsClampToBitFields() {
+        // WA msgs cap at 31, chats at 7 -> 0xff; FB caps at 15 -> 0xff; IG caps at 255.
+        assertEquals(
+            "5b 9c ff ff ff 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ff",
+            hex(ClusterProtocol.socialCounts(ClusterProtocol.SocialCounts(40, 9, 20, 300))),
+        )
+    }
 }
