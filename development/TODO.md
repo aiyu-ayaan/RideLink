@@ -27,7 +27,10 @@
 - [ ] Build the APK, run Demo ride on the emulator and refresh screenshots (blocked in the cloud session: dl.google.com not reachable)
 - [ ] Re-run fake_cluster.py with a real phone to check every new frame decodes
 
+- [x] Analytics tab: automatic ride recording, period stats, charts, records, ride history, CSV export, sample rides
+
 ## Needs the real scooter
+- [ ] Analytics: check recorded distance against the scooter's trip meter on a real ride
 - [ ] Trip meter: 5A 10 [14..16] reads empty on the rider's XT; get a Console "Copy log" with RX frames
 - [ ] Signal bars, call icon, notification badge: still missing? compare decoded STATUS lines, try model U577 premium
 - [ ] Pair the user's Ntorq XT (2026) and confirm the display accepts the 2025+ status frame

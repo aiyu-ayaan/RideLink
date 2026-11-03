@@ -12,6 +12,7 @@
 
     <!-- Navigation bar -->
     <string name="tab_ride">Ride</string>
+    <string name="tab_analytics">Analytics</string>
     <string name="tab_forwarding">Settings</string>
     <string name="tab_console">Console</string>
 
@@ -141,4 +142,72 @@
     <string name="console_failed">Not delivered</string>
     <string name="console_delivered">Delivered</string>
     <string name="console_received">From scooter</string>
+
+    <!-- Analytics screen -->
+    <string name="analytics_more">More options</string>
+    <string name="analytics_export">Export rides (CSV)</string>
+    <string name="analytics_add_samples">Show sample rides</string>
+    <string name="analytics_remove_samples">Remove sample rides</string>
+    <string name="analytics_sample">Sample</string>
+    <string name="analytics_recording">Recording this ride</string>
+    <string name="analytics_empty_title">No rides yet</string>
+    <string name="analytics_empty_body">Rides are recorded on their own while the scooter is connected: distance from the odometer, speed, mileage and fuel every 5 seconds. Everything stays on this phone. Load sample rides to preview this screen; they are labelled and can be removed in one tap.</string>
+    <string name="analytics_history">Rides (%1$d)</string>
+    <string name="period_week">Week</string>
+    <string name="period_month">Month</string>
+    <string name="period_year">Year</string>
+    <string name="period_all">All</string>
+    <string name="span_week">last 7 days</string>
+    <string name="span_month">last 30 days</string>
+    <string name="span_year">last 12 months</string>
+    <string name="span_all">all time</string>
+    <string name="hero_distance">Distance, %1$s</string>
+    <string name="hero_change">%1$s vs the previous %2$s</string>
+    <string name="hero_odometer">Odometer %1$s km</string>
+    <string name="stat_rides">Rides</string>
+    <string name="stat_time">Riding time</string>
+    <string name="stat_avg_speed">Average speed</string>
+    <string name="stat_top_speed">Top speed</string>
+    <string name="stat_mileage">Mileage</string>
+    <string name="stat_per_ride">Per ride</string>
+    <string name="chart_distance">Distance</string>
+    <string name="chart_distance_desc">Distance chart, %1$s km in total. Tap a bar for its value; every ride is listed below.</string>
+    <string name="chart_hours">When you ride</string>
+    <string name="chart_hours_sub">Riding minutes by hour of day</string>
+    <string name="chart_hours_desc">Riding minutes by hour of day. Busiest hour %1$s.</string>
+    <string name="chart_weekdays">Days of the week</string>
+    <string name="chart_weekdays_desc">Distance by day of the week.</string>
+    <string name="chart_speed">Speed</string>
+    <string name="chart_speed_sub">Minutes spent in each speed range, km/h</string>
+    <string name="chart_speed_desc">Minutes spent in each speed range.</string>
+    <string name="readout_tap">Tap a bar to see its value</string>
+    <string name="readout_distance">%1$s · %2$s km</string>
+    <string name="readout_best">Best: %1$s · %2$s km</string>
+    <string name="readout_hour">%1$s · %2$s</string>
+    <string name="readout_hour_idle">Busiest hour: %1$s</string>
+    <string name="readout_weekday">%1$s · %2$s km</string>
+    <string name="readout_speed">%1$s km/h · %2$s</string>
+    <string name="readout_series">%1$s · %2$s %3$s</string>
+    <string name="readout_series_idle">Peak %1$s %2$s</string>
+    <string name="chart_series_desc">%1$s over the ride, peak %2$s %3$s.</string>
+    <string name="records_title">Records</string>
+    <string name="record_longest">Longest ride</string>
+    <string name="record_fastest">Top speed</string>
+    <string name="record_mileage">Best mileage</string>
+    <string name="record_streak">Longest streak</string>
+    <string name="record_streak_value">%1$d days</string>
+    <string name="record_active_days">Rode on %1$d days</string>
+    <string name="ride_row">%1$s km · %2$s · avg %3$s · max %4$d km/h</string>
+    <string name="detail_span">%1$s to %2$s</string>
+    <string name="detail_distance">Distance</string>
+    <string name="detail_moving">Moving</string>
+    <string name="detail_stopped">Stopped</string>
+    <string name="detail_odometer">Odometer %1$s to %2$s km</string>
+    <string name="detail_no_samples">No speed samples for this ride.</string>
+    <string name="detail_delete">Delete ride</string>
+    <string name="chart_ride_speed">Speed</string>
+    <string name="chart_ride_rpm">Engine RPM</string>
+    <string name="chart_ride_range">Range left</string>
+    <string name="settings_record_rides">Record rides for Analytics</string>
+    <string name="settings_record_rides_hint">Distance, speed, mileage and fuel every 5 seconds while connected. Stays on this phone.</string>
 </resources>

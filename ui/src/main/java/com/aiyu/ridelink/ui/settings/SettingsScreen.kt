@@ -177,6 +177,7 @@ fun SettingsScreen(vm: MainViewModel) {
             item { Section(R.string.settings_in_app) }
             item { SwitchRow(R.string.settings_ride_data, R.string.settings_ride_data_hint, s.showRideData, vm::setShowRideData) }
             item { SwitchRow(R.string.settings_vehicle, R.string.settings_vehicle_hint, s.showVehicle, vm::setShowVehicle) }
+            item { SwitchRow(R.string.settings_record_rides, R.string.settings_record_rides_hint, s.recordRides, vm::setRecordRides) }
 
             item { Section(R.string.settings_scooter) }
             item {

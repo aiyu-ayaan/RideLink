@@ -21,7 +21,8 @@ Modules:
 - `core` => no UI. `protocol/` (frame encoder, models, turn/weather tables, `DisplayTelemetry` parser),
   `ble/ClusterLink` (GATT), `ClusterController` (ride session logic), `nav/MapsNotificationParser`,
   `notify/SocialNotificationParser`, `weather/WeatherRepository` (Open-Meteo + coarse location + Geocoder),
-  `phone/CallControl` (TelecomManager), `settings/` (DataStore).
+  `phone/CallControl` (TelecomManager), `display/DisplayTemplate` (live custom lines), `settings/` (DataStore),
+  `analytics/` (`RideMath` pure stats, `RideRecorder` auto-records rides, `RideStore` framework SQLite).
 - `ui` => all Compose screens, theme, and **all strings** (`ui/src/main/res/values/strings.xml`).
   `core` and `app` hold no user-facing strings; the app module reads them via `com.aiyu.ridelink.ui.R`.
 
@@ -53,7 +54,9 @@ Modules:
 
 - Material 3 Expressive only: `MaterialExpressiveTheme`, `MotionScheme.expressive()`, dynamic color
   on Android 12+, red tonal-spot fallback scheme. See `development/docs/DESIGN_SYSTEM.md`.
-- Bottom navigation with three tabs: Ride, Settings, Console. No drawer.
+- Bottom navigation with four tabs: Ride, Analytics, Settings, Console. No drawer.
+- Analytics: period picker, one hero number (distance + change), stat tiles, Canvas charts in `ui/analytics/Charts.kt`
+  (single series, primary marks, tertiary selection, tap/drag readout, no dual axis), records, ride list, ride sheet.
 - Ride screen: hero status card (cookie shape, `LoadingIndicator` while searching), turn-arrow
   dashboard (big arrow, distance, ETA, left, speed), ride data card, vehicle card, weather card, music card, call card,
   one primary button (Connect / Disconnect). New cards live in `ui/ride/RideCards.kt`.
@@ -80,7 +83,7 @@ Modules:
   (the fallback scheme in `ui/theme/Theme.kt` is the one exception).
 - Spacing through `Dimens`; shapes through `MaterialTheme.shapes` / `MaterialShapes`.
 - Motion through `MaterialTheme.motionScheme` specs, never ad-hoc `tween` durations.
-- Settings live in DataStore (`core/settings`). Nothing list-like in DataStore.
+- Settings live in DataStore (`core/settings`). Nothing list-like in DataStore: ride history is SQLite (`RideStore`).
 - All BLE writes go through `ClusterController.send` -> `ClusterLink.send` (queued, with response).
   Never write GATT from UI code.
 - Long-lived work (the ride session) runs in `ClusterService`, never on a ViewModel scope.

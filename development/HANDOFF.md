@@ -26,6 +26,11 @@ Read this, then `CLAUDE.md`, `PROTOCOL.md`, `development/TODO.md`. Day-1 notes f
    "Send to display"); reject-with-SMS texts an editable message (default "Riding now, will call you back.");
    the voice button opens the phone assistant (needs "display over other apps").
 
+10. Analytics tab (`core/analytics`, `ui/analytics`): rides recorded automatically (5 s samples, SQLite), week/month/
+    year/all stats with change vs the previous period, distance / hour-of-day / weekday / speed-band charts on
+    Canvas, records, ride list and detail sheet (speed, RPM, range), CSV export, labelled sample rides.
+    `RideMath` + `SampleRides` are pure and unit-tested (59 JVM tests total).
+
 ## Waiting on the user
 - Share the decompile folder (`ntorq-app`, or the jadx output) with this session through Remote Control in the
   Claude desktop app (Settings -> Claude Code -> Remote Control). Then port: cricket `5B 81`, football `5B 91`,

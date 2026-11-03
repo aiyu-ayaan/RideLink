@@ -6,8 +6,10 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Insights
 import androidx.compose.material.icons.outlined.Terminal
 import androidx.compose.material.icons.outlined.Tune
+import androidx.compose.material.icons.rounded.Insights
 import androidx.compose.material.icons.rounded.Terminal
 import androidx.compose.material.icons.rounded.TwoWheeler
 import androidx.compose.material.icons.rounded.Tune
@@ -32,12 +34,14 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.aiyu.ridelink.core.ble.LinkState
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.aiyu.ridelink.ui.analytics.AnalyticsScreen
 import com.aiyu.ridelink.ui.console.ConsoleScreen
 import com.aiyu.ridelink.ui.ride.RideScreen
 import com.aiyu.ridelink.ui.settings.SettingsScreen
 
 private enum class Tab(val label: Int, val selected: androidx.compose.ui.graphics.vector.ImageVector, val unselected: androidx.compose.ui.graphics.vector.ImageVector) {
     Ride(R.string.tab_ride, Icons.Rounded.TwoWheeler, Icons.Outlined.TwoWheeler),
+    Analytics(R.string.tab_analytics, Icons.Rounded.Insights, Icons.Outlined.Insights),
     Settings(R.string.tab_forwarding, Icons.Rounded.Tune, Icons.Outlined.Tune),
     Console(R.string.tab_console, Icons.Rounded.Terminal, Icons.Outlined.Terminal),
 }
@@ -72,6 +76,7 @@ fun RideLinkRoot(onConnect: () -> Unit, onDisconnect: () -> Unit) {
         ) { current ->
             when (current) {
                 Tab.Ride -> RideScreen(vm, connect, disconnect)
+                Tab.Analytics -> AnalyticsScreen()
                 Tab.Settings -> SettingsScreen(vm)
                 Tab.Console -> ConsoleScreen(vm)
             }

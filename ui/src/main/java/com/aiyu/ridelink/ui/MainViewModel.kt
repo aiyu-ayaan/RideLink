@@ -75,6 +75,7 @@ class MainViewModel @Inject constructor(
     fun setVoiceButton(on: Boolean) = viewModelScope.launch { repo.setVoiceButton(on) }
     fun setShowRideData(on: Boolean) = viewModelScope.launch { repo.setShowRideData(on) }
     fun setShowVehicle(on: Boolean) = viewModelScope.launch { repo.setShowVehicle(on) }
+    fun setRecordRides(on: Boolean) = viewModelScope.launch { repo.setRecordRides(on) }
     fun setOverSpeedAlert(on: Boolean) = viewModelScope.launch { repo.setOverSpeedAlert(on) }
     fun setOverSpeedKmh(kmh: Int) = viewModelScope.launch { repo.setOverSpeedKmh(kmh) }
     fun setMissedCalls(on: Boolean) = viewModelScope.launch { repo.setMissedCalls(on) }
