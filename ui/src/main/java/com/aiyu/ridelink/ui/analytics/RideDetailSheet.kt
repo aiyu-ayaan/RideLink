@@ -65,9 +65,12 @@ internal fun RideDetailSheet(ride: RideRecord, vm: AnalyticsViewModel, onDismiss
                 Tile(stringResource(R.string.stat_mileage), s.avgEconomy?.let(Fmt::one) ?: "--", stringResource(R.string.unit_kmpl), c, Modifier.weight(1f))
                 Tile(stringResource(R.string.detail_stopped), Fmt.duration((s.durationS - s.movingS).toLong().coerceAtLeast(0)), "", c, Modifier.weight(1f))
             }
-            if (s.odometerStartTenths != null && s.odometerEndTenths != null) {
+            // Copied to locals: properties from the core module can't be smart-cast after a null check.
+            val odoStart = s.odometerStartTenths
+            val odoEnd = s.odometerEndTenths
+            if (odoStart != null && odoEnd != null) {
                 Text(
-                    stringResource(R.string.detail_odometer, Fmt.one(s.odometerStartTenths / 10.0), Fmt.one(s.odometerEndTenths / 10.0)),
+                    stringResource(R.string.detail_odometer, Fmt.one(odoStart / 10.0), Fmt.one(odoEnd / 10.0)),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
