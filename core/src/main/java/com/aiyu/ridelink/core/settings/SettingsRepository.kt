@@ -44,6 +44,8 @@ data class Settings(
     val showRideData: Boolean = true,
     /** Vehicle card (RPM, battery, engine temperature, service, engine light) on the Ride screen. */
     val showVehicle: Boolean = true,
+    /** Save rides (speed, distance, fuel every 5 s while connected) for Analytics. Stays on the phone. */
+    val recordRides: Boolean = true,
     /** Overspeed warning on the display; the limit goes in the status frame. */
     val overSpeedAlert: Boolean = false,
     val overSpeedKmh: Int = DEFAULT_OVERSPEED_KMH,
@@ -79,6 +81,7 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
         val voiceButton = booleanPreferencesKey("voice_button")
         val rideData = booleanPreferencesKey("show_ride_data")
         val vehicle = booleanPreferencesKey("show_vehicle")
+        val recordRides = booleanPreferencesKey("record_rides")
         val overSpeedAlert = booleanPreferencesKey("overspeed_alert")
         val overSpeedKmh = intPreferencesKey("overspeed_kmh")
         val missedCalls = booleanPreferencesKey("missed_calls")
@@ -104,6 +107,7 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
             voiceButton = p[K.voiceButton] ?: true,
             showRideData = p[K.rideData] ?: true,
             showVehicle = p[K.vehicle] ?: true,
+            recordRides = p[K.recordRides] ?: true,
             overSpeedAlert = p[K.overSpeedAlert] ?: false,
             overSpeedKmh = p[K.overSpeedKmh] ?: Settings.DEFAULT_OVERSPEED_KMH,
             missedCalls = p[K.missedCalls] ?: true,
@@ -139,6 +143,7 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
     suspend fun setVoiceButton(on: Boolean) { context.store.edit { it[K.voiceButton] = on } }
     suspend fun setShowRideData(on: Boolean) { context.store.edit { it[K.rideData] = on } }
     suspend fun setShowVehicle(on: Boolean) { context.store.edit { it[K.vehicle] = on } }
+    suspend fun setRecordRides(on: Boolean) { context.store.edit { it[K.recordRides] = on } }
     suspend fun setOverSpeedAlert(on: Boolean) { context.store.edit { it[K.overSpeedAlert] = on } }
     suspend fun setOverSpeedKmh(kmh: Int) { context.store.edit { it[K.overSpeedKmh] = kmh.coerceIn(Settings.OVERSPEED_RANGE) } }
     suspend fun setMissedCalls(on: Boolean) { context.store.edit { it[K.missedCalls] = on } }
