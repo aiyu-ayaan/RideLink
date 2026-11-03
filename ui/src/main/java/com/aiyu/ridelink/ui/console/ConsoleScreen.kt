@@ -1,5 +1,7 @@
 package com.aiyu.ridelink.ui.console
 
+import android.content.ClipData
+import android.content.ClipboardManager
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
@@ -12,12 +14,14 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonGroupDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MediumFlexibleTopAppBar
@@ -32,6 +36,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
@@ -49,7 +54,23 @@ fun ConsoleScreen(vm: MainViewModel) {
     val demo by vm.demo.collectAsStateWithLifecycle()
     var text by rememberSaveable { mutableStateOf("") }
 
-    Scaffold(topBar = { MediumFlexibleTopAppBar(title = { Text(stringResource(R.string.tab_console)) }) }) { padding ->
+    val context = LocalContext.current
+    Scaffold(
+        topBar = {
+            MediumFlexibleTopAppBar(
+                title = { Text(stringResource(R.string.tab_console)) },
+                actions = {
+                    // Oldest first, so a pasted log reads in time order.
+                    IconButton(onClick = {
+                        val text = log.asReversed().joinToString("\n") { it.line() }
+                        context.getSystemService(ClipboardManager::class.java)?.setPrimaryClip(ClipData.newPlainText("RideLink log", text))
+                    }, enabled = log.isNotEmpty()) {
+                        Icon(Icons.Rounded.ContentCopy, contentDescription = stringResource(R.string.console_copy))
+                    }
+                },
+            )
+        },
+    ) { padding ->
         Column(Modifier.padding(padding).fillMaxSize()) {
             Row(Modifier.padding(horizontal = Dimens.gutter), verticalAlignment = Alignment.CenterVertically) {
                 OutlinedTextField(
@@ -109,6 +130,7 @@ fun ConsoleScreen(vm: MainViewModel) {
                     ListItem(
                         overlineContent = { Text(f.time) },
                         headlineContent = { Text(f.hex, fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall) },
+                        supportingContent = f.decoded?.let { d -> { Text(d, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) } },
                         leadingContent = {
                             Icon(
                                 when {

@@ -44,8 +44,10 @@ some cluster frames, `0x9A` for the challenge frame (other bikes).
 ### Text frame (`BluetoothUtil.createMobileToClusterArray(text, did)`)
 `5B DID <text up to 17 bytes, UTF-8> <zero pad> FF` (20 bytes).
 Characters outside `A-Z a-z 0-9 space` become `X`; emoji become `@`.
-RideLink's Settings -> Display text writes the rider name (`0x52`) and custom lines 1 (`0x4C`) and 2 (`0x63`) on every
-connect and on "Send to display". `0x63` is also the music artist on Ntorq, so a playing song replaces line 2.
+RideLink's Settings -> Display text writes the rider name (`0x52`) and custom lines 1 (`0x4C`) and 2 (`0x63`).
+The lines are templates (`DisplayTemplate`): `{caller|rider}`, `{time}`, `{battery}`, `{temp}`, `{song}`, `{odo}` and more,
+re-rendered every status tick and on call start/end, and written only when the text changes. `0x63` is also the music
+artist on Ntorq, so a playing song replaces line 2.
 
 | DID | Hex | Use |
 |---|---|---|
@@ -98,8 +100,12 @@ find-my-vehicle flag
 Battery level (`getIceBatteryLevel`): 0-9% 0, 10-19 1, 20-39 2, 40-59 3, 60-79 4, 80-100 5.
 Network type (`getNetworkType`, input `TelephonyManager.NETWORK_TYPE_*`): 3G types (2,3,8,10,15,16) -> 3,
 LTE (13) -> 4, NR (20) -> 5, else 0. Signal strength is `SignalStrength.getLevel()` (0..4).
-RideLink sends the network type only with `READ_PHONE_STATE` and the signal level only with
-`ACCESS_COARSE_LOCATION` (the stock app gates `getSignalStrength()` on location the same way); otherwise 0.
+RideLink sends the network type only with `READ_PHONE_STATE`. The signal level is read without any permission
+(the stock app gates `getSignalStrength()` on location; RideLink dropped that gate after the rider saw no bars), from
+the default *data* subscription, taking the best `CellSignalStrength.level` when `getLevel()` reports 0.
+Deviation from stock: RideLink also sends the missed-call count in the Jupiter-family frame (stock always sends 0).
+Unconfirmed on the rider's display: whether signal bars, the call icon and the notification badge come from this
+frame at all; check with Console -> Copy log (decoded `STATUS` lines).
 Overspeed limit: Settings -> Overspeed alert (30..120 km/h); off = 120 on the Jupiter family, 0xFF on older Ntorq.
 Missed calls (older Ntorq only): new missed calls from `CallLog` (`READ_CALL_LOG`), cached 30 s.
 
@@ -211,7 +217,8 @@ only when they change, plus once on every connect.
 | `5A 19` speedometer 3 | ISS duration [2..4], OTA status [5], avg fuel economy [8], instant fuel economy [9], distance to empty [11..12] BE, ISS count [15..17] |
 | `5A 18` speedometer 4 | engine load [2], MAP [5], intake temp [7], engine temp [8], battery voltage [11], engine run time [12..13], distance [14..15], injection volume [16..17] |
 
-The stock parser applies no scaling to odometer/trip/fuel; RideLink shows raw values until confirmed on the scooter.
+Odometer and trip are in **0.1 km** steps (confirmed: raw 1718 shown as 171.8 km on the rider's Ntorq XT).
+Fuel and the other fields are raw until confirmed. Trip [14..16] read 0/empty on the rider's scooter; needs a capture.
 RideLink also keeps 5A 11 software version [7], MIL code [8], vehicle model [9] (shown in Settings to identify the
 model) and 5A 18 engine load, intake/engine temp, battery voltage and run time for the Vehicle card.
 

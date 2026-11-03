@@ -24,6 +24,7 @@ import com.aiyu.ridelink.core.phone.MissedCalls
 import com.aiyu.ridelink.core.phone.RejectMessage
 import com.aiyu.ridelink.core.protocol.CallButton
 import com.aiyu.ridelink.core.protocol.DisplayTelemetry
+import com.aiyu.ridelink.core.protocol.FrameDecoder
 import com.aiyu.ridelink.core.settings.SettingsRepository
 import com.aiyu.ridelink.core.weather.WeatherRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -46,7 +47,10 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /** [rx] = sent by the display; otherwise written by us and [ok] tells if it was acknowledged. */
-data class FrameLog(val time: String, val hex: String, val ok: Boolean, val rx: Boolean = false)
+data class FrameLog(val time: String, val hex: String, val ok: Boolean, val rx: Boolean = false, val decoded: String? = null) {
+    /** One line for "Copy log": direction, time, hex and meaning. */
+    fun line() = "${if (rx) "RX" else if (ok) "TX" else "TX-FAIL"} $time $hex${decoded?.let { "  | $it" }.orEmpty()}"
+}
 
 /** Owns the ride session: status loop, navigation and call forwarding to the cluster. */
 @Singleton
@@ -468,7 +472,13 @@ class ClusterController @Inject constructor(
     private suspend fun send(frame: ByteArray): Boolean = link.send(frame).also { log(frame, it) }
 
     private fun log(frame: ByteArray, ok: Boolean, rx: Boolean = false) {
-        val line = FrameLog(LocalDateTime.now().toLocalTime().withNano(0).toString(), frame.joinToString(" ") { "%02x".format(it) }, ok, rx)
+        val line = FrameLog(
+            LocalDateTime.now().toLocalTime().withNano(0).toString(),
+            frame.joinToString(" ") { "%02x".format(it) },
+            ok,
+            rx,
+            FrameDecoder.decode(frame),
+        )
         _log.update { (listOf(line) + it).take(LOG_SIZE) }
     }
 
@@ -519,7 +529,7 @@ class ClusterController @Inject constructor(
     private fun granted(permission: String) = ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
 
     private companion object {
-        const val LOG_SIZE = 100
+        const val LOG_SIZE = 300
         const val DEMO_STEP_MS = 1_500L
         const val WEATHER_INTERVAL_MS = 15 * 60_000L
     }

@@ -28,6 +28,8 @@
 - [ ] Re-run fake_cluster.py with a real phone to check every new frame decodes
 
 ## Needs the real scooter
+- [ ] Trip meter: 5A 10 [14..16] reads empty on the rider's XT; get a Console "Copy log" with RX frames
+- [ ] Signal bars, call icon, notification badge: still missing? compare decoded STATUS lines, try model U577 premium
 - [ ] Pair the user's Ntorq XT (2026) and confirm the display accepts the 2025+ status frame
 - [ ] Confirm turn arrows show the right pictogram for each maneuver
 - [ ] Confirm caller frame clears correctly when a call ends (stock app relies on call state)
