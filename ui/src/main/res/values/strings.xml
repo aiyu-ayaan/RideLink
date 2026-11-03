@@ -48,8 +48,8 @@
     <string name="perm_grant">Allow</string>
     <string name="perm_listener_title">Notification access needed</string>
     <string name="perm_listener_body">Lets RideLink read Google Maps directions and incoming calls to show them on the scooter.</string>
-    <string name="perm_phone_title">Show signal and network</string>
-    <string name="perm_phone_body">Phone state and approximate location let the display show your signal bars, 4G/5G, weather and where you are.</string>
+    <string name="perm_phone_title">Signal, weather and calls</string>
+    <string name="perm_phone_body">Phone state, approximate location and call control let the display show your signal bars, 4G/5G, weather and where you are, and let the scooter switch answer calls.</string>
     <string name="perm_open_settings">Open settings</string>
 
     <!-- Settings screen -->
@@ -71,6 +71,8 @@
     <string name="settings_location_hint">Area name from your approximate location</string>
     <string name="settings_music">Now playing</string>
     <string name="settings_music_hint">Song, artist and play state from any music app</string>
+    <string name="settings_call_buttons">Answer calls from the scooter</string>
+    <string name="settings_call_buttons_hint">Accept or reject a ringing call with the scooter\'s switch</string>
     <string name="settings_paired">Paired with %1$s</string>
     <string name="settings_forget">Forget scooter</string>
     <string name="model_u716">Ntorq 125 (U716)</string>

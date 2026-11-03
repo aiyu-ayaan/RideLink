@@ -196,6 +196,25 @@ Name from `Geocoder` (sub-locality, else locality) on the coarse network fix.
 RideLink reads the active `MediaSession` (needs the notification listener grant) and sends song/artist/state
 only when they change, plus once on every connect.
 
+### Display -> phone ride data (notify on `5354`, `JupiterClusterDataReceiver`)
+`@ParsingMeta` is 1-based; 0-based indexes here. Parsed by `DisplayTelemetry.merge`.
+
+| Frame | Field (0-based index) |
+|---|---|
+| `5A 10` speedometer 1 | speed [2], odometer [3..5] BE, fuel level [6], average speed [7], trip status [8], top speed [9], throttle [10], backlight [11], switch/call status [12], 0-60 time [13], trip meter [14..16] BE, RPM [17..18] BE |
+| `5A 11` speedometer 2 | fuel sensor fail [2], vehicle state [3], service reminder [4], vehicle state 1 [6], software version [7], MIL code [8], vehicle model [9], diagnostics [10], ISG code [11], turn indicators [12], connector [13], screenshot [17] |
+| `5A 19` speedometer 3 | ISS duration [2..4], OTA status [5], avg fuel economy [8], instant fuel economy [9], distance to empty [11..12] BE, ISS count [15..17] |
+| `5A 18` speedometer 4 | engine load [2], MAP [5], intake temp [7], engine temp [8], battery voltage [11], engine run time [12..13], distance [14..15], injection volume [16..17] |
+
+The stock parser applies no scaling to odometer/trip/fuel; RideLink shows raw values until confirmed on the scooter.
+
+### Call accept/reject from the scooter switch (`TelephonyUtils.handleCallAcceptRejectAction`)
+`5A 10` [12]: 1 accept, 2 reject, 3 reject with SMS, 4 voice assistant; 64 = ignition change and 128 = vehicle off
+are flags in the same byte (RideLink reads the action from the low 6 bits). The byte is a level repeated in every
+frame, so RideLink acts on a change only, and only while it is showing a ringing call. Accept uses
+`TelecomManager.acceptRingingCall()`, reject `endCall()` (Android 9+); both need `ANSWER_PHONE_CALLS`.
+Reject-with-SMS rejects without the SMS; voice assistant is not handled.
+
 ## Model detection
 The display never reports its model; the stock app takes `VehicleId` from the TVS account.
 RideLink's Auto mode uses the 2025+ format and switches to the older Ntorq format when the display

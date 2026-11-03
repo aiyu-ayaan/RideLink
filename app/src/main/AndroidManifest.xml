@@ -16,6 +16,8 @@
     <!-- Status frame: network type needs READ_PHONE_STATE; signal level and weather need coarse location. -->
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <!-- Accept / reject calls from the scooter buttons. -->
+    <uses-permission android:name="android.permission.ANSWER_PHONE_CALLS" />
 
     <!-- Weather and AQI from Open-Meteo. -->
     <uses-permission android:name="android.permission.INTERNET" />

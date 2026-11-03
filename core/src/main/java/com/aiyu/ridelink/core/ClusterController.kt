@@ -16,6 +16,9 @@ import com.aiyu.ridelink.core.protocol.ClusterProtocol.CallState
 import com.aiyu.ridelink.core.protocol.ClusterProtocol.NavStep
 import com.aiyu.ridelink.core.protocol.Maneuver
 import com.aiyu.ridelink.core.settings.Settings
+import com.aiyu.ridelink.core.phone.CallControl
+import com.aiyu.ridelink.core.protocol.CallButton
+import com.aiyu.ridelink.core.protocol.DisplayTelemetry
 import com.aiyu.ridelink.core.settings.SettingsRepository
 import com.aiyu.ridelink.core.weather.WeatherRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -47,6 +50,7 @@ class ClusterController @Inject constructor(
     private val link: ClusterLink,
     private val settings: SettingsRepository,
     private val weatherRepo: WeatherRepository,
+    private val calls: CallControl,
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private var session: Job? = null
@@ -72,6 +76,35 @@ class ClusterController @Inject constructor(
     private val _speed = MutableStateFlow<Int?>(null)
     val speed: StateFlow<Int?> = _speed.asStateFlow()
 
+    /** Odometer, trip, fuel, range and the rest from the display's 5A 10 / 11 / 19 frames. */
+    private val _telemetry = MutableStateFlow(DisplayTelemetry())
+    val telemetry: StateFlow<DisplayTelemetry> = _telemetry.asStateFlow()
+
+    /**
+     * Scooter buttons arrive as a level in every 5A 10 frame, so act only when the action changes.
+     * Accept and reject only touch a call we are showing as ringing.
+     * shortcut: "reject with SMS" rejects without the SMS; voice assistant is ignored (no background activity start).
+     */
+    private fun onSwitchStatus(old: Int?, new: Int?) {
+        val button = CallButton.from(new) ?: return
+        if (button == CallButton.from(old)) return
+        scope.launch {
+            if (!settings.current().callButtons || _caller.value == null) return@launch
+            when (button) {
+                CallButton.ACCEPT -> if (calls.accept()) onCallAnswered()
+                CallButton.REJECT, CallButton.REJECT_WITH_SMS -> if (calls.end()) onCallEnded()
+                CallButton.VOICE_ASSISTANT -> Unit
+            }
+        }
+    }
+
+    /** Stop ringing on the display; the status frame reports the call as accepted. */
+    private fun onCallAnswered() {
+        callJob?.cancel()
+        _caller.value = null
+        callState = CallState.ACCEPTED
+    }
+
     /** Demo ride: fake speed, turns and a call, for screenshots and testing without a scooter. */
     private val _demo = MutableStateFlow(false)
     val demo: StateFlow<Boolean> = _demo.asStateFlow()
@@ -84,7 +117,13 @@ class ClusterController @Inject constructor(
             link.incoming.collect { frame ->
                 log(frame, ok = true, rx = true)
                 ClusterModel.detect(frame)?.let { _detected.value = it }
-                ClusterProtocol.speedKmh(frame)?.let { _speed.value = it }
+                val before = _telemetry.value
+                val after = before.merge(frame)
+                if (after !== before) {
+                    _telemetry.value = after
+                    after.speedKmh?.let { _speed.value = it }
+                    onSwitchStatus(before.switchStatus, after.switchStatus)
+                }
             }
         }
     }
