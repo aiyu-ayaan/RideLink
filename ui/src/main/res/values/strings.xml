@@ -42,6 +42,8 @@
     <string name="perm_grant">Allow</string>
     <string name="perm_listener_title">Notification access needed</string>
     <string name="perm_listener_body">Lets RideLink read Google Maps directions and incoming calls to show them on the scooter.</string>
+    <string name="perm_phone_title">Show signal and network</string>
+    <string name="perm_phone_body">Phone state and approximate location let the display show your signal bars, 4G/5G, weather and where you are.</string>
     <string name="perm_open_settings">Open settings</string>
 
     <!-- Settings screen -->

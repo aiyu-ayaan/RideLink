@@ -96,6 +96,8 @@ find-my-vehicle flag
 Battery level (`getIceBatteryLevel`): 0-9% 0, 10-19 1, 20-39 2, 40-59 3, 60-79 4, 80-100 5.
 Network type (`getNetworkType`, input `TelephonyManager.NETWORK_TYPE_*`): 3G types (2,3,8,10,15,16) -> 3,
 LTE (13) -> 4, NR (20) -> 5, else 0. Signal strength is `SignalStrength.getLevel()` (0..4).
+RideLink sends the network type only with `READ_PHONE_STATE` and the signal level only with
+`ACCESS_COARSE_LOCATION` (the stock app gates `getSignalStrength()` on location the same way); otherwise 0.
 
 ### Incoming call (`TelephonyUtils.writeNtorqCallerInformationToCluster` / `writeJupiterCallerInformationToCluster`)
 Text frame DID `0x43` with the contact name (or number with `+91` removed), no category byte.

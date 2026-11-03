@@ -44,6 +44,7 @@ import androidx.compose.material.icons.rounded.Call
 import androidx.compose.material.icons.rounded.Flag
 import androidx.compose.material.icons.rounded.NotificationsActive
 import androidx.compose.material.icons.rounded.RoundaboutRight
+import androidx.compose.material.icons.rounded.SignalCellularAlt
 import androidx.compose.material.icons.rounded.Straight
 import androidx.compose.material.icons.rounded.TwoWheeler
 import androidx.compose.material.icons.rounded.UTurnLeft
@@ -94,6 +95,8 @@ import com.aiyu.ridelink.ui.R
 import com.aiyu.ridelink.ui.bluetoothPermissions
 import com.aiyu.ridelink.ui.hasBluetooth
 import com.aiyu.ridelink.ui.hasListener
+import com.aiyu.ridelink.ui.hasPhoneState
+import com.aiyu.ridelink.ui.phonePermissions
 import com.aiyu.ridelink.ui.theme.Dimens
 
 @Composable
@@ -116,6 +119,7 @@ fun RideScreen(vm: MainViewModel, onConnect: () -> Unit, onDisconnect: () -> Uni
     }
     val bluetoothOk = remember(refresh) { context.hasBluetooth() }
     val listenerOk = remember(refresh) { context.hasListener() }
+    val phoneOk = remember(refresh) { context.hasPhoneState() }
     val askBluetooth = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { refresh++ }
 
     var pairing by remember { mutableStateOf(false) }
@@ -139,6 +143,12 @@ fun RideScreen(vm: MainViewModel, onConnect: () -> Unit, onDisconnect: () -> Uni
             if (!listenerOk) {
                 PermissionCard(Icons.Rounded.NotificationsActive, R.string.perm_listener_title, R.string.perm_listener_body, R.string.perm_open_settings) {
                     context.startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+                }
+            }
+
+            if (bluetoothOk && !phoneOk) {
+                PermissionCard(Icons.Rounded.SignalCellularAlt, R.string.perm_phone_title, R.string.perm_phone_body, R.string.perm_grant, optional = true) {
+                    askBluetooth.launch(phonePermissions)
                 }
             }
 
@@ -308,23 +318,26 @@ private fun InfoCard(icon: ImageVector, title: String, body: String, emphasized:
 }
 
 @Composable
-private fun PermissionCard(icon: ImageVector, title: Int, body: Int, action: Int, onClick: () -> Unit) {
+private fun PermissionCard(icon: ImageVector, title: Int, body: Int, action: Int, optional: Boolean = false, onClick: () -> Unit) {
+    // Required grants use the error role; nice-to-have ones use the calmer secondary role.
+    val container = if (optional) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.errorContainer
+    val content = if (optional) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onErrorContainer
     Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+        colors = CardDefaults.cardColors(containerColor = container),
         shape = MaterialTheme.shapes.large,
         modifier = Modifier.fillMaxWidth(),
     ) {
         Column(Modifier.padding(Dimens.lg)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onErrorContainer)
+                Icon(icon, contentDescription = null, tint = content)
                 Text(
                     stringResource(title),
                     style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onErrorContainer,
+                    color = content,
                     modifier = Modifier.padding(start = Dimens.md),
                 )
             }
-            Text(stringResource(body), color = MaterialTheme.colorScheme.onErrorContainer, modifier = Modifier.padding(vertical = Dimens.sm))
+            Text(stringResource(body), color = content, modifier = Modifier.padding(vertical = Dimens.sm))
             FilledTonalButton(onClick = onClick, modifier = Modifier.align(Alignment.End)) { Text(stringResource(action)) }
         }
     }

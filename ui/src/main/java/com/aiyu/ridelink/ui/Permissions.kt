@@ -25,3 +25,11 @@ internal fun Context.granted(permission: String) =
 internal fun Context.hasBluetooth() = bluetoothPermissions.all { it == Manifest.permission.POST_NOTIFICATIONS || granted(it) }
 
 internal fun Context.hasListener() = packageName in NotificationManagerCompat.getEnabledListenerPackages(this)
+
+/**
+ * Optional: network type (TelephonyManager.getDataNetworkType) needs READ_PHONE_STATE, and the stock app only
+ * reads the signal level with location granted. Coarse location also feeds weather and place name.
+ */
+internal val phonePermissions = arrayOf(Manifest.permission.READ_PHONE_STATE, Manifest.permission.ACCESS_COARSE_LOCATION)
+
+internal fun Context.hasPhoneState() = phonePermissions.all { granted(it) }

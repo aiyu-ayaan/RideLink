@@ -1,9 +1,13 @@
 package com.aiyu.ridelink.core
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.BatteryManager
 import android.telephony.TelephonyManager
+import androidx.core.content.ContextCompat
 import com.aiyu.ridelink.core.ble.ClusterLink
 import com.aiyu.ridelink.core.ble.LinkState
 import com.aiyu.ridelink.core.protocol.ClusterModel
@@ -214,9 +218,14 @@ class ClusterController @Inject constructor(
     private fun phoneStatus(): ClusterProtocol.PhoneStatus {
         val battery = context.getSystemService(BatteryManager::class.java)?.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY) ?: 0
         val tm = context.getSystemService(TelephonyManager::class.java)
-        val signal = runCatching { if (android.os.Build.VERSION.SDK_INT >= 28) tm?.signalStrength?.level ?: 0 else 0 }.getOrDefault(0)
-        // getDataNetworkType needs READ_PHONE_STATE; without it the cluster just shows no network type.
-        val network = runCatching { ClusterProtocol.networkTypeCode(tm?.dataNetworkType ?: 0) }.getOrDefault(0)
+        // Stock app (sendJupiterMobileData) reads the level only with location granted.
+        val signal = if (granted(Manifest.permission.ACCESS_COARSE_LOCATION) && Build.VERSION.SDK_INT >= 28) {
+            runCatching { tm?.signalStrength?.level ?: 0 }.getOrDefault(0)
+        } else 0
+        // getDataNetworkType needs READ_PHONE_STATE; without it the cluster shows no network type.
+        val network = if (granted(Manifest.permission.READ_PHONE_STATE)) {
+            runCatching { ClusterProtocol.networkTypeCode(tm?.dataNetworkType ?: 0) }.getOrDefault(0)
+        } else 0
         val now = LocalDateTime.now()
         return ClusterProtocol.PhoneStatus(
             batteryPercent = battery,
@@ -232,6 +241,8 @@ class ClusterController @Inject constructor(
             callState = callState,
         )
     }
+
+    private fun granted(permission: String) = ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
 
     private companion object {
         const val LOG_SIZE = 100

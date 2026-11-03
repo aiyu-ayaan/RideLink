@@ -12,7 +12,7 @@
 ## Next (see development/HANDOFF.md for byte layouts)
 - [x] Fix speed byte index: `frame[2]`, not `frame[3]` (ParsingMeta is 1-based)
 - [x] Auto-connect when paired (no "Start ride" needed); button becomes Disconnect
-- [ ] Request READ_PHONE_STATE + ACCESS_COARSE_LOCATION so signal and network type are real
+- [x] Request READ_PHONE_STATE + ACCESS_COARSE_LOCATION so signal and network type are real
 - [ ] Social notification counts `5B 9C` (WhatsApp/Facebook/Instagram); drop the sender-name hack
 - [ ] Weather + AQI `5B 5D` with screen switch `5B 4C 00 78` (Open-Meteo, no key) + temp in status
 - [ ] Current location name `5B 5C`
