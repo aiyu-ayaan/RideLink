@@ -167,8 +167,8 @@ class ClusterController @Inject constructor(
         statusJob?.cancel()
         statusJob = scope.launch {
             while (isActive) {
-                val s = settings.current()
-                send(ClusterProtocol.status(model(s), phoneStatus(s)))
+                val now = settings.current()
+                send(ClusterProtocol.status(model(now), phoneStatus(now)))
                 delay(ClusterProtocol.STATUS_INTERVAL_MS)
             }
         }

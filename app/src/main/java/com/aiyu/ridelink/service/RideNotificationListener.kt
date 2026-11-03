@@ -72,7 +72,7 @@ class RideNotificationListener : NotificationListenerService() {
         for (sbn in active) {
             val app = SocialNotificationParser.app(sbn.packageName) ?: continue
             val extras = sbn.notification.extras
-            val isSummary = sbn.notification.flags and Notification.FLAG_GROUP_SUMMARY != 0
+            val isSummary = (sbn.notification.flags and Notification.FLAG_GROUP_SUMMARY) != 0
             when (app) {
                 SocialNotificationParser.App.WHATSAPP -> {
                     val title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString()
