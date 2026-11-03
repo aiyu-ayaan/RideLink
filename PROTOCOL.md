@@ -98,6 +98,8 @@ Network type (`getNetworkType`, input `TelephonyManager.NETWORK_TYPE_*`): 3G typ
 LTE (13) -> 4, NR (20) -> 5, else 0. Signal strength is `SignalStrength.getLevel()` (0..4).
 RideLink sends the network type only with `READ_PHONE_STATE` and the signal level only with
 `ACCESS_COARSE_LOCATION` (the stock app gates `getSignalStrength()` on location the same way); otherwise 0.
+Overspeed limit: Settings -> Overspeed alert (30..120 km/h); off = 120 on the Jupiter family, 0xFF on older Ntorq.
+Missed calls (older Ntorq only): new missed calls from `CallLog` (`READ_CALL_LOG`), cached 30 s.
 
 ### Incoming call (`TelephonyUtils.writeNtorqCallerInformationToCluster` / `writeJupiterCallerInformationToCluster`)
 Text frame DID `0x43` with the contact name (or number with `+91` removed), no category byte.

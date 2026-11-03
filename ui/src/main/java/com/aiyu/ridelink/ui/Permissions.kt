@@ -29,12 +29,13 @@ internal fun Context.hasListener() = packageName in NotificationManagerCompat.ge
 /**
  * Optional: network type (TelephonyManager.getDataNetworkType) needs READ_PHONE_STATE, and the stock app only
  * reads the signal level with location granted. Coarse location also feeds weather and place name;
- * ANSWER_PHONE_CALLS lets the scooter buttons accept or reject a call.
+ * ANSWER_PHONE_CALLS lets the scooter buttons accept or reject a call; READ_CALL_LOG feeds the missed-call badge.
  */
 internal val phonePermissions = arrayOf(
     Manifest.permission.READ_PHONE_STATE,
     Manifest.permission.ACCESS_COARSE_LOCATION,
     Manifest.permission.ANSWER_PHONE_CALLS,
+    Manifest.permission.READ_CALL_LOG,
 )
 
 internal fun Context.hasPhoneState() = phonePermissions.all { granted(it) }

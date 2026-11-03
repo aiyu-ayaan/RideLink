@@ -18,6 +18,8 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <!-- Accept / reject calls from the scooter buttons. -->
     <uses-permission android:name="android.permission.ANSWER_PHONE_CALLS" />
+    <!-- Missed-call badge on older Ntorq displays. -->
+    <uses-permission android:name="android.permission.READ_CALL_LOG" />
 
     <!-- Weather and AQI from Open-Meteo. -->
     <uses-permission android:name="android.permission.INTERNET" />

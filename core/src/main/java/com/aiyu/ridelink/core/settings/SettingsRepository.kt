@@ -3,6 +3,7 @@ package com.aiyu.ridelink.core.settings
 import android.content.Context
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.aiyu.ridelink.core.protocol.ClusterModel
@@ -33,7 +34,17 @@ data class Settings(
     val callButtons: Boolean = true,
     /** Ride data card (odometer, trip, fuel, range, speeds, mileage) on the Ride screen. */
     val showRideData: Boolean = true,
-)
+    /** Overspeed warning on the display; the limit goes in the status frame. */
+    val overSpeedAlert: Boolean = false,
+    val overSpeedKmh: Int = DEFAULT_OVERSPEED_KMH,
+    /** Missed-call badge (older Ntorq family; the 2025+ status frame has no field for it). */
+    val missedCalls: Boolean = true,
+) {
+    companion object {
+        const val DEFAULT_OVERSPEED_KMH = 80
+        val OVERSPEED_RANGE = 30..120
+    }
+}
 
 private val Context.store by preferencesDataStore("settings")
 
@@ -52,6 +63,9 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
         val music = booleanPreferencesKey("show_music")
         val callButtons = booleanPreferencesKey("call_buttons")
         val rideData = booleanPreferencesKey("show_ride_data")
+        val overSpeedAlert = booleanPreferencesKey("overspeed_alert")
+        val overSpeedKmh = intPreferencesKey("overspeed_kmh")
+        val missedCalls = booleanPreferencesKey("missed_calls")
     }
 
     val settings: Flow<Settings> = context.store.data.map { p ->
@@ -68,6 +82,9 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
             showMusic = p[K.music] ?: true,
             callButtons = p[K.callButtons] ?: true,
             showRideData = p[K.rideData] ?: true,
+            overSpeedAlert = p[K.overSpeedAlert] ?: false,
+            overSpeedKmh = p[K.overSpeedKmh] ?: Settings.DEFAULT_OVERSPEED_KMH,
+            missedCalls = p[K.missedCalls] ?: true,
         )
     }
 
@@ -90,4 +107,7 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
     suspend fun setShowMusic(on: Boolean) { context.store.edit { it[K.music] = on } }
     suspend fun setCallButtons(on: Boolean) { context.store.edit { it[K.callButtons] = on } }
     suspend fun setShowRideData(on: Boolean) { context.store.edit { it[K.rideData] = on } }
+    suspend fun setOverSpeedAlert(on: Boolean) { context.store.edit { it[K.overSpeedAlert] = on } }
+    suspend fun setOverSpeedKmh(kmh: Int) { context.store.edit { it[K.overSpeedKmh] = kmh.coerceIn(Settings.OVERSPEED_RANGE) } }
+    suspend fun setMissedCalls(on: Boolean) { context.store.edit { it[K.missedCalls] = on } }
 }

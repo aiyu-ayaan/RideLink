@@ -1,5 +1,6 @@
 package com.aiyu.ridelink.ui.settings
 
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -13,11 +14,13 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -26,6 +29,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.aiyu.ridelink.core.protocol.ClusterModel
+import com.aiyu.ridelink.core.settings.Settings
+import kotlin.math.roundToInt
 import com.aiyu.ridelink.ui.MainViewModel
 import com.aiyu.ridelink.ui.R
 import com.aiyu.ridelink.ui.theme.Dimens
@@ -53,6 +58,11 @@ fun SettingsScreen(vm: MainViewModel) {
             item { SwitchRow(R.string.settings_nav, null, s.forwardNavigation, vm::setForwardNavigation) }
             item { SwitchRow(R.string.settings_calls, null, s.forwardCalls, vm::setForwardCalls) }
             item { SwitchRow(R.string.settings_call_buttons, R.string.settings_call_buttons_hint, s.callButtons, vm::setCallButtons) }
+            item { SwitchRow(R.string.settings_missed_calls, R.string.settings_missed_calls_hint, s.missedCalls, vm::setMissedCalls) }
+            item { SwitchRow(R.string.settings_overspeed, R.string.settings_overspeed_hint, s.overSpeedAlert, vm::setOverSpeedAlert) }
+            if (s.overSpeedAlert) {
+                item { OverSpeedSlider(s.overSpeedKmh, vm::setOverSpeedKmh) }
+            }
             item { SwitchRow(R.string.settings_social, R.string.settings_social_hint, s.showSocial, vm::setShowSocial) }
             item { SwitchRow(R.string.settings_weather, R.string.settings_weather_hint, s.showWeather, vm::setShowWeather) }
             item { SwitchRow(R.string.settings_location, R.string.settings_location_hint, s.showLocation, vm::setShowLocation) }
@@ -110,6 +120,26 @@ fun SettingsScreen(vm: MainViewModel) {
                 }
             }
         }
+    }
+}
+
+/** Limit in 5 km/h steps; saved when the finger lifts so DataStore is not written on every frame. */
+@Composable
+private fun OverSpeedSlider(saved: Int, onSave: (Int) -> Unit) {
+    var value by remember(saved) { mutableFloatStateOf(saved.toFloat()) }
+    val range = Settings.OVERSPEED_RANGE
+    Column(Modifier.padding(horizontal = Dimens.gutter)) {
+        Text(
+            stringResource(R.string.settings_overspeed_limit, value.roundToInt()),
+            style = MaterialTheme.typography.bodyLarge,
+        )
+        Slider(
+            value = value,
+            onValueChange = { value = it },
+            onValueChangeFinished = { onSave(value.roundToInt()) },
+            valueRange = range.first.toFloat()..range.last.toFloat(),
+            steps = (range.last - range.first) / 5 - 1,
+        )
     }
 }
 

@@ -18,6 +18,7 @@ import com.aiyu.ridelink.core.protocol.Maneuver
 import com.aiyu.ridelink.core.protocol.WeatherKind
 import com.aiyu.ridelink.core.settings.Settings
 import com.aiyu.ridelink.core.phone.CallControl
+import com.aiyu.ridelink.core.phone.MissedCalls
 import com.aiyu.ridelink.core.protocol.CallButton
 import com.aiyu.ridelink.core.protocol.DisplayTelemetry
 import com.aiyu.ridelink.core.settings.SettingsRepository
@@ -52,6 +53,7 @@ class ClusterController @Inject constructor(
     private val settings: SettingsRepository,
     private val weatherRepo: WeatherRepository,
     private val calls: CallControl,
+    private val missedCalls: MissedCalls,
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private var session: Job? = null
@@ -381,6 +383,8 @@ class ClusterController @Inject constructor(
             year = now.year,
             callState = callState,
             temperatureC = _weather.value?.takeIf { s.showWeather }?.temperatureC ?: 0,
+            overSpeedKmh = s.overSpeedKmh.takeIf { s.overSpeedAlert },
+            missedCalls = if (s.missedCalls) missedCalls.count() else 0,
         )
     }
 

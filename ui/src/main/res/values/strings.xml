@@ -59,7 +59,7 @@
     <string name="perm_listener_title">Notification access needed</string>
     <string name="perm_listener_body">Lets RideLink read Google Maps directions and incoming calls to show them on the scooter.</string>
     <string name="perm_phone_title">Signal, weather and calls</string>
-    <string name="perm_phone_body">Phone state, approximate location and call control let the display show your signal bars, 4G/5G, weather and where you are, and let the scooter switch answer calls.</string>
+    <string name="perm_phone_body">Phone state, approximate location, call control and call history let the display show your signal bars, 4G/5G, weather, where you are and missed calls, and let the scooter switch answer calls.</string>
     <string name="perm_open_settings">Open settings</string>
 
     <!-- Settings screen -->
@@ -83,6 +83,11 @@
     <string name="settings_music_hint">Song, artist and play state from any music app</string>
     <string name="settings_call_buttons">Answer calls from the scooter</string>
     <string name="settings_call_buttons_hint">Accept or reject a ringing call with the scooter\'s switch</string>
+    <string name="settings_missed_calls">Missed-call badge</string>
+    <string name="settings_missed_calls_hint">Older Ntorq displays only. The 2025+ display has no missed-call field.</string>
+    <string name="settings_overspeed">Overspeed alert</string>
+    <string name="settings_overspeed_hint">The display warns when you ride faster than the limit</string>
+    <string name="settings_overspeed_limit">Limit: %1$d km/h</string>
     <string name="settings_in_app">In the app</string>
     <string name="settings_ride_data">Ride data</string>
     <string name="settings_ride_data_hint">Odometer, trip, fuel, range, speeds and mileage from the display. Raw values until checked on the scooter.</string>

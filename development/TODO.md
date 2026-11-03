@@ -20,6 +20,7 @@
 - [x] Call accept/reject from scooter buttons (5A 10 byte 12) with ANSWER_PHONE_CALLS
 - [x] Ride data on the Ride screen: odometer, trip, fuel, range, avg/top speed, economy
 - [x] Settings toggles for each feature; PROTOCOL.md and tests updated
+- [x] Overspeed alert limit and missed-call badge in the status frame
 - [ ] Build the APK, run Demo ride on the emulator and refresh screenshots (blocked in the cloud session: dl.google.com not reachable)
 - [ ] Re-run fake_cluster.py with a real phone to check every new frame decodes
 
@@ -32,5 +33,4 @@
 
 ## Later
 - [ ] Map Google Maps non-English instructions (`MapsNotificationParser` is English-only)
-- [ ] Missed-call count for the older Ntorq family (needs READ_CALL_LOG)
 - [ ] Legacy Ntorq SmartXonnect (VehicleCode "9") uses separate code, not analysed
