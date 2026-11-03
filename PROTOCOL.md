@@ -1,0 +1,136 @@
+# TVS Ntorq SmartXonnect BLE protocol (recovered)
+
+Source: static decompile of TVS Connect 8.13.2 (`com.tvsm.connect`), APK sha256
+`0fd932601293660216b46d786325dc99a66e830e530f1d14f5d0020b24b3fec9`.
+Everything below is **static evidence only**. Nothing has been confirmed against a
+real scooter yet. Confirm with an HCI snoop log before relying on it.
+
+## GATT
+
+| Item | UUID | Notes |
+|---|---|---|
+| Service | `5456534D-5647-5341-5342-454E544F5251` | ASCII `TVSMVGSASBENTORQ`. Shared by Ntorq, Jupiter, Raider, Apache configs |
+| Write | `00005352-0000-1000-8000-00805f9b34fb` | write type 2 = `WRITE_TYPE_DEFAULT` (with response) |
+| Notify/read | `00005354-0000-1000-8000-00805f9b34fb` | cluster -> phone frames |
+| CCCD | `00002902-...` | enable notifications |
+
+- Scan filter: advertised name contains `TVS` (case-insensitive) and not `HUD`.
+- MTU requested: 512 (141 for iQube U467 family, 515 for U577 base / Jupiter U566).
+- Source: `com/tvs/bike/core/bikes/NtorqBLEConnectionConfig`, `JupiterBLEConnectionConfig`,
+  `com/tvs/ble/feature/handler/BleEngine` (`onPeripheralScan`, `onConnectedPeripheral`).
+
+## Auth
+
+- **Ntorq/Jupiter family: no auth step found.** `validateUserID` (frame `5B 22 <userId> ... FF`)
+  runs only for `BikeType.U388`. `writeChallenge` (AES cipher + `9A F1` frame) is only reached via
+  `processVehicleDataFrameType`, which is not the path for ICE Ntorq/Jupiter bikes.
+- Bonding: `peripheral.createBond()` exists in `BleEngine`; whether the cluster demands it is unknown.
+
+## Connect sequence (BaseBleConnectHelperService / NtorqBleHelper)
+
+1. Connect GATT, request MTU, enable notify on `5354`.
+2. `initializeDeviceServices()`:
+   - `sendInitialDataPacket()` -> rider name frame (DID `0x52`), ongoing-ride observer,
+     weather/cricket loop.
+   - `startSendingCyclicData()` -> `writeCyclicDataPacket()` every **2000 ms**.
+3. Incoming frames are parsed only after the first cyclic frame was sent (`isFirstCyclicDataSent`).
+
+## Frame format
+
+Mostly fixed 20-byte frames: `start, DID, payload..., 0xFF`.
+Start byte `0x5B` ('[') for most phone->cluster frames, `0x5A` ('Z') for nav-control and
+some cluster frames, `0x9A` for the challenge frame (other bikes).
+
+### Text frame (`BluetoothUtil.createMobileToClusterArray(text, did)`)
+`5B DID <text up to 17 bytes, UTF-8> <zero pad> FF` (20 bytes).
+Characters outside `A-Z a-z 0-9 space` become `X`; emoji become `@`.
+
+| DID | Hex | Use |
+|---|---|---|
+| 82 | `0x52` | Rider name (sent on connect) |
+| 76 | `0x4C` | Custom text line 1 / nav text / nav assist |
+| 99 | `0x63` | Custom text line 2; music artist (old) |
+| 97 | `0x61` | Album name |
+| 98 | `0x62` | Song name |
+| 101 | `0x65` | Artist name (new) |
+| 67 | `0x43` | Caller info: `5B 43 <category> <text> ... FF`; category 1=number, 2=name, 3=country |
+| 83 | `0x53` | SMS sender |
+| 80 | `0x50` | Pictogram description text |
+
+### Cyclic mobile status frame, DID `0x4A` ('J') (`BlePacketsProvider.sendNtorqMobileData`)
+Old-Ntorq default branch (U716 etc.), in order:
+```
+5B 4A
+[netStrength nibble | battery level nibble]   hex2decimal("<net><batt>")
+overspeed limit (0xFF = off)
+temperature (from weather API)
+00
+hour (12h)  minute  second  AM=1/PM=0
+missed-call count
+network type
+day  month  year%100
+00
+voice-assist/LCD flag byte
+find-my-vehicle flag (0/1)
+FF
+```
+U577 base/premium and Raider use a slightly different tail (call-state byte, padded to 20).
+
+### Navigation (new Ntorq/Jupiter path: `BleNavigationSendData.byteArrayForIceBikeNavigation`)
+Two frames. Sent **second first**, then sleep 400 ms, then first:
+
+Frame A (instruction text): `5B 4F <instruction up to 17 bytes> <pad> FF`
+
+Frame B (nav control, 20 bytes):
+```
+5A 4E
+distToNextManeuver_m   2 bytes BE (FF FF if >= 65535)
+etaMinutes             2 bytes BE
+totalDistLeft_m        3 bytes BE
+clusterPictogramId     1 byte
+lines                  1 byte (2 if instruction > 17 chars, else 1)
+navOn                  1 byte (0 = running, 0xFF = stopped; Raider "29": 1/0)
+00 00 00
+00 00 00 00
+FF
+```
+Pictogram mapping for NTORQ_U812/N251/U458/U377 (`getPictogramMappingForNtorqU812`),
+Mappls maneuver id -> cluster id:
+`0>0 1>1 2>2 3>10 4>11 5>12 6>19 7>57 8>22 11>0 12>10 13>0 14>10 15>7 16>17 17>1 18>11 19>7 20>17 21>57 22>0 23>7 24>10 25>17 36>23 41>19 50>24 51>38 52>10 53>36 54>24 55>35 56>0 57>40 65>27 66>28 67>29 68>48 69>31 70>32 71>33 72>61 73>0 74>8 75>18`
+Unmapped -> 0.
+
+## Bike families (VehicleId from TVS account, stored in prefs `VehicleId`)
+
+| Variant | BikeTypes (VehicleId) | Service class | Receiver |
+|---|---|---|---|
+| Ntorq (old) | U_716, U_577_BASE (37), U_577_PREMIUM (38) | `NtorqBleHelper` | `NtorqClusterDataReceiver` |
+| Jupiter-style | NTORQ_U812 (39), NTORQ_N251_STANDARD_NEW (43), NTORQ_U458_Race_NEW (44), NTORQ_U377_SUPER_SQUAD_NEW (45), Jupiter U279/U566/U745, Zest U714 | `N360HelperService` / `JupiterBleService` | `JupiterClusterDataReceiver` |
+
+Account-side vehicle codes (`com/tvsm/unified/utils/VehicleCode`): legacy Ntorq trims
+(Standard, Race Edition, Super Squad, XP, XT, Spider, Thor) are all code `"9"` with theme 0..8.
+That is an older SmartXonnect generation handled by separate legacy code
+(`com.tvsm.connect.bluetooth.bluetoothlegatt`), not yet analysed. Newer codes:
+U716 `34`, U577 base `37`, U577 premium `38`, U812 `39`, N251 `43`, U458 `44`, U377 `45`.
+U577 code has TFT-style features (image transfer, Wi-Fi mirroring frame `0x29`, Mappls pictogram
+map), so a TFT Ntorq XT is most likely **U577 premium (38)** or **U812 (39)**. This is
+unconfirmed until a real capture.
+
+## Official onboarding flow
+1. **Register vehicle (server, once):** `AddVehicleByVinActivity` -> `postAddVehicle` /
+   `postAddVehicleWithoutVIN` with frame no / VIN. TVS backend returns model data; app stores
+   `VehicleId`, theme, frame no, `userVehicleId` in prefs. `VehicleId` picks the BLE code family.
+2. **Pair cluster (phone only):** `UnifiedBluetoothScanFragment` -> `BleEngine.onPeripheralScan()`
+   scans by **name only** (Jupiter family: name contains `TVSBT` or `TVSiQUBE`, not `HUD`;
+   Ntorq/Raider: contains `TVS`, not `HUD`). User taps a device -> connect -> on CONNECTED the app
+   saves `(address, name)` to local Room table `PairedDeviceEntity` and prefs (`BLE_ADDRESS`,
+   `BLE_NAME`). No server call and no check that the device belongs to the registered VIN.
+3. **Later connects:** `connectBle()` reconnects to the saved address directly.
+
+Implication: a fake cluster named e.g. `TVSBT01` can be paired from the official app's
+Bluetooth scan screen. Afterwards the official app must be re-paired to the real scooter.
+
+## Open questions
+- User's scooter: Ntorq XT with TFT, 2026. Exact BikeType (38 vs 39) to confirm from capture.
+- Jupiter-family cyclic frame (`sendJupiterMobileData`), call/SMS/notification frames, and
+  cluster->phone frames (call accept/reject, music controls) still to extract.
+- Whether the cluster needs bonding or a specific frame before it shows nav.

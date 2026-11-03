@@ -1,0 +1,37 @@
+# Reverse-engineering inputs (third-party binaries, never commit)
+*.apks
+*.xapk
+jadx/
+jadx-*.zip
+
+# BLE capture logs can contain personal data (names, numbers)
+captures/
+
+# Local tooling
+.codegraph/
+.claude/settings.local.json
+
+# Android / Gradle
+*.iml
+.gradle
+.kotlin/
+/build
+/*/build
+.externalNativeBuild
+.cxx
+local.properties
+.idea/
+*.hprof
+*.apk
+*.aar
+*.aab
+keystore.properties
+*.jks
+*.keystore
+
+# Python
+__pycache__/
+
+# OS files
+.DS_Store
+Thumbs.db
