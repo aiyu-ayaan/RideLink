@@ -7,8 +7,10 @@ import android.content.pm.PackageManager
 import android.location.Geocoder
 import android.location.Location
 import android.location.LocationManager
+import android.os.CancellationSignal
 import androidx.core.content.ContextCompat
 import androidx.core.location.LocationManagerCompat
+import androidx.core.util.Consumer
 import com.aiyu.ridelink.core.protocol.ClusterProtocol
 import com.aiyu.ridelink.core.protocol.WeatherKind
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -41,11 +43,14 @@ class WeatherRepository @Inject constructor(@ApplicationContext private val cont
         if (!hasLocation()) return null
         val lm = context.getSystemService(LocationManager::class.java) ?: return null
         val fresh = withTimeoutOrNull(15_000) {
-            suspendCancellableCoroutine { cont ->
+            suspendCancellableCoroutine<Location?> { cont ->
                 val provider = if (lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) LocationManager.NETWORK_PROVIDER else LocationManager.PASSIVE_PROVIDER
-                runCatching {
-                    LocationManagerCompat.getCurrentLocation(lm, provider, null, executor) { cont.resume(it) }
-                }.onFailure { cont.resume(null) }
+                // android.os.CancellationSignal picks the non-deprecated overload (a bare null matches both).
+                val cancel = CancellationSignal()
+                cont.invokeOnCancellation { cancel.cancel() }
+                val done = Consumer<Location?> { location -> if (cont.isActive) cont.resume(location) }
+                runCatching { LocationManagerCompat.getCurrentLocation(lm, provider, cancel, executor, done) }
+                    .onFailure { if (cont.isActive) cont.resume(null) }
             }
         }
         if (fresh != null) return fresh
