@@ -43,12 +43,13 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.aiyu.ridelink.core.ClusterController
 import com.aiyu.ridelink.ui.MainViewModel
+import com.aiyu.ridelink.ui.update.BackButton
 import com.aiyu.ridelink.ui.R
 import com.aiyu.ridelink.ui.theme.Dimens
 
 /** Manual frame sender and log; used to test against tools/fake_cluster.py or the real display. */
 @Composable
-fun ConsoleScreen(vm: MainViewModel) {
+fun ConsoleScreen(vm: MainViewModel, onBack: () -> Unit) {
     val log by vm.log.collectAsStateWithLifecycle()
     val caller by vm.caller.collectAsStateWithLifecycle()
     val demo by vm.demo.collectAsStateWithLifecycle()
@@ -59,6 +60,7 @@ fun ConsoleScreen(vm: MainViewModel) {
         topBar = {
             MediumFlexibleTopAppBar(
                 title = { Text(stringResource(R.string.tab_console)) },
+                navigationIcon = { BackButton(onBack) },
                 actions = {
                     // Oldest first, so a pasted log reads in time order.
                     IconButton(onClick = {

@@ -1,5 +1,6 @@
 package com.aiyu.ridelink.ui.analytics
 
+import com.aiyu.ridelink.ui.nav.BottomBarSpacer
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
@@ -190,6 +191,7 @@ fun AnalyticsScreen(vm: AnalyticsViewModel = hiltViewModel()) {
             }
             items(state.rides, key = { it.id }) { r -> RideRow(r) { openRide = r.id } }
             item { Spacer(Modifier.height(Dimens.xl)) }
+            item { BottomBarSpacer() }
         }
     }
 

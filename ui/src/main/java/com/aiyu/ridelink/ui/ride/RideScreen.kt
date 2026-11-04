@@ -92,6 +92,7 @@ import com.aiyu.ridelink.core.protocol.ClusterProtocol.NavStep
 import com.aiyu.ridelink.core.protocol.Maneuver
 import com.aiyu.ridelink.core.protocol.hasHealth
 import com.aiyu.ridelink.ui.MainViewModel
+import com.aiyu.ridelink.ui.nav.BottomBarSpacer
 import com.aiyu.ridelink.ui.R
 import com.aiyu.ridelink.ui.bluetoothPermissions
 import com.aiyu.ridelink.ui.hasBluetooth
@@ -194,6 +195,7 @@ fun RideScreen(vm: MainViewModel, onConnect: () -> Unit, onDisconnect: () -> Uni
             }
 
             Spacer(Modifier.height(Dimens.xl))
+            BottomBarSpacer()
         }
     }
 

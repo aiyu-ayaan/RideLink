@@ -56,6 +56,33 @@ import com.aiyu.ridelink.ui.R
 import com.aiyu.ridelink.ui.hasBluetooth
 import com.aiyu.ridelink.ui.hasSms
 import com.aiyu.ridelink.ui.ride.PairSheet
+import com.aiyu.ridelink.ui.nav.BottomBarSpacer
+import com.aiyu.ridelink.ui.nav.LinkRow
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.material.icons.rounded.Call
+import androidx.compose.material.icons.rounded.Code
+import androidx.compose.material.icons.rounded.Navigation
+import androidx.compose.material.icons.rounded.PhoneAndroid
+import androidx.compose.material.icons.rounded.TextFields
+import androidx.compose.material.icons.rounded.TwoWheeler
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.LargeFlexibleTopAppBar
+import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import com.aiyu.ridelink.ui.update.BackButton
+import android.widget.Toast
+import androidx.compose.foundation.clickable
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
+import androidx.compose.material.icons.rounded.DeleteSweep
+import androidx.compose.material.icons.rounded.Download
+import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.SystemUpdate
+import androidx.compose.material.icons.rounded.Terminal
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material3.Icon
@@ -75,7 +102,15 @@ private val ClusterModel.label
     }
 
 @Composable
-fun SettingsScreen(vm: MainViewModel) {
+fun SettingsScreen(
+    vm: MainViewModel,
+    section: SettingsSection?,
+    onOpenSection: (SettingsSection) -> Unit,
+    onBack: () -> Unit,
+    onOpenConsole: () -> Unit,
+    onOpenUpdates: () -> Unit,
+    onOpenAbout: () -> Unit,
+) {
     val s by vm.settings.collectAsStateWithLifecycle()
     val detected by vm.detected.collectAsStateWithLifecycle()
     val telemetry by vm.telemetry.collectAsStateWithLifecycle()
@@ -103,10 +138,46 @@ fun SettingsScreen(vm: MainViewModel) {
     val bikes by vm.bikes.collectAsStateWithLifecycle()
     val bluetoothOk = remember(refresh) { context.hasBluetooth() }
     var pairing by remember { mutableStateOf(false) }
+    // Bumped after an export or delete so the saved-log summary re-reads the folder.
+    var logTick by remember { mutableIntStateOf(0) }
+    val exportLogs = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/plain")) { uri ->
+        val out = uri?.let { context.contentResolver.openOutputStream(it) } ?: return@rememberLauncherForActivityResult
+        vm.exportLogs(out) { ok ->
+            logTick++
+            Toast.makeText(context, if (ok) R.string.settings_logs_exported else R.string.settings_logs_none, Toast.LENGTH_SHORT).show()
+        }
+    }
 
-    Scaffold(topBar = { MediumFlexibleTopAppBar(title = { Text(stringResource(R.string.tab_forwarding)) }) }) { padding ->
+    val title = section?.title ?: R.string.tab_forwarding
+    val scroll = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    Scaffold(
+        modifier = Modifier.nestedScroll(scroll.nestedScrollConnection),
+        topBar = {
+            if (section == null) MediumFlexibleTopAppBar(title = { Text(stringResource(title)) }, scrollBehavior = scroll)
+            else LargeFlexibleTopAppBar(
+                title = { Text(stringResource(title)) },
+                navigationIcon = { BackButton(onBack) },
+                scrollBehavior = scroll,
+            )
+        },
+    ) { padding ->
         LazyColumn(Modifier.padding(padding)) {
-            item { Section(R.string.settings_display_text) }
+            when (section) {
+                null -> {
+                    item { Section(R.string.settings_group_ride) }
+                    item { SectionGroup(listOf(SettingsSection.SCOOTER, SettingsSection.DISPLAY_TEXT, SettingsSection.ON_DISPLAY, SettingsSection.CALLS, SettingsSection.IN_APP), onOpenSection) }
+                    item { Section(R.string.settings_about) }
+                    item {
+                        Group {
+                            LinkRow(Icons.Rounded.SystemUpdate, stringResource(R.string.update_title), stringResource(R.string.settings_updates_desc), onClick = onOpenUpdates)
+                            LinkRow(Icons.Rounded.Info, stringResource(R.string.about_title), stringResource(R.string.settings_about_desc), onClick = onOpenAbout)
+                        }
+                    }
+                    item { Section(R.string.settings_developer) }
+                    item { SectionGroup(listOf(SettingsSection.DEVELOPER), onOpenSection) }
+                    item { BottomBarSpacer() }
+                }
+                SettingsSection.DISPLAY_TEXT -> {
             item {
                 DisplayTextField(rider, R.string.settings_rider, R.string.settings_rider_hint) { rider = it; vm.setRiderName(it) }
             }
@@ -132,8 +203,20 @@ fun SettingsScreen(vm: MainViewModel) {
                 }
             }
 
-            item { Section(R.string.settings_forwarding) }
+                }
+                SettingsSection.ON_DISPLAY -> {
             item { SwitchRow(R.string.settings_nav, null, s.forwardNavigation, vm::setForwardNavigation) }
+            item { SwitchRow(R.string.settings_overspeed, R.string.settings_overspeed_hint, s.overSpeedAlert, vm::setOverSpeedAlert) }
+            if (s.overSpeedAlert) {
+                item { OverSpeedSlider(s.overSpeedKmh, vm::setOverSpeedKmh) }
+            }
+            item { SwitchRow(R.string.settings_social, R.string.settings_social_hint, s.showSocial, vm::setShowSocial) }
+            item { SwitchRow(R.string.settings_weather, R.string.settings_weather_hint, s.showWeather, vm::setShowWeather) }
+            item { SwitchRow(R.string.settings_location, R.string.settings_location_hint, s.showLocation, vm::setShowLocation) }
+            item { SwitchRow(R.string.settings_music, R.string.settings_music_hint, s.showMusic, vm::setShowMusic) }
+
+                }
+                SettingsSection.CALLS -> {
             item { SwitchRow(R.string.settings_calls, null, s.forwardCalls, vm::setForwardCalls) }
             item { SwitchRow(R.string.settings_call_buttons, R.string.settings_call_buttons_hint, s.callButtons, vm::setCallButtons) }
             if (s.callButtons) {
@@ -172,21 +255,14 @@ fun SettingsScreen(vm: MainViewModel) {
                 }
             }
             item { SwitchRow(R.string.settings_missed_calls, R.string.settings_missed_calls_hint, s.missedCalls, vm::setMissedCalls) }
-            item { SwitchRow(R.string.settings_overspeed, R.string.settings_overspeed_hint, s.overSpeedAlert, vm::setOverSpeedAlert) }
-            if (s.overSpeedAlert) {
-                item { OverSpeedSlider(s.overSpeedKmh, vm::setOverSpeedKmh) }
-            }
-            item { SwitchRow(R.string.settings_social, R.string.settings_social_hint, s.showSocial, vm::setShowSocial) }
-            item { SwitchRow(R.string.settings_weather, R.string.settings_weather_hint, s.showWeather, vm::setShowWeather) }
-            item { SwitchRow(R.string.settings_location, R.string.settings_location_hint, s.showLocation, vm::setShowLocation) }
-            item { SwitchRow(R.string.settings_music, R.string.settings_music_hint, s.showMusic, vm::setShowMusic) }
-
-            item { Section(R.string.settings_in_app) }
+                }
+                SettingsSection.IN_APP -> {
             item { SwitchRow(R.string.settings_ride_data, R.string.settings_ride_data_hint, s.showRideData, vm::setShowRideData) }
             item { SwitchRow(R.string.settings_vehicle, R.string.settings_vehicle_hint, s.showVehicle, vm::setShowVehicle) }
             item { SwitchRow(R.string.settings_record_rides, R.string.settings_record_rides_hint, s.recordRides, vm::setRecordRides) }
 
-            item { Section(R.string.settings_scooter) }
+                }
+                SettingsSection.SCOOTER -> {
             items(bikes, key = { it.address }) { b ->
                 val active = b.address == s.deviceAddress
                 val label = b.name ?: b.address
@@ -247,6 +323,32 @@ fun SettingsScreen(vm: MainViewModel) {
                     modifier = Modifier.selectable(selected = s.model == m, role = Role.RadioButton) { vm.setModel(m) },
                 )
             }
+
+                }
+                SettingsSection.DEVELOPER -> {
+            item { SwitchRow(R.string.settings_developer_mode, R.string.settings_developer_mode_hint, s.developerMode, vm::setDeveloperMode) }
+            if (s.developerMode) {
+                item { LinkRow(Icons.Rounded.Terminal, stringResource(R.string.tab_console), stringResource(R.string.settings_console_desc), onClick = onOpenConsole) }
+                item { SwitchRow(R.string.settings_save_logs, R.string.settings_save_logs_hint, s.saveLogs, vm::setSaveLogs) }
+                item {
+                    val saved = remember(logTick) { vm.savedLogs() }
+                    LinkRow(
+                        Icons.Rounded.Download,
+                        stringResource(R.string.settings_export_logs),
+                        if (saved.isEmpty()) stringResource(R.string.settings_logs_none)
+                        else stringResource(R.string.settings_logs_saved, saved.size, saved.sumOf { it.length() } / 1024.0),
+                        enabled = saved.isNotEmpty(),
+                    ) { exportLogs.launch("ridelink-log-${java.time.LocalDate.now()}.txt") }
+                }
+                item {
+                    LinkRow(Icons.Rounded.DeleteSweep, stringResource(R.string.settings_clear_logs), stringResource(R.string.settings_clear_logs_desc)) {
+                        vm.clearLogs { logTick++ }
+                    }
+                }
+            }
+                }
+            }
+            item { Spacer(Modifier.height(Dimens.xl)) }
         }
     }
 
@@ -352,4 +454,29 @@ private fun SwitchRow(title: Int, hint: Int?, checked: Boolean, onChange: (Boole
         trailingContent = { Switch(checked = checked, onCheckedChange = null) },
         modifier = Modifier.toggleable(value = checked, role = Role.Switch, onValueChange = onChange),
     )
+}
+
+/** Settings home groups these; each opens as its own page. */
+enum class SettingsSection(val title: Int, val summary: Int, val icon: ImageVector) {
+    SCOOTER(R.string.settings_scooter, R.string.settings_scooter_desc, Icons.Rounded.TwoWheeler),
+    DISPLAY_TEXT(R.string.settings_display_text, R.string.settings_display_text_desc, Icons.Rounded.TextFields),
+    ON_DISPLAY(R.string.settings_forwarding, R.string.settings_forwarding_desc, Icons.Rounded.Navigation),
+    CALLS(R.string.settings_calls_section, R.string.settings_calls_section_desc, Icons.Rounded.Call),
+    IN_APP(R.string.settings_in_app, R.string.settings_in_app_desc, Icons.Rounded.PhoneAndroid),
+    DEVELOPER(R.string.settings_developer, R.string.settings_developer_desc, Icons.Rounded.Code),
+}
+
+@Composable
+private fun SectionGroup(sections: List<SettingsSection>, onOpen: (SettingsSection) -> Unit) = Group {
+    sections.forEach { sec -> LinkRow(sec.icon, stringResource(sec.title), stringResource(sec.summary)) { onOpen(sec) } }
+}
+
+/** Rounded card holding a run of rows, like Rewire's Profile and About. */
+@Composable
+private fun Group(content: @Composable () -> Unit) {
+    Card(
+        Modifier.fillMaxWidth().padding(horizontal = Dimens.gutter),
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+    ) { Column { content() } }
 }

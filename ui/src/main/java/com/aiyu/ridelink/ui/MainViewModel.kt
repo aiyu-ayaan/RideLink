@@ -8,6 +8,7 @@ import com.aiyu.ridelink.core.ble.FoundCluster
 import com.aiyu.ridelink.core.protocol.ClusterModel
 import com.aiyu.ridelink.core.protocol.ClusterProtocol.NavStep
 import com.aiyu.ridelink.core.protocol.Maneuver
+import com.aiyu.ridelink.core.diag.LogFile
 import com.aiyu.ridelink.core.settings.Bike
 import com.aiyu.ridelink.core.settings.GarageStore
 import com.aiyu.ridelink.core.settings.Settings
@@ -24,6 +25,7 @@ class MainViewModel @Inject constructor(
     private val controller: ClusterController,
     private val repo: SettingsRepository,
     private val garage: GarageStore,
+    private val logFile: LogFile,
 ) : ViewModel() {
     val settings = repo.settings.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), Settings())
     val linkState = link.state
@@ -109,6 +111,16 @@ class MainViewModel @Inject constructor(
     fun setOverSpeedAlert(on: Boolean) = viewModelScope.launch { repo.setOverSpeedAlert(on) }
     fun setOverSpeedKmh(kmh: Int) = viewModelScope.launch { repo.setOverSpeedKmh(kmh) }
     fun setMissedCalls(on: Boolean) = viewModelScope.launch { repo.setMissedCalls(on) }
+
+    fun setDeveloperMode(on: Boolean) = viewModelScope.launch { repo.setDeveloperMode(on) }
+    fun setSaveLogs(on: Boolean) = viewModelScope.launch { repo.setSaveLogs(on) }
+
+    /** Saved log files, oldest first; empty until "Save logs" has written something. */
+    fun savedLogs() = logFile.files()
+
+    /** Writes every saved day into [out] (a file the rider picked). [done] gets false when nothing was saved yet. */
+    fun exportLogs(out: java.io.OutputStream, done: (Boolean) -> Unit) = viewModelScope.launch { done(logFile.exportTo(out)) }
+    fun clearLogs(done: () -> Unit) = viewModelScope.launch { logFile.clear(); done() }
 
     fun setDemo(on: Boolean) = controller.setDemo(on)
     fun sendText(text: String) = controller.sendTestText(text)

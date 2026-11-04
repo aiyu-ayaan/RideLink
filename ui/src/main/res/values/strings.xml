@@ -211,4 +211,89 @@
     <string name="chart_ride_range">Range left</string>
     <string name="settings_record_rides">Record rides for Analytics</string>
     <string name="settings_record_rides_hint">Distance, speed, mileage and fuel every 5 seconds while connected. Stays on this phone.</string>
+
+    <!-- Navigation -->
+    <string name="back">Back</string>
+
+    <!-- Settings: about and developer options -->
+    <string name="settings_about">About</string>
+    <string name="settings_updates_desc">Check for a newer RideLink release</string>
+    <string name="settings_about_desc">Version, developer and open-source licences</string>
+    <string name="settings_developer">Developer options</string>
+    <string name="settings_developer_mode">Developer mode</string>
+    <string name="settings_developer_mode_hint">Shows the Console: frame log, test frames and demo ride.</string>
+    <string name="settings_console_desc">Every frame sent to and received from the display</string>
+    <string name="settings_save_logs">Save logs</string>
+    <string name="settings_save_logs_hint">Also write the Console log to a file on this phone (last 7 days). Logs include caller names and numbers.</string>
+    <string name="settings_export_logs">Export saved logs</string>
+    <string name="settings_logs_none">No saved logs yet</string>
+    <string name="settings_logs_saved">%1$d day(s) saved · %2$.1f KB</string>
+    <string name="settings_logs_exported">Logs exported</string>
+    <string name="settings_clear_logs">Delete saved logs</string>
+    <string name="settings_clear_logs_desc">Removes the log files from this phone</string>
+
+    <!-- Updates -->
+    <string name="update_title">Updates</string>
+    <string name="update_subtitle">You\'re on %1$s</string>
+    <string name="update_available">RideLink %1$s is available</string>
+    <string name="update_youre_on">You\'re on %1$s</string>
+    <string name="update_download">Download</string>
+    <string name="update_download_size"> (%1$.1f MB)</string>
+    <string name="update_downloading">Downloading… %1$d%%</string>
+    <string name="update_install">Install</string>
+    <string name="update_install_permission">Android asks you to allow RideLink to install apps once. Nothing installs without your confirmation.</string>
+    <string name="update_allow_installs">Allow installs</string>
+    <string name="update_not_now">Not now</string>
+    <string name="update_checking">Checking GitHub…</string>
+    <string name="update_up_to_date">You\'re up to date</string>
+    <string name="update_last_checked">Last checked %1$s</string>
+    <string name="update_not_checked">Not checked yet</string>
+    <string name="update_check">Check for updates</string>
+    <string name="update_debug_build">This is a debug build. Updates are for release builds installed from GitHub.</string>
+    <string name="update_auto">Check on start</string>
+    <string name="update_auto_desc">Look for a new release when RideLink opens, at most once an hour. Only the public release list is fetched.</string>
+    <string name="update_channel">Release channel</string>
+    <string name="update_channel_stable">Stable</string>
+    <string name="update_channel_beta">Beta</string>
+    <string name="update_channel_alpha">Alpha</string>
+    <string name="update_channel_stable_desc">Finished releases only.</string>
+    <string name="update_channel_beta_desc">Release candidates and stable releases.</string>
+    <string name="update_channel_alpha_desc">Every build, as soon as it is released. Expect rough edges.</string>
+    <string name="update_all_releases">All releases on GitHub</string>
+    <string name="update_err_github">GitHub answered %1$s. Try again later.</string>
+    <string name="update_err_check">Could not reach GitHub. Check your connection.</string>
+    <string name="update_err_download">The download failed. Try again.</string>
+    <string name="update_err_checksum">The download was damaged (checksum mismatch). Try again.</string>
+    <string name="update_err_start">Could not start the installer.</string>
+    <string name="update_err_signature">This APK is signed with another key than the installed app. Uninstall RideLink first, then install it from GitHub.</string>
+    <string name="update_err_install">The install failed.</string>
+
+    <!-- About -->
+    <string name="about_title">About</string>
+    <string name="about_tagline">Your scooter display, without the account.</string>
+    <string name="about_app">App</string>
+    <string name="about_version">Version %1$s (%2$d)</string>
+    <string name="about_updates_desc">Check for a newer release</string>
+    <string name="about_privacy">Privacy</string>
+    <string name="about_privacy_desc">Everything stays on this phone. No account, no server, no analytics.</string>
+    <string name="about_disclaimer">Not an official app</string>
+    <string name="about_disclaimer_desc">RideLink is a personal project and is not affiliated with or endorsed by TVS Motor Company.</string>
+    <string name="about_developer">Developer</string>
+    <string name="about_built">Built RideLink.</string>
+    <string name="about_github">GitHub</string>
+    <string name="about_portfolio">Portfolio</string>
+    <string name="about_open_source">Open source</string>
+    <string name="about_source">Source code</string>
+    <string name="about_acknowledgements">Acknowledgements</string>
+    <string name="about_acknowledgements_desc">Libraries and data RideLink is built on</string>
+    <string name="about_acknowledgements_subtitle">Open-source libraries behind RideLink</string>
+    <!-- Settings home sections -->
+    <string name="settings_group_ride">Ride</string>
+    <string name="settings_scooter_desc">Saved scooters and the display model</string>
+    <string name="settings_display_text_desc">Rider name and custom lines on the display</string>
+    <string name="settings_forwarding_desc">Navigation, chats, weather, location, music, overspeed</string>
+    <string name="settings_calls_section">Calls</string>
+    <string name="settings_calls_section_desc">Caller on the display, scooter buttons, reject with SMS</string>
+    <string name="settings_in_app_desc">Ride data, vehicle health, ride recording</string>
+    <string name="settings_developer_desc">Console, saved logs</string>
 </resources>

@@ -9,6 +9,7 @@ import android.os.BatteryManager
 import android.telephony.SubscriptionManager
 import android.telephony.TelephonyManager
 import androidx.core.content.ContextCompat
+import com.aiyu.ridelink.core.diag.LogFile
 import com.aiyu.ridelink.core.ble.ClusterLink
 import com.aiyu.ridelink.core.ble.LinkState
 import com.aiyu.ridelink.core.display.DisplayTemplate
@@ -62,6 +63,7 @@ class ClusterController @Inject constructor(
     private val weatherRepo: WeatherRepository,
     private val calls: CallControl,
     private val missedCalls: MissedCalls,
+    private val logFile: LogFile,
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private var session: Job? = null
@@ -508,6 +510,7 @@ class ClusterController @Inject constructor(
     fun note(text: String) {
         val line = FrameLog(LocalDateTime.now().toLocalTime().withNano(0).toString(), "note", ok = true, rx = true, decoded = text)
         _log.update { (listOf(line) + it).take(LOG_SIZE) }
+        logFile.write(line.line())
     }
 
     private fun log(frame: ByteArray, ok: Boolean, rx: Boolean = false) {
@@ -519,6 +522,7 @@ class ClusterController @Inject constructor(
             FrameDecoder.decode(frame),
         )
         _log.update { (listOf(line) + it).take(LOG_SIZE) }
+        logFile.write(line.line())
     }
 
     @SuppressLint("MissingPermission")
