@@ -35,10 +35,31 @@ class MapsNotificationParserTest {
     }
 
     @Test fun directionInOtherFieldAndInPrefix() {
-        val step = MapsNotificationParser.parse("In 300 m", "Main St", "5 min · 2 km")
-        assertEquals(300, step!!.distanceToTurnM)
-        val s2 = MapsNotificationParser.parse("Turn left", "Main St · 200 m", null)
-        assertEquals(Maneuver.LEFT, s2!!.maneuver)
+        val step = MapsNotificationParser.parse("In 300 m", "Main St", "5 min · 2 km")!!
+        assertEquals(300, step.distanceToTurnM)
+        assertEquals("Main St", step.instruction)
+
+        val s2 = MapsNotificationParser.parse("Turn left", "Main St · 200 m", null)!!
+        assertEquals(200, s2.distanceToTurnM)
+        assertEquals(Maneuver.LEFT, s2.maneuver)
+
+        // Street alone in one field, direction next to the distance in the other.
+        val s3 = MapsNotificationParser.parse("150 m · Turn right", "MG Road", null)!!
+        assertEquals(150, s3.distanceToTurnM)
+        assertEquals(Maneuver.RIGHT, s3.maneuver)
+
+        // Single field: distance stripped, rest is the instruction.
+        val s4 = MapsNotificationParser.parse("Then 50 m, keep left", null, null)!!
+        assertEquals(50, s4.distanceToTurnM)
+        assertEquals("keep left", s4.instruction)
+        assertEquals(Maneuver.FORK_LEFT, s4.maneuver)
+
+        // Explicit straight is not overridden by a street name with "Left" in it.
+        assertEquals(Maneuver.STRAIGHT, MapsNotificationParser.parse("Continue onto Ring Rd", "400 m · Left Bank", null)!!.maneuver)
+
+        // Numbers inside road names are not distances.
+        assertNull(MapsNotificationParser.parse("NH48 bypass", "Sector 15", null))
+
         assertEquals(Maneuver.SLIGHT_RIGHT, MapsNotificationParser.maneuverOf("Bear right onto NH 48"))
         assertEquals(Maneuver.FORK_LEFT, MapsNotificationParser.maneuverOf("Take the ramp on the left"))
     }

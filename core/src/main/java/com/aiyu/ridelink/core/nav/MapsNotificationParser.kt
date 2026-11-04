@@ -12,23 +12,30 @@ import com.aiyu.ridelink.core.protocol.Maneuver
 object MapsNotificationParser {
     const val MAPS_PACKAGE = "com.google.android.apps.maps"
 
-    private val distance = Regex("""(?:^|\b(?:in|then)\s+)\s*(\d+(?:[.,]\d+)?)\s*(km|mi|ft|m)\b""", RegexOption.IGNORE_CASE)
+    // Anywhere in the field: "300 m", "In 300 m", "Main St · 300 m". Not inside a longer number.
+    private val distance = Regex("""(?<![\w.,])(\d+(?:[.,]\d+)?)\s*(km|mi|ft|m)\b""", RegexOption.IGNORE_CASE)
     private val minutes = Regex("""(?:(\d+)\s*h(?:r|our)?s?\s*)?(\d+)\s*min""", RegexOption.IGNORE_CASE)
     private val km = Regex("""(\d+(?:[.,]\d+)?)\s*(km|m)\b""", RegexOption.IGNORE_CASE)
+    private val separators = Regex("""^(?:[\s·•\-–,]|\b(?:in|then)\b)+|[\s·•\-–,]+$""", RegexOption.IGNORE_CASE)
+    private val explicitStraight = Regex("""\b(continue|straight|head)\b""", RegexOption.IGNORE_CASE)
 
     fun parse(title: String?, text: String?, subText: String?): NavStep? {
         val parts = listOfNotNull(title, text).map(String::trim).filter(String::isNotEmpty)
         val distPart = parts.firstOrNull { distance.containsMatchIn(it) } ?: return null
-        val instruction = (parts - distPart).firstOrNull()
-            ?: distance.replace(distPart, "").trim(' ', '·', '-').ifEmpty { return null }
+        val distMatch = distance.find(distPart)!!
+        val distRest = distPart.removeRange(distMatch.range).replace(separators, "")
+        val instruction = (parts - distPart).firstOrNull() ?: distRest.ifEmpty { return null }
         return NavStep(
-            distanceToTurnM = toMeters(distance.find(distPart)!!),
+            distanceToTurnM = toMeters(distMatch),
             etaSeconds = subText?.let(minutes::find)?.let { m ->
                 ((m.groupValues[1].toLongOrNull() ?: 0) * 60 + m.groupValues[2].toLong()) * 60
             } ?: 0,
             distanceLeftM = subText?.let(km::find)?.let(::toMeters) ?: 0,
-            // Maps sometimes puts only the street in one field and the direction in the other.
-            maneuver = maneuverOf(instruction).takeIf { it != Maneuver.STRAIGHT } ?: maneuverOf((parts - distPart).joinToString(" ")),
+            maneuver = maneuverOf(instruction).let { m ->
+                // Maps sometimes puts only the street in one field and the direction next to the distance.
+                if (m != Maneuver.STRAIGHT || explicitStraight.containsMatchIn(instruction)) m
+                else maneuverOf("$instruction $distRest")
+            },
             instruction = instruction,
         )
     }
