@@ -58,7 +58,8 @@ object ClusterProtocol {
      * ("(987) 654-3210", "+91 98765 43210") is sent as digits only; the display has no ( ) - +.
      */
     fun caller(nameOrNumber: String): ByteArray {
-        val v = nameOrNumber.replace("+91", "").trim()
+        // Dialers wrap numbers in invisible bidi marks (U+202A..U+202C); drop format characters first.
+        val v = nameOrNumber.filterNot { Character.getType(it) == Character.FORMAT.toInt() }.replace("+91", "").trim()
         return text(DID_CALLER, if (v.matches(PHONE_NUMBER)) v.filter(Char::isDigit) else v)
     }
 
