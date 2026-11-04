@@ -33,4 +33,13 @@ class MapsNotificationParserTest {
     @Test fun nonNavigationNotificationIsIgnored() {
         assertNull(MapsNotificationParser.parse("Location sharing", "You are sharing", null))
     }
+
+    @Test fun directionInOtherFieldAndInPrefix() {
+        val step = MapsNotificationParser.parse("In 300 m", "Main St", "5 min · 2 km")
+        assertEquals(300, step!!.distanceToTurnM)
+        val s2 = MapsNotificationParser.parse("Turn left", "Main St · 200 m", null)
+        assertEquals(Maneuver.LEFT, s2!!.maneuver)
+        assertEquals(Maneuver.SLIGHT_RIGHT, MapsNotificationParser.maneuverOf("Bear right onto NH 48"))
+        assertEquals(Maneuver.FORK_LEFT, MapsNotificationParser.maneuverOf("Take the ramp on the left"))
+    }
 }
