@@ -1,0 +1,1 @@
+The official TVS Connect app sits at 2.7★ on Google Play, so I rebuilt it. RideLink puts Google Maps turns and caller ID on your NTORQ's SmartXonnect display over Bluetooth. No account, no cloud, no tracking. Free and open source: github.com/aiyu-ayaan/RideLink

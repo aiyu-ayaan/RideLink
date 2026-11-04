@@ -1,0 +1,9 @@
+# Render intermediates and installed tooling (regenerate with work/README.md)
+work/node_modules/
+work/package-lock.json
+work/fonts/
+work/seg/
+work/stills/
+work/sheet*.png
+work/poster.png
+work/score.wav
