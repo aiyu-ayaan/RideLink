@@ -19,7 +19,6 @@ import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MediumFlexibleTopAppBar
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
@@ -27,7 +26,6 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -55,7 +53,13 @@ import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
 import com.aiyu.ridelink.ui.MainViewModel
 import com.aiyu.ridelink.ui.R
+import com.aiyu.ridelink.ui.hasBluetooth
 import com.aiyu.ridelink.ui.hasSms
+import com.aiyu.ridelink.ui.ride.PairSheet
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import com.aiyu.ridelink.ui.smsPermissions
 import com.aiyu.ridelink.ui.theme.Dimens
 
@@ -96,6 +100,9 @@ fun SettingsScreen(vm: MainViewModel) {
     val overlayOk = remember(refresh) { AndroidSettings.canDrawOverlays(context) }
     val askSms = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { refresh++ }
     val linkReady = link is LinkState.Ready
+    val bikes by vm.bikes.collectAsStateWithLifecycle()
+    val bluetoothOk = remember(refresh) { context.hasBluetooth() }
+    var pairing by remember { mutableStateOf(false) }
 
     Scaffold(topBar = { MediumFlexibleTopAppBar(title = { Text(stringResource(R.string.tab_forwarding)) }) }) { padding ->
         LazyColumn(Modifier.padding(padding)) {
@@ -180,6 +187,32 @@ fun SettingsScreen(vm: MainViewModel) {
             item { SwitchRow(R.string.settings_record_rides, R.string.settings_record_rides_hint, s.recordRides, vm::setRecordRides) }
 
             item { Section(R.string.settings_scooter) }
+            items(bikes, key = { it.address }) { b ->
+                val active = b.address == s.deviceAddress
+                val label = b.name ?: b.address
+                ListItem(
+                    headlineContent = { Text(label) },
+                    supportingContent = { Text(if (active) stringResource(R.string.settings_bike_active, b.address) else b.address) },
+                    leadingContent = { RadioButton(selected = active, onClick = null) },
+                    trailingContent = {
+                        IconButton(onClick = { vm.remove(b) }) {
+                            Icon(
+                                Icons.Rounded.Delete,
+                                contentDescription = stringResource(R.string.settings_remove_scooter, label),
+                                tint = MaterialTheme.colorScheme.error,
+                            )
+                        }
+                    },
+                    modifier = Modifier.selectable(selected = active, role = Role.RadioButton) { vm.select(b) },
+                )
+            }
+            item {
+                Row(Modifier.fillMaxWidth().padding(horizontal = Dimens.gutter), horizontalArrangement = Arrangement.End) {
+                    FilledTonalButton(onClick = { pairing = true }, enabled = bluetoothOk) {
+                        Text(stringResource(R.string.settings_add_scooter))
+                    }
+                }
+            }
             item {
                 ListItem(
                     headlineContent = { Text(stringResource(R.string.settings_model)) },
@@ -214,21 +247,10 @@ fun SettingsScreen(vm: MainViewModel) {
                     modifier = Modifier.selectable(selected = s.model == m, role = Role.RadioButton) { vm.setModel(m) },
                 )
             }
-            if (s.deviceAddress != null) {
-                item {
-                    ListItem(
-                        headlineContent = { Text(stringResource(R.string.settings_paired, s.deviceName ?: s.deviceAddress!!)) },
-                        trailingContent = {
-                            OutlinedButton(
-                                onClick = vm::forget,
-                                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
-                            ) { Text(stringResource(R.string.settings_forget)) }
-                        },
-                    )
-                }
-            }
         }
     }
+
+    if (pairing) PairSheet(vm) { pairing = false }
 }
 
 /** 17 characters max, the display's text frame width; the counter shows what is left. */

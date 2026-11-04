@@ -8,6 +8,8 @@ import com.aiyu.ridelink.core.ble.FoundCluster
 import com.aiyu.ridelink.core.protocol.ClusterModel
 import com.aiyu.ridelink.core.protocol.ClusterProtocol.NavStep
 import com.aiyu.ridelink.core.protocol.Maneuver
+import com.aiyu.ridelink.core.settings.Bike
+import com.aiyu.ridelink.core.settings.GarageStore
 import com.aiyu.ridelink.core.settings.Settings
 import com.aiyu.ridelink.core.settings.SettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -21,6 +23,7 @@ class MainViewModel @Inject constructor(
     private val link: ClusterLink,
     private val controller: ClusterController,
     private val repo: SettingsRepository,
+    private val garage: GarageStore,
 ) : ViewModel() {
     val settings = repo.settings.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), Settings())
     val linkState = link.state
@@ -44,18 +47,45 @@ class MainViewModel @Inject constructor(
     fun startScan() = link.startScan()
     fun stopScan() = link.stopScan()
 
+    val bikes = garage.bikes
+
+    /** Saves the scooter and makes it the active one. */
     fun pair(cluster: FoundCluster) = viewModelScope.launch {
         link.stopScan()
+        val bike = garage.bikes.value.find { it.address == cluster.address }?.copy(name = cluster.name)
+            ?: Bike(cluster.address, cluster.name, model = null)
+        garage.add(bike)
+        activate(bike)
+    }
+
+    /** Switches to another saved scooter; AutoConnect connects to it once the old link is idle. */
+    fun select(bike: Bike) = viewModelScope.launch {
+        if (bike.address != repo.current().deviceAddress) activate(bike)
+    }
+
+    /** Removes a saved scooter; removing the active one switches to the next saved one, if any. */
+    fun remove(bike: Bike) = viewModelScope.launch {
+        garage.remove(bike.address)
+        if (bike.address != repo.current().deviceAddress) return@launch
+        val next = garage.bikes.value.firstOrNull()
+        if (next != null) activate(next) else {
+            controller.stopForBikeSwitch()
+            repo.setDevice(null, null)
+            repo.setModel(null)
+        }
+    }
+
+    private suspend fun activate(bike: Bike) {
+        if (repo.current().deviceAddress != null) controller.stopForBikeSwitch()
         userStopped = false
-        repo.setDevice(cluster.address, cluster.name)
+        repo.setModel(bike.model)
+        repo.setDevice(bike.address, bike.name)
     }
 
-    fun forget() = viewModelScope.launch {
-        controller.stop()
-        repo.setDevice(null, null)
+    fun setModel(model: ClusterModel?) = viewModelScope.launch {
+        repo.setModel(model)
+        repo.current().deviceAddress?.let { garage.setModel(it, model) }
     }
-
-    fun setModel(model: ClusterModel?) = viewModelScope.launch { repo.setModel(model) }
     fun setRiderName(name: String) = viewModelScope.launch { repo.setRiderName(name) }
     fun setDisplayLines(line1: String, line2: String) = viewModelScope.launch { repo.setDisplayLines(line1, line2) }
     fun sendDisplayText() = controller.sendDisplayTextNow()

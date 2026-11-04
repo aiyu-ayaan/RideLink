@@ -362,7 +362,7 @@ private fun PermissionCard(icon: ImageVector, title: Int, body: Int, action: Int
 }
 
 @Composable
-private fun PairSheet(vm: MainViewModel, onDone: () -> Unit) {
+internal fun PairSheet(vm: MainViewModel, onDone: () -> Unit) {
     val found by vm.found.collectAsStateWithLifecycle()
     val scanning by vm.scanning.collectAsStateWithLifecycle()
     LaunchedEffect(Unit) { vm.startScan() }
