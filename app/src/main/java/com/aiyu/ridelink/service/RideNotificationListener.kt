@@ -1,7 +1,9 @@
 package com.aiyu.ridelink.service
 
 import android.app.Notification
+import android.app.Person
 import android.content.ComponentName
+import android.os.Build
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import com.aiyu.ridelink.core.ClusterController
@@ -25,13 +27,46 @@ class RideNotificationListener : NotificationListenerService() {
         val text = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString()
         when {
             sbn.packageName == MapsNotificationParser.MAPS_PACKAGE -> {
-                val step = MapsNotificationParser.parse(title, text, extras.getCharSequence(Notification.EXTRA_SUB_TEXT)?.toString()) ?: return
+                val sub = extras.getCharSequence(Notification.EXTRA_SUB_TEXT)?.toString()
+                val step = MapsNotificationParser.parse(title, text, sub)
+                if (step == null) {
+                    noteOnce("Maps not parsed: title=$title | text=$text | sub=$sub")
+                    return
+                }
                 lastNavKey = sbn.key
                 controller.onNavigation(step)
             }
-            n.category == Notification.CATEGORY_CALL && isIncoming(n) -> controller.onIncomingCall(title ?: text ?: return)
+            n.category == Notification.CATEGORY_CALL -> {
+                val incoming = isIncoming(n)
+                noteOnce("Call ${if (incoming) "ringing" else "not ringing"}: ${sbn.packageName} title=$title | text=$text")
+                when {
+                    incoming -> controller.onIncomingCall(callerName(n) ?: return)
+                    // Answered: the dialer swaps the ringing notification for an ongoing one; stop the caller frames.
+                    controller.caller.value != null -> controller.onCallEnded()
+                }
+            }
             SocialNotificationParser.app(sbn.packageName) != null -> recountSocial()
         }
+    }
+
+    private var lastNote: String? = null
+
+    /** Console note, skipped when it repeats (Maps reposts every few seconds). */
+    private fun noteOnce(text: String) {
+        if (text == lastNote) return
+        lastNote = text
+        controller.note(text)
+    }
+
+    /** CallStyle puts the caller in EXTRA_CALL_PERSON and may leave the title empty. */
+    private fun callerName(n: Notification): String? {
+        val person = if (Build.VERSION.SDK_INT >= 31) {
+            @Suppress("DEPRECATION")
+            n.extras.getParcelable<Person>(Notification.EXTRA_CALL_PERSON)?.name?.toString()
+        } else null
+        return n.extras.getCharSequence(Notification.EXTRA_TITLE)?.toString()?.takeIf { it.isNotBlank() }
+            ?: person?.takeIf { it.isNotBlank() }
+            ?: n.extras.getCharSequence(Notification.EXTRA_TEXT)?.toString()?.takeIf { it.isNotBlank() }
     }
 
     override fun onNotificationRemoved(sbn: StatusBarNotification) {
@@ -92,9 +127,13 @@ class RideNotificationListener : NotificationListenerService() {
         controller.onSocialCounts(ClusterProtocol.SocialCounts(wa.messages, wa.chats, fb, ig))
     }
 
-    /** Ringing calls carry CallStyle type INCOMING (API 31+) or a full-screen intent on older dialers. */
+    /**
+     * Ringing calls carry CallStyle type INCOMING (API 31+). Dialers without CallStyle: a full-screen intent,
+     * or no running call timer (an answered call shows a chronometer).
+     */
     private fun isIncoming(n: Notification): Boolean {
         val type = n.extras.getInt(Notification.EXTRA_CALL_TYPE, -1)
-        return if (type != -1) type == Notification.CallStyle.CALL_TYPE_INCOMING else n.fullScreenIntent != null
+        if (type != -1) return type == Notification.CallStyle.CALL_TYPE_INCOMING
+        return n.fullScreenIntent != null || !n.extras.getBoolean(Notification.EXTRA_SHOW_CHRONOMETER)
     }
 }

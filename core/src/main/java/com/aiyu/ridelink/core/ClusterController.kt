@@ -497,6 +497,12 @@ class ClusterController @Inject constructor(
 
     private suspend fun send(frame: ByteArray): Boolean = link.send(frame).also { log(frame, it) }
 
+    /** Console line for a phone-side event (raw Maps / call notification), so "Copy log" shows what the app saw. */
+    fun note(text: String) {
+        val line = FrameLog(LocalDateTime.now().toLocalTime().withNano(0).toString(), "note", ok = true, rx = true, decoded = text)
+        _log.update { (listOf(line) + it).take(LOG_SIZE) }
+    }
+
     private fun log(frame: ByteArray, ok: Boolean, rx: Boolean = false) {
         val line = FrameLog(
             LocalDateTime.now().toLocalTime().withNano(0).toString(),

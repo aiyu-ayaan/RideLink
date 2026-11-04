@@ -4,9 +4,11 @@ import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
+import android.service.notification.NotificationListenerService
 import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
@@ -34,6 +36,8 @@ class ClusterService : LifecycleService() {
         }
         ServiceCompat.startForeground(this, NOTIFICATION_ID, notification(getString(R.string.status_connecting)), ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE)
         controller.start()
+        // Android can leave the listener unbound after an app update; without it no Maps or call events arrive.
+        runCatching { NotificationListenerService.requestRebind(ComponentName(this, RideNotificationListener::class.java)) }
         lifecycleScope.launch {
             controller.linkState.collect { state ->
                 val text = when (state) {
