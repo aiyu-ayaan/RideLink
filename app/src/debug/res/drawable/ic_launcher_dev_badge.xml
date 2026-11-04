@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Debug builds only: a "DEV" tag on the launcher icon, inside the adaptive-icon safe zone. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <path android:fillColor="#FFB82E" android:pathData="M40,64 h28 a6,6 0 0 1 6,6 v0 a6,6 0 0 1 -6,6 h-28 a6,6 0 0 1 -6,-6 v0 a6,6 0 0 1 6,-6 z" />
+    <path android:strokeColor="#1C1B1F" android:strokeWidth="1.6" android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:pathData="M42,67 L42,73 L44.5,73 Q47,73 47,70 Q47,67 44.5,67 Z M56,67 L51,67 L51,73 L56,73 M51,70 L55,70 M59,67 L62,73 L65,67" />
+</vector>

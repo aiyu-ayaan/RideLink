@@ -3,4 +3,7 @@
     <!-- Android 12+ dark: dynamic surface ~ neutral 10, primary = accent 80. -->
     <color name="splash_background">@android:color/system_neutral1_900</color>
     <color name="splash_ring">@android:color/system_accent1_200</color>
+    <!-- Launcher icon in the app's tonal colours: primary container behind an on-primary-container ring. -->
+    <color name="icon_background">@android:color/system_accent1_700</color>
+    <color name="icon_ring">@android:color/system_accent1_100</color>
 </resources>

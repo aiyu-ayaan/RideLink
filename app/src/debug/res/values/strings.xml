@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Debug builds say so: launcher label and in-app title (overrides ui's app_name). -->
+    <string name="app_name">RideLink Dev</string>
+</resources>

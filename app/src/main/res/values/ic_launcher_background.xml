@@ -2,5 +2,5 @@
 <resources>
     <!-- Brand palette (development/brand/BRAND.md). -->
     <color name="brand_red">#B3261E</color>
-    <color name="ic_launcher_background">@color/brand_red</color>
+    <color name="ic_launcher_background">@color/icon_background</color>
 </resources>

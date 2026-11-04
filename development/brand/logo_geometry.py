@@ -122,7 +122,8 @@ if __name__ == "__main__":
     ui_res = os.path.join(root, "ui", "src", "main", "res")
     # Adaptive icon: 108 dp canvas, the mark (outer diameter 58) inside the 66 dp safe circle.
     s_icon = 58.0 / ((R + W / 2) * 2)
-    write(os.path.join(app_res, "drawable", "ic_launcher_foreground.xml"), vector(108, 108, 54, 54, s_icon, WHITE, AMBER))
+    # Ring in the app's tonal colour (values*/splash_colors.xml icon_ring), on icon_background, to match the theme.
+    write(os.path.join(app_res, "drawable", "ic_launcher_foreground.xml"), vector(108, 108, 54, 54, s_icon, "@color/icon_ring", AMBER))
     write(os.path.join(app_res, "drawable", "ic_launcher_monochrome.xml"), vector(108, 108, 54, 54, s_icon, INK, INK))
     # Notification small icon: white silhouette, 24 dp with 1 dp padding.
     write(os.path.join(ui_res, "drawable", "ic_ridelink.xml"), vector(24, 24, 12, 12, 22.0 / ((R + W / 2) * 2), WHITE, WHITE))
