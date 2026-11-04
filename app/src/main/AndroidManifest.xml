@@ -27,6 +27,8 @@
 
     <!-- Weather and AQI from Open-Meteo. -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Self-update from GitHub releases: the system installer still asks before anything is replaced. -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
@@ -68,6 +70,10 @@
                 <action android:name="android.service.notification.NotificationListenerService" />
             </intent-filter>
         </service>
+
+        <receiver
+            android:name=".service.UpdateInstallReceiver"
+            android:exported="false" />
 
         <receiver
             android:name=".service.BootReceiver"

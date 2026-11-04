@@ -4,9 +4,11 @@ import android.content.Context
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.aiyu.ridelink.core.protocol.ClusterModel
+import com.aiyu.ridelink.core.update.UpdateChannel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -51,6 +53,17 @@ data class Settings(
     val overSpeedKmh: Int = DEFAULT_OVERSPEED_KMH,
     /** Missed-call badge (older Ntorq family; the 2025+ status frame has no field for it). */
     val missedCalls: Boolean = true,
+    /** Look for a newer GitHub release on app start (at most once an hour). */
+    val updatesEnabled: Boolean = true,
+    /** null = the channel of the installed build (an alpha install follows alpha). */
+    val updateChannel: UpdateChannel? = null,
+    val updateLastChecked: Long = 0,
+    /** "Not now" on an update offer: no launch check until then. */
+    val updateSnoozedUntil: Long = 0,
+    /** Developer options: shows the Console (frame log, test frames) in Settings. */
+    val developerMode: Boolean = false,
+    /** Also write every Console line to a file on the phone, for sharing after a ride. */
+    val saveLogs: Boolean = false,
 ) {
     companion object {
         const val DEFAULT_OVERSPEED_KMH = 80
@@ -85,6 +98,12 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
         val overSpeedAlert = booleanPreferencesKey("overspeed_alert")
         val overSpeedKmh = intPreferencesKey("overspeed_kmh")
         val missedCalls = booleanPreferencesKey("missed_calls")
+        val updates = booleanPreferencesKey("updates_enabled")
+        val updateChannel = stringPreferencesKey("update_channel")
+        val updateChecked = longPreferencesKey("update_last_checked")
+        val updateSnoozed = longPreferencesKey("update_snoozed_until")
+        val developer = booleanPreferencesKey("developer_mode")
+        val saveLogs = booleanPreferencesKey("save_logs")
     }
 
     val settings: Flow<Settings> = context.store.data.map { p ->
@@ -111,6 +130,12 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
             overSpeedAlert = p[K.overSpeedAlert] ?: false,
             overSpeedKmh = p[K.overSpeedKmh] ?: Settings.DEFAULT_OVERSPEED_KMH,
             missedCalls = p[K.missedCalls] ?: true,
+            updatesEnabled = p[K.updates] ?: true,
+            updateChannel = p[K.updateChannel]?.let { runCatching { UpdateChannel.valueOf(it) }.getOrNull() },
+            updateLastChecked = p[K.updateChecked] ?: 0,
+            updateSnoozedUntil = p[K.updateSnoozed] ?: 0,
+            developerMode = p[K.developer] ?: false,
+            saveLogs = p[K.saveLogs] ?: false,
         )
     }
 
@@ -147,4 +172,10 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
     suspend fun setOverSpeedAlert(on: Boolean) { context.store.edit { it[K.overSpeedAlert] = on } }
     suspend fun setOverSpeedKmh(kmh: Int) { context.store.edit { it[K.overSpeedKmh] = kmh.coerceIn(Settings.OVERSPEED_RANGE) } }
     suspend fun setMissedCalls(on: Boolean) { context.store.edit { it[K.missedCalls] = on } }
+    suspend fun setUpdatesEnabled(on: Boolean) { context.store.edit { it[K.updates] = on } }
+    suspend fun setUpdateChannel(c: UpdateChannel) { context.store.edit { it[K.updateChannel] = c.name } }
+    suspend fun setUpdateLastChecked(at: Long) { context.store.edit { it[K.updateChecked] = at } }
+    suspend fun setUpdateSnoozedUntil(at: Long) { context.store.edit { it[K.updateSnoozed] = at } }
+    suspend fun setDeveloperMode(on: Boolean) { context.store.edit { it[K.developer] = on } }
+    suspend fun setSaveLogs(on: Boolean) { context.store.edit { it[K.saveLogs] = on } }
 }
