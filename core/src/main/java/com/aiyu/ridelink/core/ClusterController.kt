@@ -167,6 +167,13 @@ class ClusterController @Inject constructor(
         link.disconnect()
     }
 
+    /** Ends the session and forgets what the last display reported, before connecting to another scooter. */
+    fun stopForBikeSwitch() {
+        stop()
+        _detected.value = null
+        _telemetry.value = DisplayTelemetry()
+    }
+
     private var statusJob: Job? = null
     private var weatherJob: Job? = null
 
