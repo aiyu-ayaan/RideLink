@@ -50,10 +50,10 @@ RideLink works with TVS Bluetooth-equipped SmartXonnect clusters:
 
 ## Screenshots
 
-| Ride (Light) | Ride (Dark) | Settings | Developer Console |
-|:---:|:---:|:---:|:---:|
-| <img src="docs/screenshots/ride-light.png" width="220" alt="Ride Screen Light Theme" /> | <img src="docs/screenshots/ride-dark.png" width="220" alt="Ride Screen Dark Theme" /> | <img src="docs/screenshots/settings.png" width="220" alt="Settings Screen" /> | <img src="docs/screenshots/console.png" width="220" alt="Developer Console" /> |
-| Real-time connection, navigation turn & vehicle stats | Dark theme with dynamic color support | Modular settings sections and scooter garage | Live BLE frame log & diagnostic test injection |
+| Ride (Demo Mode) | Ride (Dark Theme) | Analytics | Settings | Developer Console |
+|:---:|:---:|:---:|:---:|:---:|
+| <img src="docs/screenshots/ride-light.png" width="200" alt="Ride Screen with Live Demo Ride" /> | <img src="docs/screenshots/ride-dark.png" width="200" alt="Ride Screen Dark Theme" /> | <img src="docs/screenshots/analytics.png" width="200" alt="Analytics and Ride History" /> | <img src="docs/screenshots/settings.png" width="200" alt="Settings Screen" /> | <img src="docs/screenshots/console.png" width="200" alt="Developer Console" /> |
+| Active navigation turn, speed & live ride telemetry | Material 3 dark theme with scooter chips | Period stats, distance chart & ride records | Modular settings sections and scooter garage | Live BLE frame log & diagnostic test injection |
 
 ## How it works
 
