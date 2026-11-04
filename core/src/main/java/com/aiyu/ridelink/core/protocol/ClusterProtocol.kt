@@ -53,8 +53,16 @@ object ClusterProtocol {
     /** Custom text line 2 (DID 0x63). The same DID carries the music artist, so a playing song replaces it. */
     fun customLine2(value: String) = text(DID_TEXT_LINE_2, value)
 
-    /** Incoming call name or number. Stock app strips the +91 prefix. */
-    fun caller(nameOrNumber: String) = text(DID_CALLER, nameOrNumber.replace("+91", ""))
+    /**
+     * Incoming call name or number. Stock app strips the +91 prefix. A number as dialers format it
+     * ("(987) 654-3210", "+91 98765 43210") is sent as digits only; the display has no ( ) - +.
+     */
+    fun caller(nameOrNumber: String): ByteArray {
+        val v = nameOrNumber.replace("+91", "").trim()
+        return text(DID_CALLER, if (v.matches(PHONE_NUMBER)) v.filter(Char::isDigit) else v)
+    }
+
+    private val PHONE_NUMBER = Regex("""[\d\s()+\-.]{3,}""")
 
     data class PhoneStatus(
         val batteryPercent: Int,

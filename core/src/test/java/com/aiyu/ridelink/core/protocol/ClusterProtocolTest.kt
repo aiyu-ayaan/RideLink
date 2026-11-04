@@ -80,6 +80,12 @@ class ClusterProtocolTest {
         )
     }
 
+    @Test fun callerNumberIsDigitsOnly() {
+        assertEquals("9876543210", String(ClusterProtocol.caller("(987) 654-3210"), 2, 10, Charsets.US_ASCII))
+        assertEquals("9876543210", String(ClusterProtocol.caller("+91 98765 43210"), 2, 10, Charsets.US_ASCII))
+        assertEquals("Mom", String(ClusterProtocol.caller("Mom"), 2, 3, Charsets.US_ASCII))
+    }
+
     @Test fun checksumMatchesStockAddChecksum() {
         // 5B 9C 2A 33 09: sum = 0x5b+0x9c+0x2a+0x33+0x09 = 0x15d; 255 - (0x15d % 256) = 255 - 0x5d = 0xa2.
         val f = ClusterProtocol.socialCounts(ClusterProtocol.SocialCounts(5, 2, 3, 9))
