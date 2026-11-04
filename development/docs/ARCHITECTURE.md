@@ -63,7 +63,8 @@ is used when it agrees with integrated speed within 2x, otherwise integrated spe
 
 | State | Owner | Exposed as |
 |---|---|---|
-| Saved device, model (null = Auto), rider name, toggles | `SettingsRepository` (DataStore) | `Flow<Settings>` |
+| Active device, its model (null = Auto), rider name, toggles | `SettingsRepository` (DataStore) | `Flow<Settings>` |
+| Every paired scooter with its own model | `GarageStore` (SQLite `garage.db`) | `StateFlow<List<Bike>>` |
 | Connection | `ClusterLink` | `StateFlow<LinkState>` |
 | Current nav step, caller, speed, telemetry, weather, place, music, social counts, detected model, frame log, demo | `ClusterController` | `StateFlow`s |
 | Ride history (summaries + 5 s samples) | `RideStore` (SQLite `rides.db`) | `StateFlow<List<RideRecord>>` |

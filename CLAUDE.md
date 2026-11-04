@@ -32,7 +32,9 @@ Modules:
 
 ## How it works
 
-1. Pair: scan for BLE names containing `TVS` (not `HUD`), save address in DataStore.
+1. Pair: scan for BLE names containing `TVS` (not `HUD`). Every paired scooter is saved in `GarageStore`
+   (SQLite, own model per bike); the selected one is copied to DataStore (`deviceAddress`, `model`),
+   so the service and boot paths see one bike. Settings -> Scooter switches, adds and removes bikes.
 2. Auto-connect: once a scooter is paired and Bluetooth is granted, `RideLinkRoot` starts
    `ClusterService` (foreground, `connectedDevice`) on app start, after pairing, and `BootReceiver` on boot.
    The service calls `ClusterController.start()`. The Ride button is Disconnect / Connect.
