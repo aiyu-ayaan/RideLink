@@ -52,7 +52,7 @@ RideLink works with TVS Bluetooth-equipped SmartXonnect clusters:
 
 | Ride (Light) | Ride (Dark) | Settings | Developer Console |
 |:---:|:---:|:---:|:---:|
-| <img src="screenshots/ride-light.png" width="200" alt="Ride Screen Light Theme" /> | <img src="screenshots/ride-dark.png" width="200" alt="Ride Screen Dark Theme" /> | <img src="screenshots/settings.png" width="200" alt="Settings Screen" /> | <img src="screenshots/console.png" width="200" alt="Developer Console" /> |
+| <img src="docs/screenshots/ride-light.png" width="220" alt="Ride Screen Light Theme" /> | <img src="docs/screenshots/ride-dark.png" width="220" alt="Ride Screen Dark Theme" /> | <img src="docs/screenshots/settings.png" width="220" alt="Settings Screen" /> | <img src="docs/screenshots/console.png" width="220" alt="Developer Console" /> |
 | Real-time connection, navigation turn & vehicle stats | Dark theme with dynamic color support | Modular settings sections and scooter garage | Live BLE frame log & diagnostic test injection |
 
 ## How it works
