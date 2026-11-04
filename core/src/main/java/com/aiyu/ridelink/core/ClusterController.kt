@@ -43,6 +43,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeoutOrNull
 import java.time.LocalDateTime
+import java.util.concurrent.atomic.AtomicLong
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -181,6 +182,8 @@ class ClusterController @Inject constructor(
         sendDisplayText(s, force = true)
         sendSocial()
         sendMusic(force = true)
+        // After a reconnect the display has lost the route; put the current turn back without waiting for Maps.
+        _nav.value?.let { onNavigation(it) }
         startWeather()
         statusJob?.cancel()
         statusJob = scope.launch {
@@ -256,10 +259,28 @@ class ClusterController @Inject constructor(
         sentMusic = m
     }
 
-    fun onNavigation(step: NavStep) = scope.launch {
-        val s = settings.current()
-        if (!s.forwardNavigation) return@launch
-        _nav.value = step
+    /**
+     * Maps posts a new step about once a second and each one is two frames 400 ms apart. Steps go out one at a
+     * time under [navLock], and a step that a newer update (or the end of navigation) replaced is dropped, so the
+     * display never gets one step's text with another's arrow and a late step cannot bring back an ended route.
+     */
+    private val navLock = Mutex()
+    private val navSeq = AtomicLong()
+
+    fun onNavigation(step: NavStep) {
+        val seq = navSeq.incrementAndGet()
+        scope.launch {
+            val s = settings.current()
+            if (!s.forwardNavigation || seq != navSeq.get()) return@launch
+            _nav.value = step
+            navLock.withLock {
+                if (seq != navSeq.get()) return@withLock
+                sendNav(s, step)
+            }
+        }
+    }
+
+    private suspend fun sendNav(s: Settings, step: NavStep) {
         if (weatherScreenOn) {
             weatherScreenOn = false
             send(ClusterProtocol.screen(ClusterProtocol.Screen.DEFAULT))
@@ -270,11 +291,16 @@ class ClusterController @Inject constructor(
         send(control)
     }
 
-    fun onNavigationEnded() = scope.launch {
-        val last = _nav.value ?: return@launch
-        _nav.value = null
-        val s = settings.current()
-        if (s.forwardNavigation) ClusterProtocol.navigation(model(s), last.copy(stopped = true)).forEach { send(it) }
+    fun onNavigationEnded() {
+        navSeq.incrementAndGet()
+        scope.launch {
+            navLock.withLock {
+                val last = _nav.value ?: return@withLock
+                _nav.value = null
+                val s = settings.current()
+                if (s.forwardNavigation) ClusterProtocol.navigation(model(s), last.copy(stopped = true)).forEach { send(it) }
+            }
+        }
     }
 
     fun onIncomingCall(nameOrNumber: String) {

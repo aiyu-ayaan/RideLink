@@ -48,6 +48,10 @@ class RideNotificationListener : NotificationListenerService() {
     private var music: MusicWatcher? = null
 
     override fun onListenerConnected() {
+        // A route started before the listener (re)bound is already in the shade; pick it up now.
+        runCatching { activeNotifications }.getOrNull()
+            ?.filter { it.packageName == MapsNotificationParser.MAPS_PACKAGE }
+            ?.forEach(::onNotificationPosted)
         recountSocial()
         music = MusicWatcher(this, ComponentName(this, RideNotificationListener::class.java), controller).also { it.start() }
     }
