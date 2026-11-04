@@ -25,7 +25,8 @@ class MusicWatcher(private val context: Context, private val listener: Component
     private val callback = object : MediaController.Callback() {
         override fun onMetadataChanged(metadata: MediaMetadata?) = report()
         override fun onPlaybackStateChanged(state: PlaybackState?) = report()
-        override fun onSessionDestroyed() = pick(emptyList())
+        // Another player may still be active; fall back to it instead of clearing the music card.
+        override fun onSessionDestroyed() = pick(runCatching { sessions?.getActiveSessions(listener) }.getOrNull().orEmpty().filter { it.sessionToken != current?.sessionToken })
     }
 
     private val sessionsChanged = MediaSessionManager.OnActiveSessionsChangedListener { pick(it.orEmpty()) }
