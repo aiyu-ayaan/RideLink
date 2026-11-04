@@ -1,0 +1,55 @@
+# Changelog
+
+## [0.2.1-alpha.1](https://github.com/aiyu-ayaan/RideLink/compare/v0.2.0...v0.2.1-alpha.1) (2026-11-04)
+
+### Other changes
+
+* Ui(Nav) : Floating pill bar, Settings sections, predictive back, Console as developer option with saved logs, About, Updates
+* Core(Update) : Self-update from GitHub releases with channels, checksum and system installer
+* Ci(Release) : Replace debug APK workflow with signed release flow from Rewire, version from VERSION file
+* App(Splash) : Match splash background and mark to the app theme, light, dark and dynamic
+* Docs(Garage) : Document multi-scooter storage and switching
+* Ui(Settings) : List saved scooters, switch between them, add and remove
+* Core(Garage) : Store every paired scooter with its own model and reset display state on bike switch
+* App(Notify) : Detect ringing calls on more dialers, rebind the listener, note unparsed Maps and call events in Console
+* Core(Nav) : Match Maps distances written with no-break spaces
+* App(Music) : Fall back to another active player when a session ends
+* Core(Nav) : Send one turn at a time, drop stale steps, resend after reconnect
+* Core(Nav) : Find turn distance anywhere in Maps text and strip separators
+* Ci(Build) : Add debug APK workflow
+* Core(Nav) : Parse Maps direction from any field so dashboard arrow shows
+* Ui(Analytics) : Fix odometer smart cast across modules
+* App(Splash) : Add Closed loop launcher icon and animated splash screen with safe exit
+* Docs(Brand) : Add Closed loop logo masters, brand guide and splash preview
+* Docs(Brand) : Rethink ring and spark without the vehicle, round 4
+* Docs(Brand) : Rethink concept B with the scooter, round 3
+* Docs(Brand) : Add logo concepts round 2
+* Ui(Analytics) : Add Analytics tab with charts, records, ride history and CSV export
+* Core(Analytics) : Record rides automatically and compute period stats
+* Ui(Console) : Decode every frame and add Copy log for scooter captures
+* Core(Display) : Fix odometer scale, send real signal and missed calls, add live display text templates
+* Core(Weather) : Fix getCurrentLocation overload ambiguity
+* Core(Calls) : Text the caller on reject-with-SMS and open the assistant from the voice button
+* Ui(Settings) : Add custom display text lines with send-now
+* Ui(Console) : Add per-frame test chips and return to the default screen before navigation
+* Ui(Vehicle) : Show engine, battery and service data and the display's model code
+* Core(Status) : Add overspeed alert limit and missed-call badge
+* Docs(Handoff) : Record TFT feature port, version 0.2.0 and what still needs a build
+* App(Social) : Fix group-summary flag precedence in unread count
+* Ui(Ride) : Add ride data card, Settings toggle and demo data for every TFT feature
+* Core(Calls) : Accept and reject calls from the scooter switch, parse display ride data
+* Core(Music) : Send song, artist and play state from the active media session
+* Core(Weather) : Send weather, AQI, temperature and place name to TFT displays
+* Core(Social) : Send WhatsApp, Facebook and Instagram unread counts as 5B 9C
+* App(Permissions) : Ask for phone state and coarse location so signal and network show
+* App(Connect) : Auto-connect when a scooter is paired, ride button becomes Disconnect
+* Core(Protocol) : Read speed from frame[2], ParsingMeta is 1-based
+* Docs(Handoff) : Record TFT feature map, testing method and next steps
+* Docs(Project) : Add CLAUDE.md, architecture, design system, TODO and run.sh
+* Ui(Ride) : Add turn-arrow dashboard, speed readout and demo ride
+* Tools(Emulation) : Add BlueZ central test for the fake display
+* Core(Model) : Add Auto model detection from display frames
+* App(RideLink) : Add BLE link, ride service and M3 Expressive UI
+* Core(Protocol) : Add cluster frame encoder, Maps nav parser and Gradle setup
+* Add recovered BLE protocol notes and fake cluster tool
+
