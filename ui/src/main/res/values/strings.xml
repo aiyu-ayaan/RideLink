@@ -238,7 +238,7 @@
     <string name="update_available">RideLink %1$s is available</string>
     <string name="update_youre_on">You\'re on %1$s</string>
     <string name="update_download">Download</string>
-    <string name="update_download_size"> (%1$.1f MB)</string>
+    <string name="update_download_size">\u0020(%1$.1f MB)</string>
     <string name="update_downloading">Downloading… %1$d%%</string>
     <string name="update_install">Install</string>
     <string name="update_install_permission">Android asks you to allow RideLink to install apps once. Nothing installs without your confirmation.</string>
