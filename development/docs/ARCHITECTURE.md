@@ -49,15 +49,33 @@ sequenceDiagram
 ```mermaid
 graph LR
     D[Display 5A 10/11/18/19] --> C[ClusterController.telemetry]
+    N[Google Maps notification] --> CN[ClusterController.nav]
     C --> R[RideRecorder<br/>every 5 s while connected or demo]
+    CN -->|distance left + new instructions| R
     R -->|ride ends: link drop, demo off, 10 min still| M[RideMath.summarize]
-    M --> S[(RideStore<br/>SQLite rides + samples)]
+    M --> S[(RideStore v2<br/>SQLite rides + samples + turns)]
     S --> V[AnalyticsViewModel<br/>RideMath.stats per period]
-    V --> UI[AnalyticsScreen + RideDetailSheet]
+    V --> UI[AnalyticsScreen]
+    UI -->|ride:id page| RD[RideDetailScreen<br/>source, stats, charts, turns]
 ```
 
-`RideRecorder` is started from `RideLinkApp.onCreate` and lives for the process. Odometer distance (0.1 km)
-is used when it agrees with integrated speed within 2x, otherwise integrated speed.
+`RideRecorder` is started from `RideLinkApp.onCreate` and lives for the process. Distance per interval:
+Google Maps route progress (drop in distance-left) while navigating; the rest from the odometer (0.1 km) when it
+agrees with integrated speed within 2x, otherwise integrated speed. The split is stored per ride (`maps_m`,
+`odo_m`, `speed_m`).
+
+## App shell and updates
+
+```mermaid
+graph TD
+    Root[RideLinkRoot] --> Tabs[Ride / Analytics / Settings<br/>floating pill, hides on scroll]
+    Root --> Stack[page stack: settings:SECTION, ride:ID, Console, Updates, About, Acknowledgements<br/>SeekableTransitionState + PredictiveBackHandler]
+    Root --> Host[UpdateHost sheet]
+    Host --> U[AppUpdater: GitHub releases API -> RideLink-version.apk -> PackageInstaller session]
+    U --> IR[UpdateInstallReceiver: confirm / failure reason]
+    Settings[Settings -> Developer options] -->|developer mode| Console[Console page]
+    Console --> LF[LogFile: files/logs, 7 days, export via SAF]
+```
 
 ## State ownership
 
@@ -67,7 +85,9 @@ is used when it agrees with integrated speed within 2x, otherwise integrated spe
 | Every paired scooter with its own model | `GarageStore` (SQLite `garage.db`) | `StateFlow<List<Bike>>` |
 | Connection | `ClusterLink` | `StateFlow<LinkState>` |
 | Current nav step, caller, speed, telemetry, weather, place, music, social counts, detected model, frame log, demo | `ClusterController` | `StateFlow`s |
-| Ride history (summaries + 5 s samples) | `RideStore` (SQLite `rides.db`) | `StateFlow<List<RideRecord>>` |
+| Ride history (summaries + 5 s samples + Maps turns) | `RideStore` (SQLite `rides.db`, v2) | `StateFlow<List<RideRecord>>` |
+| Update check / download / install | `AppUpdater` | `StateFlow<UpdateState>` |
+| Saved Console log | `LogFile` (`files/logs`) | export to a file the rider picks |
 | Ride session lifetime | `ClusterService` (foreground, connectedDevice) | notification |
 
 `ClusterLink` and `ClusterController` are Hilt singletons, so the service, the notification
