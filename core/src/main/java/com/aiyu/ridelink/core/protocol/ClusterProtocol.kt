@@ -154,7 +154,7 @@ object ClusterProtocol {
         val wa = (c.whatsappMessages.coerceIn(0, 0x1F) shl 3) or c.whatsappChats.coerceIn(0, 0x07)
         val fbCount = c.facebookMessages.coerceIn(0, 0x0F)
         val fb = (fbCount shl 4) or fbCount
-        return frame(START, DID_SOCIAL, byteArrayOf(wa.toByte(), fb.toByte(), c.instagram.coerceIn(0, 0xFF).toByte()))
+        return checksummed(frame(START, DID_SOCIAL, byteArrayOf(wa.toByte(), fb.toByte(), c.instagram.coerceIn(0, 0xFF).toByte())))
     }
 
     /** TrafficSequence ids for [screen]. Cricket/football need TVS's score API and are not used. */
@@ -203,11 +203,14 @@ object ClusterProtocol {
         return out.toByteArray()
     }
 
-    /** Song title (`BlePacketsProvider.returnMusicPacket(name, 98)`). */
-    fun song(title: String) = text(DID_SONG, title)
+    /**
+     * Song title (`BlePacketsProvider.returnMusicPacket(name, 98)`), checksummed like every music write
+     * (`BleMusicDataSourceImpl`). The checksum takes byte 18, so 16 characters fit instead of 17.
+     */
+    fun song(title: String) = checksummed(text(DID_SONG, title.take(TEXT_MAX - 1)))
 
-    /** Artist (`BleMusicDataSourceImpl`; Raider uses 0x65, Ntorq 0x63). */
-    fun artist(name: String) = text(DID_ARTIST, name)
+    /** Artist (`BleMusicDataSourceImpl`; Raider uses 0x65, Ntorq 0x63). Checksummed, 16 characters. */
+    fun artist(name: String) = checksummed(text(DID_ARTIST, name.take(TEXT_MAX - 1)))
 
     enum class PlayState { PLAYING, PAUSED, STOPPED }
 
@@ -233,14 +236,14 @@ object ClusterProtocol {
             PlayState.PAUSED -> 1
             PlayState.STOPPED -> if (u577) 254 else 4
         }.toByte()
-        if (!u577) return frame(START, DID_PLAY_STATE, byteArrayOf(0, state, 0, 0, 0, vol))
+        if (!u577) return checksummed(frame(START, DID_PLAY_STATE, byteArrayOf(0, state, 0, 0, 0, vol)))
         fun minSec(ms: Long): Pair<Byte, Byte> {
             val total = (ms.coerceAtLeast(0) / 1000).coerceAtMost(255L * 60 + 59)
             return (total / 60).toInt().toByte() to (total % 60).toInt().toByte()
         }
         val (curMin, curSec) = minSec(m.positionMs)
         val (totMin, totSec) = minSec(m.durationMs)
-        return frame(START, DID_PLAY_STATE, byteArrayOf(0, state, 1, curMin, curSec, vol, 0, 0, 0, 0, totMin, totSec))
+        return checksummed(frame(START, DID_PLAY_STATE, byteArrayOf(0, state, 1, curMin, curSec, vol, 0, 0, 0, 0, totMin, totSec)))
     }
 
     /**
@@ -267,6 +270,19 @@ object ClusterProtocol {
         13 -> 4
         20 -> 5
         else -> 0
+    }
+
+    /**
+     * `BluetoothUtil.addChecksum`, used when the stock app writes with `isChecksumNeeded = true` (social counts and
+     * music): byte 18 = 255 - (unsigned sum of bytes 0..17) mod 256, byte 19 stays FF. Displays drop these frames
+     * without it.
+     */
+    fun checksummed(frame: ByteArray): ByteArray {
+        val out = frame.copyOf()
+        val sum = (0 until FRAME_SIZE - 2).sumOf { out[it].toInt() and 0xFF }
+        out[FRAME_SIZE - 2] = (255 - sum % 256).toByte()
+        out[FRAME_SIZE - 1] = END
+        return out
     }
 
     private fun frame(start: Byte, did: Int, payload: ByteArray): ByteArray {

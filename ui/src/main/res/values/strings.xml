@@ -296,4 +296,6 @@
     <string name="settings_calls_section_desc">Caller on the display, scooter buttons, reject with SMS</string>
     <string name="settings_in_app_desc">Ride data, vehicle health, ride recording</string>
     <string name="settings_developer_desc">Console, saved logs</string>
+    <!-- Caller shown on the display when the number is unknown -->
+    <string name="call_unknown">Incoming call</string>
 </resources>

@@ -26,16 +26,20 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class ClusterService : LifecycleService() {
     @Inject lateinit var controller: ClusterController
+    private var calls: CallStateWatcher? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         super.onStartCommand(intent, flags, startId)
         if (intent?.action == ACTION_STOP) {
+            calls?.stop()
+            calls = null
             controller.stop()
             stopSelf()
             return START_NOT_STICKY
         }
         ServiceCompat.startForeground(this, NOTIFICATION_ID, notification(getString(R.string.status_connecting)), ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE)
         controller.start()
+        if (calls == null) calls = CallStateWatcher(this, controller).takeIf { it.start() }
         // Android can leave the listener unbound after an app update; without it no Maps or call events arrive.
         runCatching { NotificationListenerService.requestRebind(ComponentName(this, RideNotificationListener::class.java)) }
         lifecycleScope.launch {
@@ -50,6 +54,11 @@ class ClusterService : LifecycleService() {
             }
         }
         return START_STICKY
+    }
+
+    override fun onDestroy() {
+        calls?.stop()
+        super.onDestroy()
     }
 
     private fun notification(text: String): Notification {

@@ -75,15 +75,24 @@ class ClusterProtocolTest {
     @Test fun socialCountsFrame() {
         // WA 5 msgs / 2 chats -> 0b00101_010 = 0x2a; FB 3 -> 0x33; IG 9.
         assertEquals(
-            "5b 9c 2a 33 09 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ff",
+            "5b 9c 2a 33 09 00 00 00 00 00 00 00 00 00 00 00 00 00 a2 ff",
             hex(ClusterProtocol.socialCounts(ClusterProtocol.SocialCounts(5, 2, 3, 9))),
         )
+    }
+
+    @Test fun checksumMatchesStockAddChecksum() {
+        // 5B 9C 2A 33 09: sum = 0x5b+0x9c+0x2a+0x33+0x09 = 0x15d; 255 - (0x15d % 256) = 255 - 0x5d = 0xa2.
+        val f = ClusterProtocol.socialCounts(ClusterProtocol.SocialCounts(5, 2, 3, 9))
+        assertEquals(0xa2, f[18].toInt() and 0xFF)
+        assertEquals(0xff, f[19].toInt() and 0xFF)
+        // A 17-character title loses its last character to the checksum, as on the stock app.
+        assertEquals("ABCDEFGHIJKLMNOP", String(ClusterProtocol.song("ABCDEFGHIJKLMNOPQ"), 2, 16, Charsets.US_ASCII))
     }
 
     @Test fun socialCountsClampToBitFields() {
         // WA msgs cap at 31, chats at 7 -> 0xff; FB caps at 15 -> 0xff; IG caps at 255.
         assertEquals(
-            "5b 9c ff ff ff 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ff",
+            "5b 9c ff ff ff 00 00 00 00 00 00 00 00 00 00 00 00 00 0b ff",
             hex(ClusterProtocol.socialCounts(ClusterProtocol.SocialCounts(40, 9, 20, 300))),
         )
     }
@@ -149,13 +158,13 @@ class ClusterProtocolTest {
     )
 
     @Test fun songAndArtistAreTextFrames() {
-        assertEquals("5b 62 4b 65 73 61 72 69 79 61 00 00 00 00 00 00 00 00 00 ff", hex(ClusterProtocol.song(music.title)))
-        assertEquals("5b 63 41 72 69 6a 69 74 20 53 69 6e 67 68 00 00 00 00 00 ff", hex(ClusterProtocol.artist(music.artist)))
+        assertEquals("5b 62 4b 65 73 61 72 69 79 61 00 00 00 00 00 00 00 00 09 ff", hex(ClusterProtocol.song(music.title)))
+        assertEquals("5b 63 41 72 69 6a 69 74 20 53 69 6e 67 68 00 00 00 00 c5 ff", hex(ClusterProtocol.artist(music.artist)))
     }
 
     @Test fun genericPlayStateFrame() {
         assertEquals(
-            "5b 60 00 01 00 00 00 3c 00 00 00 00 00 00 00 00 00 00 00 ff",
+            "5b 60 00 01 00 00 00 3c 00 00 00 00 00 00 00 00 00 00 07 ff",
             hex(ClusterProtocol.playState(ClusterModel.NTORQ_U812, music)),
         )
         val stopped = ClusterProtocol.playState(ClusterModel.NTORQ_U812, music.copy(state = ClusterProtocol.PlayState.STOPPED))
@@ -166,7 +175,7 @@ class ClusterProtocolTest {
     @Test fun u577PlayStateCarriesProgress() {
         // 83 s = 1:23, 268 s = 4:28, volume 60 = 0x3c.
         assertEquals(
-            "5b 60 00 01 01 01 17 3c 00 00 00 00 04 1c 00 00 00 00 00 ff",
+            "5b 60 00 01 01 01 17 3c 00 00 00 00 04 1c 00 00 00 00 ce ff",
             hex(ClusterProtocol.playState(ClusterModel.NTORQ_U577_PREMIUM, music)),
         )
         val stopped = ClusterProtocol.playState(ClusterModel.NTORQ_U577_BASE, music.copy(state = ClusterProtocol.PlayState.STOPPED))

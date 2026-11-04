@@ -155,6 +155,15 @@ U577 premium (vehicle 38) uses its own table and the stock app parses the value 
 
 All 20 bytes, end with `FF`, written on `5352` with response.
 
+### Checksum (`BluetoothUtil.addChecksum`, writes with `isChecksumNeeded = true`)
+Some frames are written through `BleEngine.writeCharacteristicToCentral(frame, true)`, which replaces byte 18 with
+a checksum: `255 - (unsigned sum of bytes 0..17) mod 256` (`byteArrayToIntArray` drops the last two bytes, `& 0xFF`).
+Byte 19 stays `FF`. On the Ntorq paths this covers the **social counts** (`BleWriteSocialMediaNotificationDataSrcImpl`)
+and **every music frame** (song, artist, play state; `BleMusicDataSourceImpl`, all models except Raider and Apache).
+A text frame loses its 17th character to the checksum, so music text is cut to 16 characters.
+Caller (`5B 43`), navigation, status, weather and location frames are written without it.
+Before RideLink sent the checksum, the display ignored the counts and music frames (no notification icons).
+
 ### Social unread counts, DID `0x9C` (`BleWriteSocialMediaNotificationDataSrcImpl`, `BluetoothUtil.getSocialMediaDataToWriteToCluster`)
 ```
 5B 9C
