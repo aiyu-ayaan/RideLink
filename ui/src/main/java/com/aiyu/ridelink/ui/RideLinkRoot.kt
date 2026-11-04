@@ -56,6 +56,7 @@ import com.aiyu.ridelink.core.ble.LinkState
 import com.aiyu.ridelink.ui.about.AboutScreen
 import com.aiyu.ridelink.ui.about.AcknowledgementsScreen
 import com.aiyu.ridelink.ui.analytics.AnalyticsScreen
+import com.aiyu.ridelink.ui.analytics.RideDetailScreen
 import com.aiyu.ridelink.ui.console.ConsoleScreen
 import com.aiyu.ridelink.ui.nav.FloatingNavBar
 import com.aiyu.ridelink.ui.nav.LocalBottomBarInset
@@ -77,6 +78,9 @@ private enum class Page { Console, Updates, About, Acknowledgements }
 
 /** Stack entry prefix for a Settings section page, e.g. "settings:SCOOTER". */
 private const val SETTINGS = "settings:"
+
+/** Stack entry prefix for a ride's detail page, e.g. "ride:42". */
+private const val RIDE = "ride:"
 
 @Composable
 fun RideLinkRoot(onConnect: () -> Unit, onDisconnect: () -> Unit) {
@@ -141,11 +145,12 @@ fun RideLinkRoot(onConnect: () -> Unit, onDisconnect: () -> Unit) {
                 top == null -> Tabs(tab, { tab = it }) { current ->
                     when (current) {
                         0 -> RideScreen(vm, connect, disconnect)
-                        1 -> AnalyticsScreen()
+                        1 -> AnalyticsScreen(onOpenRide = { push(RIDE + it) })
                         else -> settings(null)
                     }
                 }
                 top.startsWith(SETTINGS) -> settings(SettingsSection.valueOf(top.removePrefix(SETTINGS)))
+                top.startsWith(RIDE) -> RideDetailScreen(top.removePrefix(RIDE).toLong(), onBack = pop)
                 else -> when (Page.valueOf(top)) {
                     Page.Console -> ConsoleScreen(vm, onBack = pop)
                     Page.Updates -> UpdateScreen(onBack = pop)

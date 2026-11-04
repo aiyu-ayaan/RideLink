@@ -90,13 +90,12 @@ private val Period.span
     }
 
 @Composable
-fun AnalyticsScreen(vm: AnalyticsViewModel = hiltViewModel()) {
+fun AnalyticsScreen(onOpenRide: (Long) -> Unit, vm: AnalyticsViewModel = hiltViewModel()) {
     val state by vm.state.collectAsStateWithLifecycle()
     val recording by vm.recording.collectAsStateWithLifecycle()
     val telemetry by vm.telemetry.collectAsStateWithLifecycle()
     val context = LocalContext.current
     var menu by remember { mutableStateOf(false) }
-    var openRide by rememberSaveable { mutableStateOf<Long?>(null) }
     val export = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/csv")) { uri ->
         if (uri != null) vm.exportCsv(uri, context.contentResolver)
     }
@@ -181,7 +180,7 @@ fun AnalyticsScreen(vm: AnalyticsViewModel = hiltViewModel()) {
                     )
                 }
             }
-            item { Records(s) { openRide = it } }
+            item { Records(s, onOpenRide) }
             item {
                 Text(
                     stringResource(R.string.analytics_history, state.rides.size),
@@ -189,16 +188,10 @@ fun AnalyticsScreen(vm: AnalyticsViewModel = hiltViewModel()) {
                     modifier = Modifier.padding(horizontal = Dimens.gutter, vertical = Dimens.sm),
                 )
             }
-            items(state.rides, key = { it.id }) { r -> RideRow(r) { openRide = r.id } }
+            items(state.rides, key = { it.id }) { r -> RideRow(r) { onOpenRide(r.id) } }
             item { Spacer(Modifier.height(Dimens.xl)) }
             item { BottomBarSpacer() }
         }
-    }
-
-    openRide?.let { id ->
-        val ride = state.rides.firstOrNull { it.id == id } ?: s.longestRide?.takeIf { it.id == id } ?: s.fastestRide?.takeIf { it.id == id }
-            ?: s.bestEconomyRide?.takeIf { it.id == id }
-        if (ride != null) RideDetailSheet(ride, vm, onDismiss = { openRide = null })
     }
 }
 

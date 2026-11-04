@@ -92,6 +92,13 @@ import com.aiyu.ridelink.core.protocol.ClusterProtocol.NavStep
 import com.aiyu.ridelink.core.protocol.Maneuver
 import com.aiyu.ridelink.core.protocol.hasHealth
 import com.aiyu.ridelink.ui.MainViewModel
+import com.aiyu.ridelink.core.settings.Bike
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.AssistChipDefaults
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import com.aiyu.ridelink.ui.nav.BottomBarSpacer
 import com.aiyu.ridelink.ui.R
 import com.aiyu.ridelink.ui.bluetoothPermissions
@@ -129,6 +136,7 @@ fun RideScreen(vm: MainViewModel, onConnect: () -> Unit, onDisconnect: () -> Uni
     val askBluetooth = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { refresh++ }
 
     var pairing by remember { mutableStateOf(false) }
+    val bikes by vm.bikes.collectAsStateWithLifecycle()
     val paired = settings.deviceAddress != null
     val rideOn = link !is LinkState.Idle
 
@@ -159,6 +167,7 @@ fun RideScreen(vm: MainViewModel, onConnect: () -> Unit, onDisconnect: () -> Uni
             }
 
             HeroCard(link, paired, settings.deviceName, demo)
+            if (paired) BikeChips(bikes, settings.deviceAddress, bluetoothOk, onSelect = vm::select, onAdd = { pairing = true })
             AnimatedVisibility(nav != null || speed != null, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
                 RideDashboard(nav, speed)
             }
@@ -250,7 +259,7 @@ private fun HeroCard(link: LinkState, paired: Boolean, deviceName: String?, demo
     }
 }
 
-private fun Maneuver.icon(): ImageVector = when (this) {
+internal fun Maneuver.icon(): ImageVector = when (this) {
     Maneuver.LEFT -> Icons.Rounded.TurnLeft
     Maneuver.SHARP_LEFT -> Icons.Rounded.TurnSharpLeft
     Maneuver.SLIGHT_LEFT -> Icons.Rounded.TurnSlightLeft
@@ -360,6 +369,27 @@ private fun PermissionCard(icon: ImageVector, title: Int, body: Int, action: Int
             Text(stringResource(body), color = content, modifier = Modifier.padding(vertical = Dimens.sm))
             FilledTonalButton(onClick = onClick, modifier = Modifier.align(Alignment.End)) { Text(stringResource(action)) }
         }
+    }
+}
+
+/** Saved scooters as chips: tap one to switch to it, "Add" pairs another. */
+@Composable
+private fun BikeChips(bikes: List<Bike>, active: String?, bluetoothOk: Boolean, onSelect: (Bike) -> Unit, onAdd: () -> Unit) {
+    Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(Dimens.sm)) {
+        bikes.forEach { b ->
+            FilterChip(
+                selected = b.address == active,
+                onClick = { onSelect(b) },
+                label = { Text(b.name ?: b.address) },
+                leadingIcon = { Icon(Icons.Rounded.TwoWheeler, contentDescription = null, modifier = Modifier.size(FilterChipDefaults.IconSize)) },
+            )
+        }
+        AssistChip(
+            onClick = onAdd,
+            enabled = bluetoothOk,
+            label = { Text(stringResource(R.string.ride_add_scooter)) },
+            leadingIcon = { Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(AssistChipDefaults.IconSize)) },
+        )
     }
 }
 

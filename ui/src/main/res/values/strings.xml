@@ -298,4 +298,37 @@
     <string name="settings_developer_desc">Console, saved logs</string>
     <!-- Caller shown on the display when the number is unknown -->
     <string name="call_unknown">Incoming call</string>
+    <!-- Ride detail page -->
+    <string name="cancel">Cancel</string>
+    <string name="unit_min">min</string>
+    <string name="detail_title">Ride</string>
+    <string name="detail_delete_title">Delete this ride?</string>
+    <string name="detail_delete_body">Its samples, charts and route are removed from this phone. This cannot be undone.</string>
+    <string name="detail_source_maps">Mostly measured along your Google Maps route</string>
+    <string name="detail_source_odometer">Measured by the scooter\'s odometer</string>
+    <string name="detail_source_speed">Worked out from speed (the odometer did not report)</string>
+    <string name="detail_part_maps">Maps %1$s km</string>
+    <string name="detail_part_odometer">Odometer %1$s km</string>
+    <string name="detail_part_speed">Speed %1$s km</string>
+    <string name="detail_duration">Total time</string>
+    <string name="detail_fuel_used">Fuel gauge drop</string>
+    <string name="detail_fuel_unit">bars</string>
+    <string name="detail_avg_rpm">Average RPM</string>
+    <string name="detail_max_rpm">Highest RPM</string>
+    <string name="detail_range">Range</string>
+    <string name="detail_trip">Trip meter</string>
+    <string name="detail_odometer_tile">Odometer</string>
+    <string name="detail_route">Google Maps route</string>
+    <string name="detail_route_summary">%1$s km along the route in %2$s · %3$d instructions</string>
+    <string name="detail_turns">Turn by turn</string>
+    <string name="detail_turn_meta">%1$s · %2$s km to go</string>
+    <string name="detail_charts">Over the ride</string>
+    <string name="chart_ride_distance">Distance covered</string>
+    <string name="chart_ride_route_left">Distance to destination</string>
+    <string name="chart_ride_economy">Mileage</string>
+    <string name="chart_ride_fuel">Fuel gauge</string>
+    <string name="chart_ride_bands">Time in each speed band</string>
+    <string name="readout_band">%1$s km/h: %2$s</string>
+    <string name="readout_band_idle">Minutes spent in each %1$s band. Tap a bar.</string>
+    <string name="ride_add_scooter">Add scooter</string>
 </resources>

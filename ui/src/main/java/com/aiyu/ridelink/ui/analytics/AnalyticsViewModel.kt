@@ -12,6 +12,7 @@ import com.aiyu.ridelink.core.analytics.RideRecord
 import com.aiyu.ridelink.core.analytics.RideRecorder
 import com.aiyu.ridelink.core.analytics.RideSample
 import com.aiyu.ridelink.core.analytics.RideStore
+import com.aiyu.ridelink.core.analytics.RideTurn
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -67,6 +68,10 @@ class AnalyticsViewModel @Inject constructor(
     fun deleteSampleRides() = viewModelScope.launch { store.deleteDemo() }
     fun delete(id: Long) = viewModelScope.launch { store.delete(id) }
     suspend fun samples(id: Long): List<RideSample> = store.samples(id)
+    suspend fun turns(id: Long): List<RideTurn> = store.turns(id)
+
+    /** Every stored ride, unfiltered by period: a ride opened from the records may be older than the period. */
+    val allRides = store.rides
 
     fun exportCsv(uri: Uri, resolver: ContentResolver) = viewModelScope.launch {
         withContext(Dispatchers.IO) {
