@@ -43,9 +43,41 @@ object SampleRides {
                         instantEconomy = if (v == 0) null else 38 + rnd.nextInt(16),
                     )
                 }
-                rides += samples
+                rides += if (weekend) withRoute(samples) else samples
             }
         }
         return rides
+    }
+
+    /** Weekend rides follow a Google Maps route: distance-left counts down in Maps' 100 m steps. */
+    private fun withRoute(samples: List<RideSample>): List<RideSample> {
+        var covered = 0.0
+        val steps = samples.map { s -> covered += (s.speedKmh ?: 0) / 3.6 * RideMath.SAMPLE_MS / 1000; covered }
+        val total = covered
+        return samples.mapIndexed { i, s -> s.copy(navLeftM = ((total - steps[i]) / 100).toInt() * 100) }
+    }
+
+    private val instructions = listOf(
+        "LEFT" to "Turn left onto MG Road", "RIGHT" to "Turn right onto Ring Rd", "STRAIGHT" to "Continue on NH 48",
+        "SLIGHT_RIGHT" to "Slight right toward Hosur Rd", "ROUNDABOUT" to "At the roundabout, take the 2nd exit",
+        "LEFT" to "Turn left onto 100 Feet Rd", "SLIGHT_LEFT" to "Slight left onto Outer Ring Rd",
+    )
+
+    /** A turn about every 1.5 km of a sample route, and the arrival. */
+    fun turnsFor(samples: List<RideSample>): List<RideTurn> {
+        val routed = samples.filter { it.navLeftM != null }
+        if (routed.isEmpty()) return emptyList()
+        val turns = mutableListOf<RideTurn>()
+        var nextAt = routed.first().navLeftM!!
+        var k = 0
+        for (s in routed) {
+            val left = s.navLeftM!!
+            if (left > nextAt) continue
+            val (maneuver, text) = instructions[k++ % instructions.size]
+            turns += RideTurn(s.t, text, maneuver, 400, left)
+            nextAt = left - 1_500
+        }
+        routed.last().let { turns += RideTurn(it.t, "Arrive at destination", "DESTINATION", 0, 0) }
+        return turns
     }
 }

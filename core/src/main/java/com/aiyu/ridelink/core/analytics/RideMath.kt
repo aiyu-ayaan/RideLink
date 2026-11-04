@@ -18,7 +18,22 @@ data class RideSample(
     val rpm: Int? = null,
     val instantEconomy: Int? = null,
     val averageEconomy: Int? = null,
+    /** Distance left on the Google Maps route, metres; null while not navigating. */
+    val navLeftM: Int? = null,
 )
+
+/** One Google Maps instruction seen during a ride, kept for the ride's turn-by-turn timeline. */
+data class RideTurn(
+    val t: Long,
+    val instruction: String,
+    /** [com.aiyu.ridelink.core.protocol.Maneuver] name. */
+    val maneuver: String,
+    val distanceToTurnM: Int,
+    val distanceLeftM: Int,
+)
+
+/** Where a ride's distance came from, largest share first. */
+enum class DistanceSource { MAPS, ODOMETER, SPEED }
 
 /** Everything Analytics needs about one ride, computed once when it ends. */
 data class RideSummary(
@@ -39,8 +54,23 @@ data class RideSummary(
     val speedBandS: List<Int>,
     /** Moving seconds per local hour of day, 24 entries. */
     val hourS: List<Int>,
+    /** Parts of [distanceM]: Google Maps route progress, odometer, integrated speed. */
+    val mapsM: Int = 0,
+    val odometerM: Int = 0,
+    val speedM: Int = 0,
+    /** Seconds with a Google Maps route active. */
+    val navigatedS: Int = 0,
 ) {
     val distanceKm get() = distanceM / 1000.0
+
+    /** The source that gave most of the distance (older rides without the split: odometer if it moved). */
+    val source: DistanceSource get() = when {
+        mapsM == 0 && odometerM == 0 && speedM == 0 ->
+            if (odometerStartTenths != null && odometerEndTenths != null && odometerEndTenths > odometerStartTenths) DistanceSource.ODOMETER else DistanceSource.SPEED
+        mapsM >= odometerM && mapsM >= speedM -> DistanceSource.MAPS
+        odometerM >= speedM -> DistanceSource.ODOMETER
+        else -> DistanceSource.SPEED
+    }
 }
 
 /** A stored ride: id, whether it is a demo/sample ride, and its summary. */
@@ -92,34 +122,56 @@ object RideMath {
     fun band(speed: Int) = SPEED_BANDS.indexOfLast { speed >= it }.coerceAtLeast(0)
 
     /**
-     * Distance comes from the odometer (0.1 km steps) when it moved sensibly; otherwise it is integrated from
-     * speed. Moving time, bands and hours only count gaps up to [MAX_GAP_MS].
+     * Distance per ride, interval by interval:
+     *  - while a Google Maps route is active, the drop in its distance-left (route progress; a reroute that adds
+     *    distance is not counted as Maps);
+     *  - everything else from the odometer (0.1 km steps), unless it went backwards or disagrees with speed by more
+     *    than 2x (1 km slack for its steps and a stalled reading), then from integrated speed.
+     * Moving time, bands and hours only count gaps up to [MAX_GAP_MS].
      */
     fun summarize(samples: List<RideSample>, zone: ZoneId): RideSummary? {
         val s = samples.sortedBy { it.t }
         if (s.isEmpty()) return null
-        var integratedM = 0.0
+        var mapsM = 0.0
+        var restSpeedM = 0.0
+        var restOdoTenths = 0
+        var restOdoSeen = false
         var movingS = 0.0
+        var navigatedS = 0.0
         val bands = DoubleArray(SPEED_BANDS.size)
         val hours = DoubleArray(24)
         for (i in 1 until s.size) {
-            val dtMs = s[i].t - s[i - 1].t
-            if (dtMs <= 0 || dtMs > MAX_GAP_MS) continue
-            val v = s[i - 1].speedKmh ?: continue
-            if (v < MOVING_KMH) continue
+            val a = s[i - 1]
+            val b = s[i]
+            val dtMs = b.t - a.t
+            if (dtMs <= 0) continue
+            val inGap = dtMs <= MAX_GAP_MS
             val dt = dtMs / 1000.0
-            integratedM += v / 3.6 * dt
-            movingS += dt
-            bands[band(v)] += dt
-            hours[Instant.ofEpochMilli(s[i - 1].t).atZone(zone).hour] += dt
+            val v = a.speedKmh?.takeIf { inGap && it >= MOVING_KMH }
+            if (v != null) {
+                movingS += dt
+                bands[band(v)] += dt
+                hours[Instant.ofEpochMilli(a.t).atZone(zone).hour] += dt
+            }
+            val navDrop = navDrop(a, b, dtMs)
+            if (navDrop != null) {
+                mapsM += navDrop
+                navigatedS += dt
+                continue
+            }
+            if (v != null) restSpeedM += v / 3.6 * dt
+            if (a.odometerTenths != null && b.odometerTenths != null) {
+                restOdoTenths += b.odometerTenths - a.odometerTenths
+                restOdoSeen = true
+            }
         }
+        val odoM = if (restOdoSeen) restOdoTenths * 100 else null
+        val plausible = odoM != null && odoM >= 0 && odoM <= restSpeedM * 2 + 1_000 && odoM >= restSpeedM / 2 - 1_000
+        val restOdometerM = if (plausible) odoM!! else 0
+        val restSpeed = if (plausible) 0 else restSpeedM.toInt()
+        val distanceM = mapsM.toInt() + restOdometerM + restSpeed
         val odoStart = s.firstNotNullOfOrNull { it.odometerTenths }
         val odoEnd = s.lastOrNull { it.odometerTenths != null }?.odometerTenths
-        val odoM = if (odoStart != null && odoEnd != null) (odoEnd - odoStart) * 100 else null
-        // Trust the odometer unless it went backwards or disagrees with speed by more than 2x either way
-        // (1 km slack covers its 0.1 km steps on short rides and a stalled reading).
-        val plausible = odoM != null && odoM >= 0 && odoM <= integratedM * 2 + 1_000 && odoM >= integratedM / 2 - 1_000
-        val distanceM = if (plausible) odoM!! else integratedM.toInt()
         val eco = s.mapNotNull { it.instantEconomy?.takeIf { e -> e > 0 } }.takeIf { it.isNotEmpty() }?.average()
             ?: s.lastOrNull { (it.averageEconomy ?: 0) > 0 }?.averageEconomy?.toDouble()
         val fuelStart = s.firstNotNullOfOrNull { it.fuel }
@@ -138,7 +190,44 @@ object RideMath {
             odometerEndTenths = odoEnd,
             speedBandS = bands.map { it.toInt() },
             hourS = hours.map { it.toInt() },
+            mapsM = mapsM.toInt(),
+            odometerM = restOdometerM,
+            speedM = restSpeed,
+            navigatedS = navigatedS.toInt(),
         )
+    }
+
+    /** Route progress between two samples, or null when this interval is not a plausible Maps interval. */
+    private fun navDrop(a: RideSample, b: RideSample, dtMs: Long): Int? {
+        val from = a.navLeftM ?: return null
+        val to = b.navLeftM ?: return null
+        if (dtMs > MAX_GAP_MS) return null
+        val drop = from - to
+        // Faster than 60 m/s is a new route, not progress.
+        return drop.takeIf { it >= 0 && it <= 60 * dtMs / 1000 + 100 }
+    }
+
+    /**
+     * Distance covered since the start, km, for the ride chart. Same per-interval rules as [summarize] without the
+     * whole-ride odometer check: Maps progress, else odometer step, else speed.
+     */
+    fun distanceSeries(samples: List<RideSample>): List<Pair<Long, Double>> {
+        val s = samples.sortedBy { it.t }
+        if (s.isEmpty()) return emptyList()
+        var m = 0.0
+        val out = ArrayList<Pair<Long, Double>>(s.size)
+        out += s[0].t to 0.0
+        for (i in 1 until s.size) {
+            val a = s[i - 1]
+            val b = s[i]
+            val dtMs = b.t - a.t
+            val odo = if (a.odometerTenths != null && b.odometerTenths != null) (b.odometerTenths - a.odometerTenths) * 100 else null
+            m += navDrop(a, b, dtMs)?.toDouble()
+                ?: odo?.takeIf { it >= 0 && it <= 60 * dtMs / 1000 + 100 }?.toDouble()
+                ?: if (dtMs in 1..MAX_GAP_MS) (a.speedKmh ?: 0) / 3.6 * dtMs / 1000 else 0.0
+            out += b.t to m / 1000
+        }
+        return out
     }
 
     /** Rides shorter than this are dropped (ignition on in the parking lot). */

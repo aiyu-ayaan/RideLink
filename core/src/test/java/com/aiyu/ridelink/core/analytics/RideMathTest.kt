@@ -50,6 +50,48 @@ class RideMathTest {
         assertEquals(6.0, RideMath.summarize(missing, zone)!!.distanceKm, 0.1)
     }
 
+    @Test fun noRouteMeansOdometer() {
+        val r = RideMath.summarize(steady(36), zone)!!
+        assertEquals(DistanceSource.ODOMETER, r.source)
+        assertEquals(0, r.mapsM)
+        assertEquals(r.distanceM, r.odometerM)
+        assertEquals(0, r.navigatedS)
+    }
+
+    @Test fun routeProgressCountsAsMapsAndTheRestFromOdometer() {
+        // First 5 minutes on a 3 km route counting down to 0 (Maps), the last 5 minutes without one (odometer).
+        val ride = steady(36).mapIndexed { i, s -> if (i <= 60) s.copy(navLeftM = 3_000 - i * 50) else s }
+        val r = RideMath.summarize(ride, zone)!!
+        assertEquals(3_000, r.mapsM)
+        assertEquals(3.0, r.odometerM / 1000.0, 0.15)
+        assertEquals(6.0, r.distanceKm, 0.15)
+        assertEquals(300, r.navigatedS)
+        assertEquals(DistanceSource.MAPS, r.source)
+    }
+
+    @Test fun rerouteIsNotProgress() {
+        // Distance left jumps up (new route) half way: that interval is not Maps progress, the odometer covers it.
+        val ride = steady(36).mapIndexed { i, s -> s.copy(navLeftM = if (i < 60) 6_000 - i * 50 else 9_000 - (i - 60) * 50) }
+        val r = RideMath.summarize(ride, zone)!!
+        assertEquals(6.0, r.distanceKm, 0.2)
+        assertTrue(r.mapsM in 5_900..6_000)
+    }
+
+    @Test fun distanceSeriesEndsAtTheRideDistance() {
+        val series = RideMath.distanceSeries(steady(36))
+        assertEquals(0.0, series.first().second, 0.0)
+        assertEquals(6.0, series.last().second, 0.15)
+    }
+
+    @Test fun sampleWeekendRidesHaveRoutesAndTurns() {
+        val rides = SampleRides.generate(LocalDate.of(2026, 11, 3), zone)
+        val routed = rides.filter { r -> r.any { it.navLeftM != null } }
+        assertTrue(routed.isNotEmpty())
+        val turns = SampleRides.turnsFor(routed.first())
+        assertEquals("DESTINATION", turns.last().maneuver)
+        assertEquals(DistanceSource.MAPS, RideMath.summarize(routed.first(), zone)!!.source)
+    }
+
     @Test fun emptyAndTinyRides() {
         assertNull(RideMath.summarize(emptyList(), zone))
         val tiny = RideMath.summarize(listOf(RideSample(t0, 0), RideSample(t0 + 5_000, 0)), zone)!!

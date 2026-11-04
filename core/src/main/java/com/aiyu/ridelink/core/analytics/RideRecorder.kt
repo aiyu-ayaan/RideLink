@@ -34,6 +34,7 @@ class RideRecorder @Inject constructor(
 
     @Volatile private var telemetryAt = 0L
     private var current: MutableList<RideSample>? = null
+    private val turns = mutableListOf<RideTurn>()
     private var currentIsDemo = false
     private var lastMovingAt = 0L
 
@@ -66,22 +67,36 @@ class RideRecorder @Inject constructor(
             !active -> if (ride != null) finish()
             ride == null -> if ((speed ?: 0) >= RideMath.MOVING_KMH) {
                 current = mutableListOf(sample(now, t, speed))
+                turns.clear()
+                noteTurn(now)
                 currentIsDemo = demo
                 lastMovingAt = now
                 _recording.value = true
             }
             else -> {
                 ride += sample(now, t, speed)
+                noteTurn(now)
                 if ((speed ?: 0) >= RideMath.MOVING_KMH) lastMovingAt = now
                 else if (now - lastMovingAt > IDLE_END_MS) finish()
             }
         }
     }
 
+    private fun activeRoute() = controller.nav.value?.takeIf { !it.stopped }
+
     private fun sample(now: Long, t: DisplayTelemetry, speed: Int?) = RideSample(
         t = now, speedKmh = speed, odometerTenths = t.odometerTenths, tripTenths = t.tripTenths, fuel = t.fuelLevel,
         rangeKm = t.rangeKm, rpm = t.rpm, instantEconomy = t.instantEconomy, averageEconomy = t.averageEconomy,
+        navLeftM = activeRoute()?.distanceLeftM?.takeIf { it > 0 },
     )
+
+    /** A new Google Maps instruction since the last one recorded becomes a timeline entry. */
+    private fun noteTurn(now: Long) {
+        val step = activeRoute() ?: return
+        val last = turns.lastOrNull()
+        if (last != null && last.instruction == step.instruction && last.maneuver == step.maneuver.name) return
+        turns += RideTurn(now, step.instruction, step.maneuver.name, step.distanceToTurnM, step.distanceLeftM)
+    }
 
     private suspend fun finish() {
         val samples = current ?: return
@@ -90,14 +105,16 @@ class RideRecorder @Inject constructor(
         // Drop the standing-still tail so the ride ends when the wheels stopped.
         val trimmed = samples.filter { it.t <= lastMovingAt + RideMath.SAMPLE_MS }
         val summary = RideMath.summarize(trimmed, ZoneId.systemDefault()) ?: return
-        if (RideMath.worthKeeping(summary)) store.save(summary, trimmed, currentIsDemo)
+        val kept = turns.filter { it.t <= lastMovingAt + RideMath.SAMPLE_MS }
+        turns.clear()
+        if (RideMath.worthKeeping(summary)) store.save(summary, trimmed, currentIsDemo, kept)
     }
 
     /** Fills Analytics with labelled sample rides (demo = true) so it can be previewed without riding. */
     fun addSampleRides() = scope.launch {
         val zone = ZoneId.systemDefault()
         SampleRides.generate(LocalDate.now(zone), zone).forEach { samples ->
-            RideMath.summarize(samples, zone)?.let { store.save(it, samples, demo = true) }
+            RideMath.summarize(samples, zone)?.let { store.save(it, samples, demo = true, turns = SampleRides.turnsFor(samples)) }
         }
     }
 

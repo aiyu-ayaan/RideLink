@@ -35,13 +35,14 @@ class RideStore @Inject constructor(@ApplicationContext context: Context) {
 
     init { io.launch { reload() } }
 
-    suspend fun save(summary: RideSummary, samples: List<RideSample>, demo: Boolean): Long = withContext(Dispatchers.IO) {
+    suspend fun save(summary: RideSummary, samples: List<RideSample>, demo: Boolean, turns: List<RideTurn> = emptyList()): Long = withContext(Dispatchers.IO) {
         val w = db.writableDatabase
         var id = -1L
         w.beginTransaction()
         try {
             id = w.insert(T_RIDES, null, summary.toValues(demo))
             samples.forEach { w.insert(T_SAMPLES, null, it.toValues(id)) }
+            turns.forEach { w.insert(T_TURNS, null, it.toValues(id)) }
             w.setTransactionSuccessful()
         } finally {
             w.endTransaction()
@@ -56,7 +57,23 @@ class RideStore @Inject constructor(@ApplicationContext context: Context) {
         }
     }
 
+    /** Google Maps instructions seen during the ride, in order; empty when it was ridden without a route. */
+    suspend fun turns(rideId: Long): List<RideTurn> = withContext(Dispatchers.IO) {
+        db.readableDatabase.query(T_TURNS, null, "ride = ?", arrayOf(rideId.toString()), null, null, "t ASC").use { c ->
+            buildList {
+                while (c.moveToNext()) add(
+                    RideTurn(
+                        t = c.long("t"), instruction = c.getString(c.getColumnIndexOrThrow("instruction")).orEmpty(),
+                        maneuver = c.getString(c.getColumnIndexOrThrow("maneuver")).orEmpty(),
+                        distanceToTurnM = c.int("to_turn") ?: 0, distanceLeftM = c.int("left_m") ?: 0,
+                    ),
+                )
+            }
+        }
+    }
+
     suspend fun delete(rideId: Long) = withContext(Dispatchers.IO) {
+        db.writableDatabase.delete(T_TURNS, "ride = ?", arrayOf(rideId.toString()))
         db.writableDatabase.delete(T_SAMPLES, "ride = ?", arrayOf(rideId.toString()))
         db.writableDatabase.delete(T_RIDES, "id = ?", arrayOf(rideId.toString()))
         reload()
@@ -64,6 +81,7 @@ class RideStore @Inject constructor(@ApplicationContext context: Context) {
 
     /** Removes sample and demo-ride data only; real rides stay. */
     suspend fun deleteDemo() = withContext(Dispatchers.IO) {
+        db.writableDatabase.delete(T_TURNS, "ride IN (SELECT id FROM $T_RIDES WHERE demo = 1)", null)
         db.writableDatabase.delete(T_SAMPLES, "ride IN (SELECT id FROM $T_RIDES WHERE demo = 1)", null)
         db.writableDatabase.delete(T_RIDES, "demo = 1", null)
         reload()
@@ -106,6 +124,12 @@ class RideStore @Inject constructor(@ApplicationContext context: Context) {
         avgEconomy?.let { put("avg_economy", it) }; fuelUsed?.let { put("fuel_used", it) }
         odometerStartTenths?.let { put("odo_start", it) }; odometerEndTenths?.let { put("odo_end", it) }
         put("bands", speedBandS.joinToString(",")); put("hours", hourS.joinToString(","))
+        put("maps_m", mapsM); put("odo_m", odometerM); put("speed_m", speedM); put("nav_s", navigatedS)
+    }
+
+    private fun RideTurn.toValues(ride: Long) = ContentValues().apply {
+        put("ride", ride); put("t", t); put("instruction", instruction); put("maneuver", maneuver)
+        put("to_turn", distanceToTurnM); put("left_m", distanceLeftM)
     }
 
     private fun RideSample.toValues(ride: Long) = ContentValues().apply {
@@ -113,6 +137,7 @@ class RideStore @Inject constructor(@ApplicationContext context: Context) {
         speedKmh?.let { put("speed", it) }; odometerTenths?.let { put("odo", it) }; tripTenths?.let { put("trip", it) }
         fuel?.let { put("fuel", it) }; rangeKm?.let { put("range_km", it) }; rpm?.let { put("rpm", it) }
         instantEconomy?.let { put("inst_eco", it) }; averageEconomy?.let { put("avg_eco", it) }
+        navLeftM?.let { put("nav_left", it) }
     }
 
     private fun Cursor.int(col: String) = getColumnIndexOrThrow(col).let { if (isNull(it)) null else getInt(it) }
@@ -128,15 +153,17 @@ class RideStore @Inject constructor(@ApplicationContext context: Context) {
             movingS = int("moving_s") ?: 0, maxSpeedKmh = int("max_speed") ?: 0, avgMovingSpeedKmh = dbl("avg_speed") ?: 0.0,
             avgEconomy = dbl("avg_economy"), fuelUsed = int("fuel_used"), odometerStartTenths = int("odo_start"),
             odometerEndTenths = int("odo_end"), speedBandS = ints("bands"), hourS = ints("hours"),
+            mapsM = int("maps_m") ?: 0, odometerM = int("odo_m") ?: 0, speedM = int("speed_m") ?: 0, navigatedS = int("nav_s") ?: 0,
         ),
     )
 
     private fun Cursor.sample() = RideSample(
         t = long("t"), speedKmh = int("speed"), odometerTenths = int("odo"), tripTenths = int("trip"), fuel = int("fuel"),
         rangeKm = int("range_km"), rpm = int("rpm"), instantEconomy = int("inst_eco"), averageEconomy = int("avg_eco"),
+        navLeftM = int("nav_left"),
     )
 
-    private class Helper(context: Context) : SQLiteOpenHelper(context, "rides.db", null, 1) {
+    private class Helper(context: Context) : SQLiteOpenHelper(context, "rides.db", null, 2) {
         override fun onCreate(db: SQLiteDatabase) {
             db.execSQL(
                 """CREATE TABLE $T_RIDES (id INTEGER PRIMARY KEY AUTOINCREMENT, start INTEGER NOT NULL, end_t INTEGER NOT NULL,
@@ -148,13 +175,31 @@ class RideStore @Inject constructor(@ApplicationContext context: Context) {
                 fuel INTEGER, range_km INTEGER, rpm INTEGER, inst_eco INTEGER, avg_eco INTEGER)""",
             )
             db.execSQL("CREATE INDEX samples_ride ON $T_SAMPLES (ride, t)")
+            upgradeTo2(db)
         }
 
-        override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) = Unit
+        override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
+            if (oldVersion < 2) upgradeTo2(db)
+        }
+
+        /**
+         * v2: distance split (Maps / odometer / speed), Maps distance-left per sample, turn timeline.
+         * Rides from v1 keep null splits; RideSummary.source then falls back to the odometer.
+         */
+        private fun upgradeTo2(db: SQLiteDatabase) {
+            listOf("maps_m", "odo_m", "speed_m", "nav_s").forEach { db.execSQL("ALTER TABLE $T_RIDES ADD COLUMN $it INTEGER") }
+            db.execSQL("ALTER TABLE $T_SAMPLES ADD COLUMN nav_left INTEGER")
+            db.execSQL(
+                """CREATE TABLE $T_TURNS (ride INTEGER NOT NULL, t INTEGER NOT NULL, instruction TEXT, maneuver TEXT,
+                to_turn INTEGER, left_m INTEGER)""",
+            )
+            db.execSQL("CREATE INDEX turns_ride ON $T_TURNS (ride, t)")
+        }
     }
 
     private companion object {
         const val T_RIDES = "rides"
         const val T_SAMPLES = "samples"
+        const val T_TURNS = "turns"
     }
 }
