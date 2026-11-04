@@ -1,6 +1,6 @@
 # RideLink — brag plan
 
-**Format:** vertical 9:16, 1440×2560 (2K), 30 fps, 25 s. **Tone:** cinematic dev-story, polished, dark.
+**Format:** vertical 9:16, 1440×2560 (2K), 30 fps, 64.8 s (extended cut on request: slower, settled pacing). **Tone:** cinematic dev-story, polished, dark.
 **Angle:** "The official app is rated 2.7★. So I rebuilt it — no account, no cloud — straight to the scooter display."
 
 ## What it is
@@ -23,19 +23,22 @@ tertiaryContainer #574419 / on #FCDFA6, secondaryContainer #5D3F3B. Brand: RideL
 (`splash-preview.html`). Problem act is desaturated grey with error-red accents; the turn floods to brand red.
 No TVS logos or assets (CLAUDE.md rule) — TVS is named in text only, with a not-affiliated line at the end.
 
-## Storyboard (120 BPM, beat = 0.5 s, every cut on a beat)
-| # | Time | Scene | On screen |
-|---|---|---|---|
-| 1 | 0.0–3.0 | Hook | Big rating counts 5.0 → 2.7★, stars drain. "The official TVS Connect app" / "2.7★ on Google Play" |
-| 2 | 3.0–8.0 | Pain | "What riders keep hitting:" then 4 error cards stack in on beats: Chassis number not found · Connects once, then never again · Disconnects mid-ride · mac_id is not valid. Glitch on each. |
-| 3 | 8.0–10.5 | Turn | Hard cut to red. "So I built my own." Logo draws with the real splash choreography, spark pops, ripple. "RideLink" + tagline |
-| 4 | 10.5–20.0 | Product | Phone with rebuilt current Ride screen. 10.5 Searching (loading cookie) → 11.5 Connected. Caption "No account. It just connects." 13.0 nav dashboard springs in, distance counts 300 → 50 m, speed ticks; scooter display panel mirrors the arrow over a BLE pulse. Caption "Google Maps turns, on your display." 15.5 call card "Mom" + handlebar answer. Caption "Answer calls from the handlebar." 17.5 pill bar switches to Analytics, bars grow. Caption "Every ride. Only on your phone." |
-| 5 | 20.0–22.5 | Proof | Real BLE frames stream (5B 4F …, 5A 4E …). "Rebuilt the BLE protocol from scratch." then "Zero accounts. Zero cloud. Zero tracking." |
-| 6 | 22.5–25.0 | Outro | Mark + RideLink + "Free & open source · Android 8+" + github.com/aiyu-ayaan/RideLink; small "Independent project. Not affiliated with TVS Motor Company." |
-
-UI text inside the phone uses demo values (the app's own Demo ride / sample rides): "TVSBT01", MG Road, Mom.
+## Storyboard (100 BPM, beat = 0.6 s, every cut on a beat)
+| # | Time | Scene |
+|---|---|---|
+| 1 | 0.0–4.8 | Hook: rating counts 5.0 → 2.7★, stars drain, "on Google Play · ~110K ratings" |
+| 2 | 4.8–12.0 | Pain: 4 rider complaints stack in, one per 1.2 s, then hold |
+| 3 | 12.0–16.8 | Turn: brand red, "So I built my own.", real splash choreography, RideLink + tagline |
+| 4 | 16.8–22.8 | Connect: phone in, Searching → Connected; NTORQ-style TFT cluster rises and boots (telltales, needle sweep), RIDELINK / CONNECTED |
+| 5 | 22.8–30.0 | Navigation: dashboard card, 400 m → turn (right indicator blinks on the beat), then "Continue onto 100 Feet Rd"; cluster mirrors arrow, street, distance, speed |
+| 6 | 30.0–36.0 | Calls: Mom rings, answered from the scooter switch at 32.4, call ends at 34.8 |
+| 7 | 36.0–40.8 | Music + weather cards, page scrolls; cluster shows NIGHT RIDE / LO-FI BEATS and 27° |
+| 8 | 40.8–46.8 | Cluster sinks, phone grows, pill switches to Analytics: week distance, bars, records |
+| 9 | 46.8–52.8 | Ride history: list scrolls in, tap Sat 31 Oct ride → detail page (distance source, stats, Maps turn timeline, speed chart) |
+| 10 | 52.8–57.6 | Proof: real nav-control frame, byte by byte; Zero accounts / cloud / tracking |
+| 11 | 57.6–64.8 | Outro: icon, RideLink, feature chips, GitHub link, not-affiliated line; long hold, fade to black |
 
 ## Sound
-120 BPM in A minor. Act 1: muted pad, ticking hats, detuned error blips on each card (in key, low in the mix).
+100 BPM in A minor. Act 1: muted pad, ticking hats, detuned error blips on each card (in key, low in the mix).
 Riser into 8.0, impact + brand chord on the logo. 10.0 onward: full groove (kick, clap, bass, plucked arp,
 A-major lift); soft UI ticks on beat for connect / arrow / call / tab. Outro: final chord rings out.

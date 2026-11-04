@@ -1,11 +1,11 @@
-"""Soundtrack for the RideLink brag video: 25 s, 120 BPM, A minor -> A major lift at the reveal.
+"""Soundtrack for the RideLink brag video: 64.8 s, 100 BPM, A minor -> A major lift at the reveal.
 Every part sits on one grid counted from frame 0 (beat = 0.5 s). Writes work/score.wav (48 kHz stereo)."""
 import numpy as np, sys, wave
 
 SR = 48000
-DUR = 25.0
+DUR = 64.8
 N = int(SR * DUR)
-BEAT = 0.5
+BEAT = 0.6
 rng = np.random.default_rng(7)
 
 def hz(m):  # midi -> Hz
@@ -139,116 +139,121 @@ def ring_tone(m):  # phone ring blip (in key)
     s = np.sin(2 * np.pi * hz(m) * t) + 0.4 * np.sin(2 * np.pi * hz(m + 4) * t)
     return s * np.minimum(1, t * 300) * np.exp(-t * 14) * 0.5
 
-# ---------------- arrangement ----------------
-A2, C3, D3, E3, F3, G3 = 45, 48, 50, 52, 53, 55
-# Act 1 (0-8): A minor, sparse
-put('pad', pad([57, 60, 64], 3.0, a=0.15, bright=0.15), 0.0, gain=0.55)
-put('pad', pad([53, 57, 60], 2.0, bright=0.2), 3.0, gain=0.55)       # F
-put('pad', pad([50, 53, 57], 2.0, bright=0.2), 5.0, gain=0.55)       # Dm
-put('pad', pad([52, 56, 59], 1.0, bright=0.3, r=0.2), 7.0, gain=0.55) # E (tension)
-for b in range(16):
-    t = b * BEAT
-    put('drums', hat(), t + 0.25, pan=0.3, gain=0.5)
-    if b >= 6 and b % 2 == 0: put('drums', kick(0.55), t)
-for t, m in [(0.0, 33), (1.0, 33), (2.0, 33), (3.0, 29), (4.0, 29), (5.0, 26), (6.0, 26), (7.0, 28)]:
-    put('bass', bass(m + 12, 0.45), t, gain=0.7)
-# rating drop: descending glide while the number falls (0.5 -> 1.75)
-n = int(1.25 * SR); tt = np.arange(n) / SR
-f = hz(76) * 2 ** (-(7 / 12) * (tt / 1.25))
-put('sfx', np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-tt * 1.2) * 0.25, 0.5, pan=-0.1)
-# error blips on each pain card (3.5, 4.5, 5.5, 6.5)
-for i, t in enumerate([3.5, 4.5, 5.5, 6.5]):
-    put('sfx', blip(76 - i, 72 - i), t, pan=(-0.25 if i % 2 else 0.25), gain=0.35)
-put('fx', riser(1.0), 7.0, gain=0.45)
-for k in range(8): put('drums', clap() * (0.2 + 0.1 * k), 7.0 + k * 0.125, gain=0.6)
 
-# Turn (8-10): impact + A major
-put('fx', impact(), 8.0, gain=0.8)
-put('fx', crash(), 8.0, gain=0.8)
-put('pad', pad([57, 61, 64, 69], 2.0, a=0.02, bright=0.6), 8.0, gain=0.7)
-put('bass', bass(33, 1.9), 8.0, gain=0.8)
-put('sfx', ding(88), 8.75, pan=0.2, gain=0.45)   # spark pops in
-for k, m in enumerate([69, 73, 76, 81, 76, 73, 76, 81]):
-    put('arp', pluck(m, bright=0.6), 9.0 + k * 0.125, pan=(-0.3 if k % 2 else 0.3), gain=0.35)
-put('fx', riser(0.5), 9.5, gain=0.3)
+# ---------------- arrangement (100 BPM, beat 0.6 s, bar 2.4 s) ----------------
+B = BEAT
+# Act 1 (0-12): A minor, sparse and soft
+for t0, ch, root, d in [(0.0, [57, 60, 64], 33, 4.8), (4.8, [53, 57, 60], 29, 2.4), (7.2, [50, 53, 57], 26, 2.4), (9.6, [52, 56, 59], 28, 2.4)]:
+    put('pad', pad(ch, d, a=0.4, bright=0.15, r=0.5), t0, gain=0.6)
+    for k in range(int(d / (2 * B))):
+        put('bass', bass(root + 12, 0.9), t0 + k * 2 * B, gain=0.55)
+for b in range(int(12.0 / B)):
+    t0 = b * B
+    put('drums', hat(), t0 + B / 2, pan=0.3, gain=0.35)
+    if t0 >= 4.8 and b % 2 == 0: put('drums', kick(0.45), t0)
+# rating drop: soft descending glide (0.9 -> 2.7)
+n = int(1.8 * SR); tt = np.arange(n) / SR
+f = hz(76) * 2 ** (-(7 / 12) * (tt / 1.8))
+put('sfx', np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-tt * .9) * 0.22, 0.9, pan=-0.1)
+for i, t0 in enumerate([5.4, 6.6, 7.8, 9.0]):
+    put('sfx', blip(76 - i, 72 - i), t0, pan=(-0.25 if i % 2 else 0.25), gain=0.28)
+put('fx', riser(1.2), 10.8, gain=0.35)
 
-# Groove (10-22.5): A - F#m - D - E, 1 bar each, 120 BPM
-prog = [(10, [57, 61, 64], 33), (12, [54, 57, 61], 30), (14, [50, 54, 57], 26), (16, [52, 56, 59], 28),
-        (18, [57, 61, 64], 33), (20, [54, 57, 61], 30), (22, [50, 54, 57], 26)]
-for t0, ch, root in prog:
-    dur = min(2.0, 22.5 - t0)
-    put('pad', pad(ch, dur, a=0.05, bright=0.45, r=0.3), t0, gain=0.5)
-    for k in range(int(dur / 0.25)):
-        t = t0 + k * 0.25
-        m = root + 12 + (12 if k % 4 == 3 else 0)
-        put('bass', bass(m, 0.22), t, gain=0.75)
+# Turn (12-16.8): impact + A major, the splash spark
+put('fx', impact(), 12.0, gain=0.7)
+put('fx', crash(), 12.0, gain=0.6)
+put('pad', pad([57, 61, 64, 69], 4.6, a=0.05, bright=0.5, r=0.8), 12.0, gain=0.65)
+put('bass', bass(33, 4.6), 12.0, gain=0.7)
+put('sfx', ding(88), 13.2, pan=0.2, gain=0.4)
+for k, m in enumerate([69, 73, 76, 81, 76, 73, 76, 81, 69, 73, 76, 81]):
+    put('arp', pluck(m, 0.3, 0.5), 13.8 + k * B / 2, pan=(-0.3 if k % 2 else 0.3), gain=0.28)
+put('fx', riser(0.6), 16.2, gain=0.25)
+
+# Groove (16.8-52.8): A - F#m - D - E, one bar each; relaxed, builds at 22.8
+prog = [([57, 61, 64], 33), ([54, 57, 61], 30), ([50, 54, 57], 26), ([52, 56, 59], 28)]
+for bar in range(15):
+    t0 = 16.8 + bar * 4 * B
+    ch, root = prog[bar % 4]
+    full = t0 >= 22.8
+    put('pad', pad(ch, 4 * B, a=0.08, bright=0.4, r=0.4), t0, gain=0.5)
+    for k in range(8):  # eighth-note bass, softer before the build
+        put('bass', bass(root + 12 + (12 if k == 7 else 0), 0.26), t0 + k * B / 2, gain=0.7 if full else 0.5)
     arp = [ch[0] + 12, ch[1] + 12, ch[2] + 12, ch[1] + 24]
-    for k in range(int(dur / 0.125)):
-        put('arp', pluck(arp[k % 4], 0.18, 0.8), t0 + k * 0.125, pan=(-0.35 if k % 2 else 0.35), gain=0.22)
-for b in range(int((22.5 - 10.0) / BEAT)):
-    t = 10.0 + b * BEAT
-    put('drums', kick(1.0), t)
-    if b % 2 == 1: put('drums', clap(), t, gain=0.8)
-    put('drums', hat(), t, pan=-0.2, gain=0.3)
-    put('drums', hat(open_=True), t + 0.25, pan=0.25, gain=0.35)
-# UI ticks on the grid, blended low
-for t, m in [(11.5, 88), (12.0, 93), (13.0, 85), (17.5, 88), (19.5, 81), (21.0, 85), (21.25, 88), (21.5, 93)]:
-    put('sfx', tick(m), t, pan=0.15, gain=0.35)
+    for k in range(16 if full else 8):
+        step = B / 4 if full else B / 2
+        put('arp', pluck(arp[k % 4], 0.22, 0.7), t0 + k * step, pan=(-0.35 if k % 2 else 0.35), gain=0.18 if full else 0.2)
+    for k in range(4):
+        tb = t0 + k * B
+        put('drums', kick(0.9 if full else 0.6), tb)
+        if full and k % 2 == 1: put('drums', clap(), tb, gain=0.6)
+        put('drums', hat(), tb + B / 2, pan=0.25, gain=0.3)
+        if full: put('drums', hat(), tb, pan=-0.2, gain=0.18)
+# UI sounds, on the grid and low
+for t0, m in [(18.6, 88), (23.4, 85), (27.6, 88), (34.8, 81), (36.0, 85), (41.4, 88), (48.6, 93), (49.2, 85)]:
+    put('sfx', tick(m), t0, pan=0.15, gain=0.3)
+# cluster boot: gauge sweep up and back (19.8-21.0), in key
+n = int(1.2 * SR); tt = np.arange(n) / SR
+semis = np.where(tt < 0.6, 24 * (tt / 0.6), 24 * (1 - (tt - 0.6) / 0.6))
+sw = np.sin(2 * np.pi * np.cumsum(hz(57) * 2 ** (semis / 12)) / SR) * np.sin(np.pi * tt / 1.2) ** 1.5
+put('sfx', sw * 0.2, 19.8, gain=0.6)
+put('sfx', ding(81), 21.0, gain=0.3)
+# right indicator relay: on/off every half beat (25.2-27.6)
 for k in range(4):
-    put('sfx', ring_tone(81), 15.5 + k * 0.25, pan=-0.15, gain=0.32)
-put('sfx', ding(93), 16.75, pan=0.1, gain=0.3)   # answered from the scooter switch
-
-# Cluster boot (12.0-12.8): gauge sweep tone up then down, in key (A3 -> A5 -> A3)
-n = int(0.8 * SR); tt = np.arange(n) / SR
-semis = np.where(tt < 0.4, 24 * (tt / 0.4), 24 * (1 - (tt - 0.4) / 0.4))
-f = hz(57) * 2 ** (semis / 12)
-sw = np.sin(2 * np.pi * np.cumsum(f) / SR) * np.sin(np.pi * tt / 0.8) ** 1.5
-put('sfx', sw * 0.22, 12.0, gain=0.6)
-# Right indicator relay clicks while the display blinks (on the beat)
+    put('sfx', tick(100, 0.03) * 0.8, 25.2 + k * B, pan=0.45, gain=0.3)
+    put('sfx', tick(95, 0.03) * 0.5, 25.5 + k * B, pan=0.45, gain=0.25)
+# call: ring pairs on the grid until answered (30.0-32.4), answered chime
 for k in range(4):
-    put('sfx', tick(100, 0.03) * 0.8, 13.5 + k * 0.5, pan=0.45, gain=0.35)
-    put('sfx', tick(95, 0.03) * 0.5, 13.75 + k * 0.5, pan=0.45, gain=0.3)
+    put('sfx', ring_tone(81), 30.0 + k * 2 * B, pan=-0.15, gain=0.3)
+    put('sfx', ring_tone(81), 30.3 + k * 2 * B, pan=-0.15, gain=0.3)
+put('sfx', ding(93), 32.4, pan=0.1, gain=0.3)
 
-# Outro (22.5-25): crash + final chord rings out
-put('fx', crash(), 22.5, gain=0.7)
-put('fx', impact() * 0.6, 22.5, gain=0.6)
-put('pad', pad([57, 61, 64, 69, 73], 2.0, a=0.01, bright=0.55, r=0.9), 22.5, gain=0.65)
-put('bass', bass(33, 2.0), 22.5, gain=0.7)
-for k, m in enumerate([81, 76, 73, 69]):
-    put('arp', pluck(m, 0.6, 0.4), 22.5 + k * 0.25, pan=(-0.3 if k % 2 else 0.3), gain=0.3)
-put('sfx', ding(88), 22.75, gain=0.35)
+# Proof (52.8-57.6): groove thins to kick, bass and arps
+for bar in range(2):
+    t0 = 52.8 + bar * 4 * B
+    ch, root = prog[bar % 4]
+    put('pad', pad(ch, 4 * B, a=0.1, bright=0.25, r=0.4), t0, gain=0.45)
+    for k in range(8): put('bass', bass(root + 12, 0.26), t0 + k * B / 2, gain=0.55)
+    for k in range(4): put('drums', kick(0.6), t0 + k * B); put('drums', hat(), t0 + k * B + B / 2, gain=0.25)
+    arp = [ch[0] + 24, ch[2] + 12, ch[1] + 24, ch[2] + 12]
+    for k in range(16): put('arp', pluck(arp[k % 4], 0.15, 1.2), t0 + k * B / 4, pan=(-0.4 if k % 2 else 0.4), gain=0.12)
+for i in range(3): put('sfx', tick(85 + 3 * i), 55.2 + i * B / 2, gain=0.3)
+put('fx', riser(0.6), 57.0, gain=0.25)
+
+# Outro (57.6-64.8): crash, long A major chord, slow arp, rings out
+put('fx', crash(), 57.6, gain=0.55)
+put('fx', impact() * 0.5, 57.6, gain=0.5)
+put('pad', pad([57, 61, 64, 69, 73], 5.0, a=0.05, bright=0.45, r=2.2), 57.6, gain=0.6)
+put('bass', bass(33, 4.8), 57.6, gain=0.6)
+for k, m in enumerate([81, 76, 73, 69, 73, 76, 81, 85, 81, 76, 73, 69]):
+    put('arp', pluck(m, 0.8, 0.35), 58.2 + k * B, pan=(-0.3 if k % 2 else 0.3), gain=0.22)
+put('sfx', ding(88), 58.2, gain=0.3)
 
 # ---------------- mix ----------------
-# sidechain pump from the kick grid (10-22.5)
 t = np.arange(N) / SR
 duck = np.ones(N)
-for b in range(int((22.5 - 10.0) / BEAT)):
-    t0 = 10.0 + b * BEAT
-    i0 = int(t0 * SR); i1 = min(N, i0 + int(0.4 * SR))
-    tt = (np.arange(i1 - i0)) / SR
-    duck[i0:i1] = np.minimum(duck[i0:i1], 1 - 0.45 * np.exp(-tt * 9))
+for b in range(int((52.8 - 22.8) / B)):
+    i0 = int((22.8 + b * B) * SR); i1 = min(N, i0 + int(0.45 * SR))
+    tt = np.arange(i1 - i0) / SR
+    duck[i0:i1] = np.minimum(duck[i0:i1], 1 - 0.35 * np.exp(-tt * 8))
 
-def reverb(x, dur=1.6, mix=0.18):
+def reverb(x, dur=2.2, mix=0.2):
     n = int(dur * SR); tt = np.arange(n) / SR
-    ir = rng.standard_normal(n) * np.exp(-tt * 3.5)
-    ir = lp_fast(ir, 5000); ir /= np.sqrt((ir ** 2).sum())
+    ir = rng.standard_normal(n) * np.exp(-tt * 2.8)
+    ir = lp_fast(ir, 4500); ir /= np.sqrt((ir ** 2).sum())
     m = len(x) + n - 1; F = 1 << (m - 1).bit_length()
     y = np.fft.irfft(np.fft.rfft(x, F) * np.fft.rfft(ir, F), F)[: len(x)]
     return x + mix * y
 
-gains = {'drums': 0.9, 'bass': 0.85, 'pad': 0.7, 'arp': 0.75, 'sfx': 0.55, 'fx': 0.7}
+gains = {'drums': 0.8, 'bass': 0.85, 'pad': 0.75, 'arp': 0.75, 'sfx': 0.55, 'fx': 0.65}
 mixL = np.zeros(N); mixR = np.zeros(N)
 for k, g in gains.items():
     l, r = bus[k]
-    if k in ('pad', 'arp', 'bass'):
-        l, r = l * duck, r * duck
-    if k in ('pad', 'arp', 'sfx', 'fx'):
-        l, r = reverb(l, mix=0.22), reverb(r, mix=0.22)
+    if k in ('pad', 'arp', 'bass'): l, r = l * duck, r * duck
+    if k in ('pad', 'arp', 'sfx', 'fx'): l, r = reverb(l, mix=0.25), reverb(r, mix=0.25)
     mixL += l * g; mixR += r * g
-# proof section: gentle low-pass sweep on the music bed (19.5-21) then open up
-fade = np.ones(N); i0 = int(24.4 * SR); fade[i0:] = np.linspace(1, 0, N - i0) ** 1.5
+fade = np.ones(N); i0 = int(63.0 * SR); fade[i0:] = np.linspace(1, 0, N - i0) ** 1.6
 fade[: int(0.01 * SR)] = np.linspace(0, 1, int(0.01 * SR))
-sec = np.interp(t, [0, 7.0, 7.9, 8.0, 10.0, 10.05, 22.4, 22.5, 25], [1.55, 1.55, 1.4, 1.5, 1.4, 1.0, 1.0, 1.45, 1.45])
+sec = np.interp(t, [0, 11.9, 12.0, 16.8, 22.7, 22.8, 52.7, 52.8, 57.5, 57.6, 64.8], [1.5, 1.5, 1.35, 1.35, 1.3, 1.0, 1.0, 1.25, 1.25, 1.35, 1.35])
 mixL *= fade * sec; mixR *= fade * sec
 peak = max(np.abs(mixL).max(), np.abs(mixR).max())
 mixL = np.tanh(mixL / peak * 1.3) / np.tanh(1.3) * 0.89
