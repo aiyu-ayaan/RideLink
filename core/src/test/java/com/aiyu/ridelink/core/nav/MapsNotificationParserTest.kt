@@ -23,6 +23,14 @@ class MapsNotificationParserTest {
         assertEquals(52_000, step.distanceLeftM)
     }
 
+    @Test fun noBreakSpaces() {
+        val step = MapsNotificationParser.parse("300 m", "Turn left onto MG Road", "12 min · 4.5 km · 10:42 ETA")!!
+        assertEquals(300, step.distanceToTurnM)
+        assertEquals(Maneuver.LEFT, step.maneuver)
+        assertEquals(720L, step.etaSeconds)
+        assertEquals(4500, step.distanceLeftM)
+    }
+
     @Test fun keywords() {
         assertEquals(Maneuver.SLIGHT_LEFT, MapsNotificationParser.maneuverOf("Slight left toward NH 48"))
         assertEquals(Maneuver.ROUNDABOUT, MapsNotificationParser.maneuverOf("At the roundabout, take the 2nd exit"))

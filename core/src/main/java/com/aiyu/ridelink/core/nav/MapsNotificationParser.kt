@@ -19,18 +19,22 @@ object MapsNotificationParser {
     private val separators = Regex("""^(?:[\s·•\-–,]|\b(?:in|then)\b)+|[\s·•\-–,]+$""", RegexOption.IGNORE_CASE)
     private val explicitStraight = Regex("""\b(continue|straight|head)\b""", RegexOption.IGNORE_CASE)
 
+    // Maps formats "300 m" / "12 min" with no-break spaces, which Java's \s does not match.
+    private val oddSpaces = Regex("[\\u00A0\\u2007\\u202F]")
+
     fun parse(title: String?, text: String?, subText: String?): NavStep? {
-        val parts = listOfNotNull(title, text).map(String::trim).filter(String::isNotEmpty)
+        val sub = subText?.replace(oddSpaces, " ")
+        val parts = listOfNotNull(title, text).map { it.replace(oddSpaces, " ").trim() }.filter(String::isNotEmpty)
         val distPart = parts.firstOrNull { distance.containsMatchIn(it) } ?: return null
         val distMatch = distance.find(distPart)!!
         val distRest = distPart.removeRange(distMatch.range).replace(separators, "")
         val instruction = (parts - distPart).firstOrNull() ?: distRest.ifEmpty { return null }
         return NavStep(
             distanceToTurnM = toMeters(distMatch),
-            etaSeconds = subText?.let(minutes::find)?.let { m ->
+            etaSeconds = sub?.let(minutes::find)?.let { m ->
                 ((m.groupValues[1].toLongOrNull() ?: 0) * 60 + m.groupValues[2].toLong()) * 60
             } ?: 0,
-            distanceLeftM = subText?.let(km::find)?.let(::toMeters) ?: 0,
+            distanceLeftM = sub?.let(km::find)?.let(::toMeters) ?: 0,
             maneuver = maneuverOf(instruction).let { m ->
                 // Maps sometimes puts only the street in one field and the direction next to the distance.
                 if (m != Maneuver.STRAIGHT || explicitStraight.containsMatchIn(instruction)) m
