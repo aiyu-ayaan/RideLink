@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.1-alpha.2](https://github.com/aiyu-ayaan/RideLink/compare/v0.2.1-alpha.1...v0.2.1-alpha.2) (2026-11-04)
+
+### Other changes
+
+* Docs(Arch) : Document app shell, updater, developer console, ride distance sources and release flow
+* App(Icon) : Tonal launcher icon matching the app theme, DEV tag and name on debug builds, single activity instance
+* Ui(Analytics) : Ride detail page with distance source, all stats, charts, speed bands and Maps turn timeline; scooter chips on Ride
+* Core(Analytics) : Ride distance from Maps route progress, odometer or speed per interval, record route and turns
+* Core(Calls) : Strip bidi marks dialers wrap around caller numbers
+* Core(Calls) : Send dialer-formatted caller numbers as digits only
+* Core(Protocol) : Checksum social count and music frames like the stock app, phone-state backup for incoming calls
+
 ## [0.2.1-alpha.1](https://github.com/aiyu-ayaan/RideLink/compare/v0.2.0...v0.2.1-alpha.1) (2026-11-04)
 
 ### Other changes
