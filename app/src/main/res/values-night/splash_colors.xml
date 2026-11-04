@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dark fallback scheme surface and primary. -->
+    <color name="splash_background">#1A1110</color>
+    <color name="splash_ring">#FFB4A9</color>
+</resources>

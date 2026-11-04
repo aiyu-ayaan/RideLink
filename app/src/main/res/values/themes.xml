@@ -3,10 +3,10 @@
     <!-- Window theme only; all UI colors come from the Compose MaterialExpressiveTheme. -->
     <style name="Theme.RideLink" parent="android:Theme.Material.Light.NoActionBar" />
 
-    <!-- Launch theme: brand-red splash with the animated "Closed loop" mark, then Theme.RideLink.
+    <!-- Launch theme: splash on the app surface colour (splash_background) with the primary-coloured mark with the animated "Closed loop" mark, then Theme.RideLink.
          The icon animation is 1000 ms; MainActivity waits for it, then plays the exit. -->
     <style name="Theme.RideLink.Starting" parent="Theme.SplashScreen">
-        <item name="windowSplashScreenBackground">@color/brand_red</item>
+        <item name="windowSplashScreenBackground">@color/splash_background</item>
         <item name="windowSplashScreenAnimatedIcon">@drawable/splash_logo_animated</item>
         <item name="windowSplashScreenAnimationDuration">1000</item>
         <item name="postSplashScreenTheme">@style/Theme.RideLink</item>

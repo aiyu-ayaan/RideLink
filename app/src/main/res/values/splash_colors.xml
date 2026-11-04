@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Splash matches the app: fallback scheme surface and primary (ui/theme/Theme.kt). -->
+    <color name="splash_background">#FFF8F7</color>
+    <color name="splash_ring">#904A42</color>
+</resources>

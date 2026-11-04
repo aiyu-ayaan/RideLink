@@ -92,7 +92,8 @@ def splash_avd():
     pop = "@android:anim/overshoot_interpolator"
     drawable = (f'        <vector android:width="240dp" android:height="240dp" android:viewportWidth="240" android:viewportHeight="240">\n'
                 f'            <group android:name="mark" android:pivotX="{f(cx)}" android:pivotY="{f(cy)}">\n'
-                f'                <path android:name="ring" android:strokeColor="{WHITE}" android:strokeWidth="{f(w)}"\n'
+                # Ring takes the app's primary role (values/, values-night/, values-v31/ splash_ring) to match the theme.
+                f'                <path android:name="ring" android:strokeColor="@color/splash_ring" android:strokeWidth="{f(w)}"\n'
                 f'                    android:strokeLineCap="round" android:trimPathEnd="1" android:pathData="{line}" />\n'
                 f'                <group android:name="spark" android:pivotX="{f(sc[0])}" android:pivotY="{f(sc[1])}">\n'
                 f'                    <path android:fillColor="{AMBER}" android:pathData="{circle_path(sc, sr)}" />\n'

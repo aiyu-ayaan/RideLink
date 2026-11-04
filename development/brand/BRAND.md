@@ -13,7 +13,7 @@ Construction (256 grid, `logo_geometry.py` is the source of truth; never redraw 
 ## Colour
 | Name | HEX | Use |
 |---|---|---|
-| RideLink Red | `#B3261E` | brand colour, launcher and splash background, ring on light |
+| RideLink Red | `#B3261E` | brand colour, launcher background, ring on light. The splash follows the app theme instead (`splash_colors.xml`: surface + primary, dynamic on Android 12+) |
 | Spark Amber | `#FFB82E` | the spark on red or dark backgrounds only |
 | Ink | `#1C1B1F` | the spark on light backgrounds, one-colour mark |
 | White | `#FFFFFF` | ring on red or dark |

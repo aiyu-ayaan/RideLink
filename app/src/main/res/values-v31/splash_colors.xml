@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Android 12+: dynamic colour, the same wallpaper palette the app uses (surface ~ neutral 99, primary = accent 40). -->
+    <color name="splash_background">@android:color/system_neutral1_10</color>
+    <color name="splash_ring">@android:color/system_accent1_600</color>
+</resources>
