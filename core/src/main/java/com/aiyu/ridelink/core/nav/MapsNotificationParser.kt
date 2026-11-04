@@ -12,7 +12,7 @@ import com.aiyu.ridelink.core.protocol.Maneuver
 object MapsNotificationParser {
     const val MAPS_PACKAGE = "com.google.android.apps.maps"
 
-    private val distance = Regex("""^\s*(\d+(?:[.,]\d+)?)\s*(km|m|mi|ft)\b""", RegexOption.IGNORE_CASE)
+    private val distance = Regex("""(?:^|\b(?:in|then)\s+)\s*(\d+(?:[.,]\d+)?)\s*(km|mi|ft|m)\b""", RegexOption.IGNORE_CASE)
     private val minutes = Regex("""(?:(\d+)\s*h(?:r|our)?s?\s*)?(\d+)\s*min""", RegexOption.IGNORE_CASE)
     private val km = Regex("""(\d+(?:[.,]\d+)?)\s*(km|m)\b""", RegexOption.IGNORE_CASE)
 
@@ -27,7 +27,8 @@ object MapsNotificationParser {
                 ((m.groupValues[1].toLongOrNull() ?: 0) * 60 + m.groupValues[2].toLong()) * 60
             } ?: 0,
             distanceLeftM = subText?.let(km::find)?.let(::toMeters) ?: 0,
-            maneuver = maneuverOf(instruction),
+            // Maps sometimes puts only the street in one field and the direction in the other.
+            maneuver = maneuverOf(instruction).takeIf { it != Maneuver.STRAIGHT } ?: maneuverOf((parts - distPart).joinToString(" ")),
             instruction = instruction,
         )
     }
@@ -35,15 +36,17 @@ object MapsNotificationParser {
     fun maneuverOf(instruction: String): Maneuver {
         val s = instruction.lowercase()
         return when {
-            "u-turn" in s || "u turn" in s -> Maneuver.U_TURN
+            "u-turn" in s || "u turn" in s || "turn around" in s -> Maneuver.U_TURN
             "roundabout" in s -> Maneuver.ROUNDABOUT
             "arrive" in s || "destination" in s -> Maneuver.DESTINATION
             "sharp left" in s -> Maneuver.SHARP_LEFT
             "sharp right" in s -> Maneuver.SHARP_RIGHT
+            "bear left" in s -> Maneuver.SLIGHT_LEFT
+            "bear right" in s -> Maneuver.SLIGHT_RIGHT
             "slight left" in s -> Maneuver.SLIGHT_LEFT
             "slight right" in s -> Maneuver.SLIGHT_RIGHT
-            "keep left" in s || "fork" in s && "left" in s -> Maneuver.FORK_LEFT
-            "keep right" in s || "fork" in s && "right" in s -> Maneuver.FORK_RIGHT
+            "keep left" in s || ("fork" in s || "ramp" in s || "exit" in s || "merge" in s) && "left" in s -> Maneuver.FORK_LEFT
+            "keep right" in s || ("fork" in s || "ramp" in s || "exit" in s || "merge" in s) && "right" in s -> Maneuver.FORK_RIGHT
             "left" in s -> Maneuver.LEFT
             "right" in s -> Maneuver.RIGHT
             else -> Maneuver.STRAIGHT
