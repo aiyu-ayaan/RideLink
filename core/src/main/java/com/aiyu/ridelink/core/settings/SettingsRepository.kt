@@ -2,6 +2,7 @@ package com.aiyu.ridelink.core.settings
 
 import android.content.Context
 import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
@@ -64,8 +65,23 @@ data class Settings(
     val developerMode: Boolean = false,
     /** Also write every Console line to a file on the phone, for sharing after a ride. */
     val saveLogs: Boolean = false,
+    /** SmartXonnect LCD backlight, stock levels 2 (low) to 5 (high), sent in `5A F1`. */
+    val displayBrightness: Int = 4,
+    /** SmartXonnect: show who sent an SMS (`5B 53`). */
+    val smsAlerts: Boolean = true,
+    /** While connected, text a missed caller [rejectSmsText] (stock "auto reply SMS" / DND). */
+    val autoReply: Boolean = false,
+    /** ISO dates (yyyy-MM-dd) the SmartXonnect greets on (`5A 7E`); blank = not sent. */
+    val birthday: String = "",
+    val purchaseDate: String = "",
+    /** Where the phone was when the scooter last disconnected. */
+    val parkedLat: Double? = null,
+    val parkedLng: Double? = null,
+    val parkedAt: Long = 0,
+    val parkedBike: String? = null,
 ) {
     companion object {
+        val BRIGHTNESS_RANGE = 2..5
         const val DEFAULT_OVERSPEED_KMH = 80
         val OVERSPEED_RANGE = 30..120
     }
@@ -104,6 +120,15 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
         val updateSnoozed = longPreferencesKey("update_snoozed_until")
         val developer = booleanPreferencesKey("developer_mode")
         val saveLogs = booleanPreferencesKey("save_logs")
+        val brightness = intPreferencesKey("display_brightness")
+        val smsAlerts = booleanPreferencesKey("sms_alerts")
+        val autoReply = booleanPreferencesKey("auto_reply")
+        val birthday = stringPreferencesKey("birthday")
+        val purchase = stringPreferencesKey("purchase_date")
+        val parkedLat = doublePreferencesKey("parked_lat")
+        val parkedLng = doublePreferencesKey("parked_lng")
+        val parkedAt = longPreferencesKey("parked_at")
+        val parkedBike = stringPreferencesKey("parked_bike")
     }
 
     val settings: Flow<Settings> = context.store.data.map { p ->
@@ -136,6 +161,15 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
             updateSnoozedUntil = p[K.updateSnoozed] ?: 0,
             developerMode = p[K.developer] ?: false,
             saveLogs = p[K.saveLogs] ?: false,
+            displayBrightness = p[K.brightness] ?: 4,
+            smsAlerts = p[K.smsAlerts] ?: true,
+            autoReply = p[K.autoReply] ?: false,
+            birthday = p[K.birthday] ?: "",
+            purchaseDate = p[K.purchase] ?: "",
+            parkedLat = p[K.parkedLat],
+            parkedLng = p[K.parkedLng],
+            parkedAt = p[K.parkedAt] ?: 0,
+            parkedBike = p[K.parkedBike],
         )
     }
 
@@ -178,4 +212,15 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
     suspend fun setUpdateSnoozedUntil(at: Long) { context.store.edit { it[K.updateSnoozed] = at } }
     suspend fun setDeveloperMode(on: Boolean) { context.store.edit { it[K.developer] = on } }
     suspend fun setSaveLogs(on: Boolean) { context.store.edit { it[K.saveLogs] = on } }
+    suspend fun setDisplayBrightness(level: Int) { context.store.edit { it[K.brightness] = level.coerceIn(Settings.BRIGHTNESS_RANGE) } }
+    suspend fun setSmsAlerts(on: Boolean) { context.store.edit { it[K.smsAlerts] = on } }
+    suspend fun setAutoReply(on: Boolean) { context.store.edit { it[K.autoReply] = on } }
+    suspend fun setBirthday(iso: String) { context.store.edit { it[K.birthday] = iso } }
+    suspend fun setPurchaseDate(iso: String) { context.store.edit { it[K.purchase] = iso } }
+    suspend fun setParked(lat: Double, lng: Double, at: Long, bike: String?) {
+        context.store.edit {
+            it[K.parkedLat] = lat; it[K.parkedLng] = lng; it[K.parkedAt] = at
+            if (bike == null) it.remove(K.parkedBike) else it[K.parkedBike] = bike
+        }
+    }
 }

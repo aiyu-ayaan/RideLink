@@ -192,6 +192,16 @@ fun RideScreen(vm: MainViewModel, onConnect: () -> Unit, onDisconnect: () -> Uni
             AnimatedVisibility(settings.showVehicle && telemetry.hasHealth, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
                 VehicleCard(telemetry)
             }
+            AnimatedVisibility(telemetry.raceTopSpeedKmh != null, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
+                RaceStatsCard(telemetry)
+            }
+            val pLat = settings.parkedLat
+            val pLng = settings.parkedLng
+            val showParked = pLat != null && pLng != null && link !is LinkState.Ready &&
+                (settings.parkedBike == null || settings.parkedBike == settings.deviceAddress)
+            AnimatedVisibility(showParked, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
+                if (pLat != null && pLng != null) ParkedCard(pLat, pLng, settings.parkedAt)
+            }
             val showWeather = (weather != null && settings.showWeather) || (place != null && settings.showLocation)
             AnimatedVisibility(showWeather, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
                 WeatherCard(weather?.takeIf { settings.showWeather }, place?.takeIf { settings.showLocation })

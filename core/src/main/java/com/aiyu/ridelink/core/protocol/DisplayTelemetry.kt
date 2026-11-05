@@ -7,6 +7,15 @@ package com.aiyu.ridelink.core.protocol
  * Other values are raw: the stock parser applies no scaling. shortcut: confirm the remaining units on the scooter.
  */
 data class DisplayTelemetry(
+    /**
+     * SmartXonnect race stats (`5A 16`, N251ClusterDataReceiver): best lap in centiseconds, top and average speed,
+     * best 0-60 km/h in tenths of a second, lap distance in 0.1 km.
+     */
+    val raceBestLapCs: Int? = null,
+    val raceTopSpeedKmh: Int? = null,
+    val raceAverageKmh: Int? = null,
+    val raceZeroTo60Tenths: Int? = null,
+    val raceLapTenths: Int? = null,
     val speedKmh: Int? = null,
     /** 0.1 km steps; see [odometerKm]. */
     val odometerTenths: Int? = null,
@@ -66,6 +75,13 @@ data class DisplayTelemetry(
                 switchStatus = u8(12) ?: switchStatus,
                 tripTenths = be(14, 3) ?: tripTenths,
                 rpm = be(17, 2) ?: rpm,
+            )
+            0x16 -> copy(
+                raceBestLapCs = if (frame.size > 8) u8(6)!! * 6000 + u8(7)!! * 100 + u8(8)!! else raceBestLapCs,
+                raceTopSpeedKmh = u8(10) ?: raceTopSpeedKmh,
+                raceLapTenths = be(11, 3) ?: raceLapTenths,
+                raceZeroTo60Tenths = u8(14) ?: raceZeroTo60Tenths,
+                raceAverageKmh = u8(15) ?: raceAverageKmh,
             )
             // Speedometer 2.
             0x11 -> copy(

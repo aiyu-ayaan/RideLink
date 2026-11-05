@@ -142,6 +142,17 @@ class ClusterController @Inject constructor(
         _detected.value?.takeIf { it.family == ClusterFamily.SMARTXONNECT } ?: s.model ?: _detected.value ?: ClusterModel.DEFAULT
 
     init {
+        // Last parked location: where the phone was when the scooter went away.
+        scope.launch {
+            var wasReady = false
+            link.state.collect { st ->
+                val ready = st is LinkState.Ready
+                if (wasReady && !ready) {
+                    weatherRepo.location()?.let { settings.setParked(it.latitude, it.longitude, System.currentTimeMillis(), settings.current().deviceAddress) }
+                }
+                wasReady = ready
+            }
+        }
         scope.launch {
             link.incoming.collect { frame ->
                 log(frame, ok = true, rx = true)
@@ -151,6 +162,7 @@ class ClusterController @Inject constructor(
                         note("Display detected: ${found.name} (from ${"%02x %02x".format(frame[0], frame[1])})")
                         // Saved for this scooter, so the next connect uses the right format from its first frame.
                         if (found.family == ClusterFamily.SMARTXONNECT) {
+                            sendSmartXonnectSetup()
                             val s = settings.current()
                             if (s.model != found) {
                                 settings.setModel(found)
@@ -209,6 +221,7 @@ class ClusterController @Inject constructor(
     private suspend fun onReady() {
         val s = settings.current()
         if (s.riderName.isNotBlank()) send(ClusterProtocol.riderName(s.riderName))
+        if (model(s).family == ClusterFamily.SMARTXONNECT) sendSmartXonnectSetup()
         sendDisplayText(s, force = true)
         sendSocial()
         sendMusic(force = true)
@@ -447,8 +460,38 @@ class ClusterController @Inject constructor(
         }
     }
 
+    /**
+     * SmartXonnect extras on connect: backlight (`5A F1`) and the birthday / purchase-day greetings (`5A 7E`),
+     * which the display shows on the day itself.
+     */
+    private suspend fun sendSmartXonnectSetup() {
+        if (link.state.value !is LinkState.Ready) return
+        val s = settings.current()
+        send(ClusterProtocol.vehicleData(s.displayBrightness, java.time.LocalDate.now()))
+        listOf(ClusterProtocol.Anniversary.BIRTHDAY to s.birthday, ClusterProtocol.Anniversary.PURCHASE to s.purchaseDate)
+            .forEach { (whose, iso) ->
+                runCatching { java.time.LocalDate.parse(iso) }.getOrNull()?.let { send(ClusterProtocol.anniversary(whose, it)) }
+            }
+    }
+
+    /** Settings changed brightness or a date: send them now. */
+    fun applyDisplaySettings() = scope.launch {
+        if (model(settings.current()).family == ClusterFamily.SMARTXONNECT) sendSmartXonnectSetup()
+    }
+
+    /** New SMS from [sender]: the SmartXonnect shows it (stock writes `5B 53` 8 times, 100 ms apart). */
+    fun onSms(sender: String) = scope.launch {
+        val s = settings.current()
+        if (!s.smsAlerts || model(s).family != ClusterFamily.SMARTXONNECT || link.state.value !is LinkState.Ready) return@launch
+        val frame = ClusterProtocol.smsSender(sender)
+        repeat(8) { if (it > 0) delay(100); send(frame) }
+    }
+
+    @Volatile private var ringStartedAt = 0L
+
     fun onIncomingCall(nameOrNumber: String) {
         if (callJob?.isActive == true && _caller.value == nameOrNumber) return
+        if (_caller.value == null) ringStartedAt = System.currentTimeMillis()
         callJob?.cancel()
         callJob = scope.launch {
             if (!settings.current().forwardCalls) return@launch
@@ -468,6 +511,15 @@ class ClusterController @Inject constructor(
 
     fun onCallEnded() {
         callJob?.cancel()
+        val rang = ringStartedAt.also { ringStartedAt = 0 }
+        if (rang > 0) scope.launch {
+            val s = settings.current()
+            // Stock "auto reply SMS": only a missed call gets the text (CallControl checks the call log).
+            if (s.autoReply && link.state.value is LinkState.Ready) {
+                val ok = calls.smsMissedCaller(RejectMessage.text(s.rejectSmsText), rang - 5_000)
+                if (ok) note("Auto-reply sent to the missed caller")
+            }
+        }
         _caller.value = null
         callState = CallState.ENDED
         scope.launch {

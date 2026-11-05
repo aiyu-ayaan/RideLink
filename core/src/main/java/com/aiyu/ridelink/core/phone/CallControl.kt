@@ -48,6 +48,39 @@ class CallControl @Inject constructor(@ApplicationContext private val context: C
         runCatching { sms().sendTextMessage(number, null, message, null, null) }.isSuccess
     }
 
+    private val autoReplied = mutableMapOf<String, Long>()
+
+    /**
+     * Auto-reply: texts the newest caller since [since] if the call log marks the call missed (an answered or
+     * rejected call gets nothing), at most once per number every 10 minutes.
+     */
+    suspend fun smsMissedCaller(message: String, since: Long): Boolean = withContext(Dispatchers.IO) {
+        if (!canSms()) return@withContext false
+        var to: String? = null
+        for (attempt in 0 until 5) {
+            to = lastMissedSince(since)
+            if (to != null) break
+            delay(1_000)
+        }
+        val number = to ?: return@withContext false
+        val now = System.currentTimeMillis()
+        if (now - (autoReplied[number] ?: 0) < 10 * 60_000) return@withContext false
+        autoReplied[number] = now
+        runCatching { sms().sendTextMessage(number, null, message, null, null) }.isSuccess
+    }
+
+    private fun lastMissedSince(since: Long): String? = runCatching {
+        context.contentResolver.query(
+            CallLog.Calls.CONTENT_URI,
+            arrayOf(CallLog.Calls.NUMBER, CallLog.Calls.TYPE),
+            "${CallLog.Calls.DATE} >= ?",
+            arrayOf(since.toString()),
+            "${CallLog.Calls.DATE} DESC",
+        )?.use { c ->
+            if (c.moveToFirst() && c.getInt(1) == CallLog.Calls.MISSED_TYPE) c.getString(0)?.takeIf { it.isNotBlank() } else null
+        }
+    }.getOrNull()
+
     @Suppress("DEPRECATION")
     private fun sms(): SmsManager =
         if (Build.VERSION.SDK_INT >= 31) context.getSystemService(SmsManager::class.java) else SmsManager.getDefault()

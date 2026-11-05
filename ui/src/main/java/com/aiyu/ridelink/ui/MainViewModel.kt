@@ -98,6 +98,11 @@ class MainViewModel @Inject constructor(
     @Suppress("UNUSED_PARAMETER")
     fun preview(template: String, tick: Int): String = controller.previewLine(template, settings.value)
     fun setForwardNavigation(on: Boolean) = viewModelScope.launch { repo.setForwardNavigation(on) }
+    fun setDisplayBrightness(level: Int) = viewModelScope.launch { repo.setDisplayBrightness(level); controller.applyDisplaySettings() }
+    fun setSmsAlerts(on: Boolean) = viewModelScope.launch { repo.setSmsAlerts(on) }
+    fun setAutoReply(on: Boolean) = viewModelScope.launch { repo.setAutoReply(on) }
+    fun setBirthday(iso: String) = viewModelScope.launch { repo.setBirthday(iso); controller.applyDisplaySettings() }
+    fun setPurchaseDate(iso: String) = viewModelScope.launch { repo.setPurchaseDate(iso); controller.applyDisplaySettings() }
     fun setForwardCalls(on: Boolean) = viewModelScope.launch { repo.setForwardCalls(on) }
     fun setShowSocial(on: Boolean) = viewModelScope.launch { repo.setShowSocial(on) }
     fun setShowWeather(on: Boolean) = viewModelScope.launch { repo.setShowWeather(on) }

@@ -48,6 +48,7 @@ object ClusterProtocol {
     const val DID_SONG = 0x62
     const val DID_ARTIST = 0x63
     const val DID_PLAY_STATE = 0x60
+    const val DID_SMS = 0x53
 
     /** `5B DID <text, 17 bytes max> <zero pad> FF`, same sanitising as the stock app. */
     fun text(did: Int, value: String): ByteArray = frame(START, did, displayText(value).toByteArray(Charsets.US_ASCII))
@@ -197,6 +198,30 @@ object ClusterProtocol {
         Maneuver.ROUNDABOUT_RIGHT -> "RB RIGHT"
         Maneuver.ROUNDABOUT_SHARP_RIGHT -> "RB SHARP R"
     }
+
+    /**
+     * SmartXonnect vehicle data (N109U347N251DataSenderToCluster.onVehicleDataForU458, Race XP "Racing 2.0"):
+     * `5A F1 <brightness 2..5> <ride mode, 0 on the Race XP> 00 00 00 00 00 <day> <month> <yy> 00 00 01 00 00 00 00 FF`.
+     */
+    fun vehicleData(brightness: Int, date: java.time.LocalDate): ByteArray = byteArrayOf(
+        0x5A, 0xF1.toByte(), brightness.coerceIn(2, 5).toByte(), 0, 0, 0, 0, 0, 0,
+        date.dayOfMonth.toByte(), date.monthValue.toByte(), (date.year % 100).toByte(), 0, 0, 1, 0, 0, 0, 0, END,
+    )
+
+    /** SMS sender (`BluetoothUtil.createSendSMSNameArray`): `5B 53 <name up to 17> FF`; stock writes it 8 times. */
+    fun smsSender(name: String): ByteArray {
+        val v = name.filterNot { Character.getType(it) == Character.FORMAT.toInt() }.replace("+91", "").trim()
+        return text(DID_SMS, if (v.matches(PHONE_NUMBER)) v.filter(Char::isDigit) else v)
+    }
+
+    /** Whose date the display greets on (`sendBirthDate`): the rider's birthday or the scooter's purchase day. */
+    enum class Anniversary(val code: Int) { PURCHASE(1), BIRTHDAY(2) }
+
+    /** `5A 7E <whose> <day> <month> <yy> 00 ... FF` (N109U347N251DataSenderToCluster.sendBirthDate). */
+    fun anniversary(whose: Anniversary, date: java.time.LocalDate): ByteArray = byteArrayOf(
+        0x5A, 0x7E, whose.code.toByte(), date.dayOfMonth.toByte(), date.monthValue.toByte(), (date.year % 100).toByte(),
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, END,
+    )
 
     /** Rounded like stock: 5 m steps under 25 m, else 50 m (TVSMMapActivity.N251N109U347sendNavigationData). */
     fun smartXonnectDistance(m: Int): Int = if (m < 25) Math.round(m / 5.0).toInt() * 5 else Math.round(m / 50.0).toInt() * 50

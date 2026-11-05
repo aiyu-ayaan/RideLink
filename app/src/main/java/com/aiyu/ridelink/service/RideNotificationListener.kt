@@ -4,6 +4,7 @@ import android.app.Notification
 import android.app.Person
 import android.content.ComponentName
 import android.os.Build
+import android.provider.Telephony
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import com.aiyu.ridelink.core.ClusterController
@@ -55,8 +56,19 @@ class RideNotificationListener : NotificationListenerService() {
                 }
             }
             SocialNotificationParser.app(sbn.packageName) != null -> recountSocial()
+            // SMS sender on the SmartXonnect display; each message once (the SMS app reposts and groups).
+            sbn.packageName == smsPackage && (n.flags and Notification.FLAG_GROUP_SUMMARY) == 0 && !title.isNullOrBlank() -> {
+                val id = "${sbn.key}|${n.`when`}"
+                if (id != lastSms) {
+                    lastSms = id
+                    controller.onSms(title)
+                }
+            }
         }
     }
+
+    private var lastSms: String? = null
+    private val smsPackage: String? by lazy { runCatching { Telephony.Sms.getDefaultSmsPackage(this) }.getOrNull() }
 
     private var lastNote: String? = null
 

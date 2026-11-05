@@ -309,7 +309,14 @@ caller `5B 43` (`BluetoothUtil.createCallerNameArray`) and rider name `5B 52` as
 Chat counts (`sendMobileDataNotificationAndAlert(getWhatsappByte(), getFBByte(), getInstaByte(), 0, 0, 0)`):
 `5B 9C <WA> <FB> <IG> 00 <alert> 00 ... FF`, **no checksum**; WA = messages (5 bits) << 3 with chats 0,
 FB = messages (4 bits) << 4. Call ended (`onDisconnectCall`): the status frame three times, 100 ms apart.
-Not used by RideLink: `5A F1` vehicle data (illumination, ride mode, date, "clear call / SMS" flags for the
+Extras RideLink sends to this display:
+- `5A F1 <brightness 2..5> <ride mode 0> 00 00 00 00 00 <day> <month> <yy> 00 00 01 00 00 00 00 FF`
+  (`onVehicleDataForU458`; Race XP stock leaves ride mode 0) on connect and when the brightness changes.
+- `5A 7E <whose: 1 purchase, 2 birthday> <day> <month> <yy> 00 ... FF` (`sendBirthDate`) on connect.
+- `5B 53 <SMS sender up to 17> FF` (`createSendSMSNameArray`), 8 times 100 ms apart, for a new SMS.
+- Auto-reply SMS to a missed caller while connected (stock DND / auto reply; phone side only).
+Unused in stock (no callers), so not sent: `sendDeliveryAlert`, `onClearCall` / `onClearSMS`. `carbonEmission`
+needs TVS's cloud ride data. Not used by RideLink: `5A F1` vehicle data (illumination, ride mode, date, "clear call / SMS" flags for the
 notification LED), the "NAVIGATION / ASSIST ON" text before a route, and `5B 5D` climate text (a fixed
 placeholder string in stock).
 

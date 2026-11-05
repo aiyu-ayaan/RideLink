@@ -318,4 +318,26 @@ class ClusterProtocolTest {
         assertEquals(1, control[14].toInt())
         assertEquals("RIGHT 10", String(text, 2, 8, Charsets.UTF_8))
     }
+
+    /** Stock onVehicleDataForU458 / createSendSMSNameArray / sendBirthDate layouts. */
+    @Test fun smartXonnectExtras() {
+        val day = java.time.LocalDate.of(2026, 11, 6)
+        assertEquals("5a f1 04 00 00 00 00 00 00 06 0b 1a 00 00 01 00 00 00 00 ff", hex(ClusterProtocol.vehicleData(4, day)))
+        assertEquals("5a f1 05 00 00 00 00 00 00 06 0b 1a 00 00 01 00 00 00 00 ff", hex(ClusterProtocol.vehicleData(9, day)))
+        assertEquals("5b 53 39 38 37 36 35 34 33 32 31 30 00 00 00 00 00 00 00 ff", hex(ClusterProtocol.smsSender("+91 98765 43210")))
+        assertEquals(
+            "5a 7e 02 0f 08 62 00 00 00 00 00 00 00 00 00 00 00 00 00 ff",
+            hex(ClusterProtocol.anniversary(ClusterProtocol.Anniversary.BIRTHDAY, java.time.LocalDate.of(1998, 8, 15))),
+        )
+    }
+
+    @Test fun raceStatsFromTheRidersDisplay() {
+        fun bytes(h: String) = h.split(" ").map { it.toInt(16).toByte() }.toByteArray()
+        val t = DisplayTelemetry().merge(bytes("5a 16 00 00 00 00 07 17 1e 00 45 00 00 42 96 23 00 00 00 ff"))
+        assertEquals(7 * 6000 + 23 * 100 + 30, t.raceBestLapCs)
+        assertEquals(69, t.raceTopSpeedKmh)
+        assertEquals(150, t.raceZeroTo60Tenths)
+        assertEquals(35, t.raceAverageKmh)
+        assertEquals(66, t.raceLapTenths)
+    }
 }

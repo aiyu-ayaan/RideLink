@@ -229,3 +229,50 @@ internal fun VehicleCard(t: DisplayTelemetry) {
         }
     }
 }
+
+/** SmartXonnect race stats from the display's `5A 16` frame (best lap, speeds, 0-60). */
+@Composable
+internal fun RaceStatsCard(t: DisplayTelemetry) {
+    val content = MaterialTheme.colorScheme.onSurface
+    val lap = t.raceBestLapCs?.let { "%d:%02d.%02d".format(it / 6000, it / 100 % 60, it % 100) } ?: "--"
+    Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+        shape = MaterialTheme.shapes.extraLarge,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(Modifier.padding(Dimens.xl), verticalArrangement = Arrangement.spacedBy(Dimens.sm)) {
+            Text(stringResource(R.string.race_title), style = MaterialTheme.typography.titleMediumEmphasized, color = content)
+            Row(horizontalArrangement = Arrangement.spacedBy(Dimens.sm)) {
+                Tile(stringResource(R.string.race_best_lap), lap, "", content, Modifier.weight(1f))
+                Tile(stringResource(R.string.race_zero_60), t.raceZeroTo60Tenths?.let { "%.1f".format(it / 10.0) } ?: "--", stringResource(R.string.unit_s), content, Modifier.weight(1f))
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(Dimens.sm)) {
+                Tile(stringResource(R.string.race_top), t.raceTopSpeedKmh?.toString() ?: "--", stringResource(R.string.dash_kmh), content, Modifier.weight(1f))
+                Tile(stringResource(R.string.race_avg), t.raceAverageKmh?.toString() ?: "--", stringResource(R.string.dash_kmh), content, Modifier.weight(1f))
+            }
+        }
+    }
+}
+
+/** Where the phone was when the scooter last disconnected; opens the spot in a maps app. */
+@Composable
+internal fun ParkedCard(lat: Double, lng: Double, at: Long) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val content = MaterialTheme.colorScheme.onSurface
+    val time = java.time.Instant.ofEpochMilli(at).atZone(java.time.ZoneId.systemDefault())
+        .format(java.time.format.DateTimeFormatter.ofLocalizedDateTime(java.time.format.FormatStyle.MEDIUM, java.time.format.FormatStyle.SHORT))
+    Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+        shape = MaterialTheme.shapes.extraLarge,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(Modifier.padding(Dimens.xl), verticalArrangement = Arrangement.spacedBy(Dimens.sm)) {
+            Text(stringResource(R.string.parked_title), style = MaterialTheme.typography.titleMediumEmphasized, color = content)
+            Text(stringResource(R.string.parked_when, time), color = MaterialTheme.colorScheme.onSurfaceVariant)
+            androidx.compose.material3.FilledTonalButton(onClick = {
+                val uri = android.net.Uri.parse("geo:$lat,$lng?q=$lat,$lng")
+                runCatching { context.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, uri)) }
+            }) { Text(stringResource(R.string.parked_open)) }
+        }
+    }
+}

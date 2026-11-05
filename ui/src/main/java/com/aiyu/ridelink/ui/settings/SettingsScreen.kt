@@ -86,6 +86,11 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material3.Icon
+import com.aiyu.ridelink.core.protocol.ClusterFamily
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.DatePicker
 import androidx.compose.material3.IconButton
 import com.aiyu.ridelink.ui.smsPermissions
 import com.aiyu.ridelink.ui.theme.Dimens
@@ -216,10 +221,24 @@ fun SettingsScreen(
             item { SwitchRow(R.string.settings_weather, R.string.settings_weather_hint, s.showWeather, vm::setShowWeather) }
             item { SwitchRow(R.string.settings_location, R.string.settings_location_hint, s.showLocation, vm::setShowLocation) }
             item { SwitchRow(R.string.settings_music, R.string.settings_music_hint, s.showMusic, vm::setShowMusic) }
+            // Only the SmartXonnect LCD (Race XP) has these.
+            if ((s.model ?: detected)?.family == ClusterFamily.SMARTXONNECT) {
+                item { Section(R.string.settings_sx_title) }
+                item { BrightnessSlider(s.displayBrightness, vm::setDisplayBrightness) }
+                item { SwitchRow(R.string.settings_sms_alerts, R.string.settings_sms_alerts_hint, s.smsAlerts, vm::setSmsAlerts) }
+                item { DateRow(R.string.settings_birthday, s.birthday, vm::setBirthday) }
+                item { DateRow(R.string.settings_purchase_date, s.purchaseDate, vm::setPurchaseDate) }
+            }
 
                 }
                 SettingsSection.CALLS -> {
             item { SwitchRow(R.string.settings_calls, null, s.forwardCalls, vm::setForwardCalls) }
+            item {
+                SwitchRow(R.string.settings_auto_reply, R.string.settings_auto_reply_hint, s.autoReply) { on ->
+                    if (on && !context.hasSms()) askSms.launch(smsPermissions)
+                    vm.setAutoReply(on)
+                }
+            }
             item { SwitchRow(R.string.settings_call_buttons, R.string.settings_call_buttons_hint, s.callButtons, vm::setCallButtons) }
             if (s.callButtons) {
                 item {
@@ -436,6 +455,54 @@ private fun OverSpeedSlider(saved: Int, onSave: (Int) -> Unit) {
             valueRange = range.first.toFloat()..range.last.toFloat(),
             steps = (range.last - range.first) / 5 - 1,
         )
+    }
+}
+
+/** SmartXonnect backlight, stock levels 2 (low) to 5 (high); saved when the finger lifts. */
+@Composable
+private fun BrightnessSlider(saved: Int, onSave: (Int) -> Unit) {
+    var value by remember(saved) { mutableFloatStateOf(saved.toFloat()) }
+    val range = Settings.BRIGHTNESS_RANGE
+    Column(Modifier.padding(horizontal = Dimens.gutter)) {
+        Text(stringResource(R.string.settings_brightness, value.roundToInt() - range.first + 1, range.last - range.first + 1), style = MaterialTheme.typography.bodyLarge)
+        Slider(
+            value = value,
+            onValueChange = { value = it },
+            onValueChangeFinished = { onSave(value.roundToInt()) },
+            valueRange = range.first.toFloat()..range.last.toFloat(),
+            steps = range.last - range.first - 1,
+        )
+    }
+}
+
+/** A date the display greets on; tap to pick, "Clear" to stop sending it. Stored as yyyy-MM-dd. */
+@Composable
+private fun DateRow(title: Int, iso: String, onPick: (String) -> Unit) {
+    var open by remember { mutableStateOf(false) }
+    val date = remember(iso) { runCatching { java.time.LocalDate.parse(iso) }.getOrNull() }
+    ListItem(
+        headlineContent = { Text(stringResource(title)) },
+        supportingContent = { Text(date?.format(java.time.format.DateTimeFormatter.ofLocalizedDate(java.time.format.FormatStyle.MEDIUM)) ?: stringResource(R.string.settings_date_none)) },
+        modifier = Modifier.clickable { open = true },
+    )
+    if (open) {
+        val state = rememberDatePickerState(
+            initialSelectedDateMillis = date?.atStartOfDay(java.time.ZoneOffset.UTC)?.toInstant()?.toEpochMilli(),
+        )
+        DatePickerDialog(
+            onDismissRequest = { open = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    state.selectedDateMillis?.let {
+                        onPick(java.time.Instant.ofEpochMilli(it).atZone(java.time.ZoneOffset.UTC).toLocalDate().toString())
+                    }
+                    open = false
+                }) { Text(stringResource(R.string.settings_date_ok)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { onPick(""); open = false }) { Text(stringResource(R.string.settings_date_clear)) }
+            },
+        ) { DatePicker(state) }
     }
 }
 

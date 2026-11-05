@@ -69,6 +69,26 @@
     <string name="perm_phone_title">Signal, weather and calls</string>
     <string name="perm_phone_body">Phone state, approximate location, call control and call history let the display show your signal bars, 4G/5G, weather, where you are and missed calls, and let the scooter switch answer calls.</string>
     <string name="perm_open_settings">Open settings</string>
+    <string name="settings_sx_title">SmartXonnect display (Race XP)</string>
+    <string name="settings_brightness">Display brightness: %1$d of %2$d</string>
+    <string name="settings_sms_alerts">SMS sender on the display</string>
+    <string name="settings_sms_alerts_hint">Shows who sent a new text message, like the TVS app.</string>
+    <string name="settings_birthday">Your birthday</string>
+    <string name="settings_purchase_date">Scooter purchase date</string>
+    <string name="settings_date_none">Not set. The display greets you on this day.</string>
+    <string name="settings_date_ok">Save</string>
+    <string name="settings_date_clear">Clear</string>
+    <string name="settings_auto_reply">Auto-reply to missed calls</string>
+    <string name="settings_auto_reply_hint">While the scooter is connected, text a caller you missed with your reject message. Once per caller every 10 minutes.</string>
+    <string name="race_title">Race stats</string>
+    <string name="race_best_lap">Best lap</string>
+    <string name="race_top">Top speed</string>
+    <string name="race_avg">Average</string>
+    <string name="race_zero_60">0 to 60</string>
+    <string name="unit_s">s</string>
+    <string name="parked_title">Last parked</string>
+    <string name="parked_when">%1$s, approximate</string>
+    <string name="parked_open">Open in Maps</string>
     <string name="perm_battery_title">Keep RideLink running</string>
     <string name="perm_battery_body">Turn off battery optimisation for RideLink so the display keeps getting the time, signal, turns and calls while the screen is off. On OPPO, realme, OnePlus, vivo and Xiaomi phones also allow RideLink to run in the background in the phone\'s own app settings.</string>
 
