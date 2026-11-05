@@ -136,6 +136,7 @@ fun SettingsScreen(
     val askSms = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { refresh++ }
     val linkReady = link is LinkState.Ready
     val bikes by vm.bikes.collectAsStateWithLifecycle()
+    val demoNav by vm.demoNav.collectAsStateWithLifecycle()
     val bluetoothOk = remember(refresh) { context.hasBluetooth() }
     var pairing by remember { mutableStateOf(false) }
     // Bumped after an export or delete so the saved-log summary re-reads the folder.
@@ -329,6 +330,7 @@ fun SettingsScreen(
             item { SwitchRow(R.string.settings_developer_mode, R.string.settings_developer_mode_hint, s.developerMode, vm::setDeveloperMode) }
             if (s.developerMode) {
                 item { LinkRow(Icons.Rounded.Terminal, stringResource(R.string.tab_console), stringResource(R.string.settings_console_desc), onClick = onOpenConsole) }
+                item { SwitchRow(R.string.settings_demo_nav, R.string.settings_demo_nav_hint, demoNav, vm::setDemoNav) }
                 item { SwitchRow(R.string.settings_save_logs, R.string.settings_save_logs_hint, s.saveLogs, vm::setSaveLogs) }
                 item {
                     val saved = remember(logTick) { vm.savedLogs() }

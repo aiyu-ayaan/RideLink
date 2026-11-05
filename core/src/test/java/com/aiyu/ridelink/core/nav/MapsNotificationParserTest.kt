@@ -38,6 +38,19 @@ class MapsNotificationParserTest {
         assertEquals(Maneuver.STRAIGHT, MapsNotificationParser.maneuverOf("Continue onto Ring Rd"))
     }
 
+    /** Fields of a real Maps 26.14 navigation notification: no direction in any text; it is in the large icon. */
+    @Test fun currentMapsTakesTheTurnFromTheIcon() {
+        val noIcon = MapsNotificationParser.parse("40 m", "Mohan Khoper Rd", "17 min · 7.8 km · 11:27 PM ETA")!!
+        assertEquals(Maneuver.STRAIGHT, noIcon.maneuver)
+
+        val step = MapsNotificationParser.parse("40 m", "Mohan Khoper Rd", "17 min · 7.8 km · 11:27 PM ETA", Maneuver.SHARP_LEFT)!!
+        assertEquals(Maneuver.SHARP_LEFT, step.maneuver)
+        assertEquals(40, step.distanceToTurnM)
+        assertEquals("Mohan Khoper Rd", step.instruction)
+        assertEquals(1_020L, step.etaSeconds)
+        assertEquals(7_800, step.distanceLeftM)
+    }
+
     @Test fun nonNavigationNotificationIsIgnored() {
         assertNull(MapsNotificationParser.parse("Location sharing", "You are sharing", null))
     }

@@ -192,14 +192,16 @@ class ClusterController @Inject constructor(
         sendSocial()
         sendMusic(force = true)
         // After a reconnect the display has lost the route; put the current turn back without waiting for Maps.
-        _nav.value?.let { onNavigation(it) }
+        _nav.value?.let { postNav(it) }
         startWeather()
         statusJob?.cancel()
         statusJob = scope.launch {
             while (isActive) {
                 val now = settings.current()
                 send(ClusterProtocol.status(model(now), phoneStatus(now)))
-                sendDisplayText(now, force = false)
+                // Stock writes no custom lines during a route; on the Race XP LCD they share the text area with
+                // the turn, so live lines (speed, time) would keep replacing it. They come back when the route ends.
+                if (_nav.value == null) sendDisplayText(now, force = false)
                 delay(ClusterProtocol.STATUS_INTERVAL_MS)
             }
         }
@@ -276,7 +278,13 @@ class ClusterController @Inject constructor(
     private val navLock = Mutex()
     private val navSeq = AtomicLong()
 
+    /** A Google Maps step. Ignored while Demo navigation runs, so the two routes do not mix on the display. */
     fun onNavigation(step: NavStep) {
+        if (_demoNav.value) return
+        postNav(step)
+    }
+
+    private fun postNav(step: NavStep) {
         val seq = navSeq.incrementAndGet()
         scope.launch {
             val s = settings.current()
@@ -285,6 +293,29 @@ class ClusterController @Inject constructor(
             navLock.withLock {
                 if (seq != navSeq.get()) return@withLock
                 sendNav(s, step)
+            }
+            keepNavAlive()
+        }
+    }
+
+    @Volatile private var navSentAt = 0L
+    private var navKeepAlive: Job? = null
+
+    /**
+     * Stock resends the current turn every 2 s for the whole route (NavigationRepoImpl.startTimer, period 2000 ms),
+     * while Maps only reposts when its text changes, sometimes 10+ s apart. Without the repeat the display drops
+     * out of navigation between Maps updates.
+     */
+    private fun keepNavAlive() {
+        if (navKeepAlive?.isActive == true) return
+        navKeepAlive = scope.launch {
+            while (isActive) {
+                delay(ClusterProtocol.NAV_RESEND_MS)
+                val step = _nav.value ?: break
+                if (link.state.value !is LinkState.Ready) continue
+                if (System.currentTimeMillis() - navSentAt < ClusterProtocol.NAV_RESEND_MS) continue
+                val seq = navSeq.get()
+                navLock.withLock { if (seq == navSeq.get() && _nav.value === step) sendNav(settings.current(), step) }
             }
         }
     }
@@ -298,16 +329,54 @@ class ClusterController @Inject constructor(
         send(text)
         delay(ClusterProtocol.NAV_FRAME_GAP_MS)
         send(control)
+        navSentAt = System.currentTimeMillis()
     }
 
     fun onNavigationEnded() {
+        if (_demoNav.value) return
+        endNav()
+    }
+
+    private fun endNav() {
         navSeq.incrementAndGet()
+        navKeepAlive?.cancel()
         scope.launch {
             navLock.withLock {
                 val last = _nav.value ?: return@withLock
                 _nav.value = null
                 val s = settings.current()
                 if (s.forwardNavigation) ClusterProtocol.navigation(model(s), last.copy(stopped = true)).forEach { send(it) }
+                // Custom lines were held back during the route (see the status loop); put them back.
+                if (link.state.value is LinkState.Ready) sendDisplayText(s, force = true)
+            }
+        }
+    }
+
+    private val _demoNav = MutableStateFlow(false)
+    /** Developer option: a fake route through every turn type, sent to the display like a Maps route. */
+    val demoNav: StateFlow<Boolean> = _demoNav.asStateFlow()
+    private var demoNavJob: Job? = null
+
+    fun setDemoNav(on: Boolean) {
+        demoNavJob?.cancel()
+        _demoNav.value = on
+        if (!on) {
+            endNav()
+            return
+        }
+        demoNavJob = scope.launch {
+            val turns = DEMO_TURNS
+            val leg = 300
+            while (isActive) {
+                var left = turns.size * leg
+                for ((maneuver, text) in turns) {
+                    // Count down to the turn in 50 m steps, so each arrow stays up for a few seconds.
+                    for (d in leg downTo 50 step 50) {
+                        postNav(NavStep(d, (left / 6.0).toLong(), left, maneuver, text))
+                        left -= 50
+                        delay(DEMO_NAV_STEP_MS)
+                    }
+                }
             }
         }
     }
@@ -574,6 +643,23 @@ class ClusterController @Inject constructor(
     private companion object {
         const val LOG_SIZE = 300
         const val DEMO_STEP_MS = 1_500L
+        const val DEMO_NAV_STEP_MS = 1_000L
+
+        /** One of every turn type, text at most 17 characters like the stock Mappls short text. */
+        val DEMO_TURNS = listOf(
+            Maneuver.STRAIGHT to "Continue straight",
+            Maneuver.LEFT to "Turn left",
+            Maneuver.RIGHT to "Turn right",
+            Maneuver.SLIGHT_LEFT to "Slight left",
+            Maneuver.SLIGHT_RIGHT to "Slight right",
+            Maneuver.SHARP_LEFT to "Sharp left",
+            Maneuver.SHARP_RIGHT to "Sharp right",
+            Maneuver.FORK_LEFT to "Keep left",
+            Maneuver.FORK_RIGHT to "Keep right",
+            Maneuver.ROUNDABOUT to "Roundabout",
+            Maneuver.U_TURN to "Make a U-turn",
+            Maneuver.DESTINATION to "Arrive",
+        )
         const val WEATHER_INTERVAL_MS = 15 * 60_000L
     }
 }

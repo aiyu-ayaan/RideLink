@@ -17,6 +17,8 @@ object ClusterProtocol {
     const val STATUS_INTERVAL_MS = 2_000L
     const val CALLER_REPEAT_MS = 500L
     const val NAV_FRAME_GAP_MS = 400L
+    /** Stock resends the current turn this often for the whole route (NavigationRepoImpl.startTimer). */
+    const val NAV_RESEND_MS = 2_000L
 
     private const val START = 0x5B.toByte()
     private const val START_NAV = 0x5A.toByte()

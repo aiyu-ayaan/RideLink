@@ -69,6 +69,8 @@
     <string name="perm_phone_title">Signal, weather and calls</string>
     <string name="perm_phone_body">Phone state, approximate location, call control and call history let the display show your signal bars, 4G/5G, weather, where you are and missed calls, and let the scooter switch answer calls.</string>
     <string name="perm_open_settings">Open settings</string>
+    <string name="perm_battery_title">Keep RideLink running</string>
+    <string name="perm_battery_body">Turn off battery optimisation for RideLink so the display keeps getting the time, signal, turns and calls while the screen is off. On OPPO, realme, OnePlus, vivo and Xiaomi phones also allow RideLink to run in the background in the phone\'s own app settings.</string>
 
     <!-- Settings screen -->
     <string name="settings_scooter">Scooter</string>
@@ -222,6 +224,8 @@
     <string name="settings_developer">Developer options</string>
     <string name="settings_developer_mode">Developer mode</string>
     <string name="settings_developer_mode_hint">Shows the Console: frame log, test frames and demo ride.</string>
+    <string name="settings_demo_nav">Demo navigation</string>
+    <string name="settings_demo_nav_hint">Sends a fake route with every turn type to the display and the Ride screen, one arrow every few seconds. No Maps route or ride needed.</string>
     <string name="settings_console_desc">Every frame sent to and received from the display</string>
     <string name="settings_save_logs">Save logs</string>
     <string name="settings_save_logs_hint">Also write the Console log to a file on this phone (last 7 days). Logs include caller names and numbers.</string>

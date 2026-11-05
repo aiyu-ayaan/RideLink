@@ -8,6 +8,7 @@ import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import com.aiyu.ridelink.core.ClusterController
 import com.aiyu.ridelink.core.nav.MapsNotificationParser
+import com.aiyu.ridelink.core.nav.MapsTurnIcons
 import com.aiyu.ridelink.core.notify.SocialNotificationParser
 import com.aiyu.ridelink.core.protocol.ClusterProtocol
 import dagger.hilt.android.AndroidEntryPoint
@@ -17,6 +18,7 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class RideNotificationListener : NotificationListenerService() {
     @Inject lateinit var controller: ClusterController
+    @Inject lateinit var turnIcons: MapsTurnIcons
 
     private var lastNavKey: String? = null
 
@@ -28,11 +30,18 @@ class RideNotificationListener : NotificationListenerService() {
         when {
             sbn.packageName == MapsNotificationParser.MAPS_PACKAGE -> {
                 val sub = extras.getCharSequence(Notification.EXTRA_SUB_TEXT)?.toString()
-                val step = MapsNotificationParser.parse(title, text, sub)
+                // Maps names only the street; the turn direction is in the large icon.
+                val turn = runCatching { turnIcons.classify(n.getLargeIcon()) }.getOrNull()
+                val step = MapsNotificationParser.parse(title, text, sub, turn?.maneuver)
                 if (step == null) {
                     noteOnce("Maps not parsed: title=$title | text=$text | sub=$sub")
                     return
                 }
+                noteOnce(
+                    "Maps: ${step.instruction} = ${step.maneuver} (" +
+                        (turn?.let { "icon ${it.name.removePrefix("maneuver_")} %.2f".format(it.score) }
+                            ?: "icon not matched, ${turnIcons.templateCount} Maps icons") + ")",
+                )
                 lastNavKey = sbn.key
                 controller.onNavigation(step)
             }
@@ -124,6 +133,7 @@ class RideNotificationListener : NotificationListenerService() {
             }
         }
         val wa = waSummary ?: SocialNotificationParser.Count(waMsgs, waChats)
+        noteOnce("Chats: WhatsApp ${wa.messages} messages in ${wa.chats} chats, Facebook $fb, Instagram $ig")
         controller.onSocialCounts(ClusterProtocol.SocialCounts(wa.messages, wa.chats, fb, ig))
     }
 

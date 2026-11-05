@@ -145,6 +145,17 @@ Deviation: RideLink always sends `lines = 1`. Google Maps text ("Turn right onto
 and with `lines = 2` the 2025+ TFT showed the text but no arrow (rider report, 2026-11-05; Console test turn,
 15 chars, showed the arrow). Only 17 bytes of text are sent either way.
 
+Repeat: stock sends the current pair every **2 s** for the whole route (`NavigationRepoImpl.startTimer`,
+`scheduleAtFixedRate(..., 0, 2000)`; `onRouteProgress` only stores the latest `AdviseInfo`). Stock sends no
+"navigation on" frame for this family (`JupiterMobileToCluster.sendNavigationAssistOn` is empty) and no custom
+lines during a route. RideLink sends on every Maps update and repeats the last pair when 2 s pass without one
+(`ClusterProtocol.NAV_RESEND_MS`); live custom lines are held back while a route is active.
+
+Turn source in RideLink: Google Maps 26.14 has no direction in the notification text (title "40 m",
+text = street, sub text "17 min · 7.8 km · 11:27 PM ETA"); the turn is only in the 138 px large icon, which is
+one of Maps' `maneuver_*` vector drawables. `MapsTurnIcons` draws those from the installed Maps app and
+`ManeuverIcon` picks the closest shape (exact match, score 1.00, on a real route on 2026-11-05).
+
 Pictogram mapping for NTORQ_U812/N251/U458/U377 (`getPictogramMappingForNtorqU812`),
 Mappls maneuver id -> cluster id:
 `0>0 1>1 2>2 3>10 4>11 5>12 6>19 7>57 8>22 11>0 12>10 13>0 14>10 15>7 16>17 17>1 18>11 19>7 20>17 21>57 22>0 23>7 24>10 25>17 36>23 41>19 50>24 51>38 52>10 53>36 54>24 55>35 56>0 57>40 65>27 66>28 67>29 68>48 69>31 70>32 71>33 72>61 73>0 74>8 75>18`

@@ -22,7 +22,11 @@ object MapsNotificationParser {
     // Maps formats "300 m" / "12 min" with no-break spaces, which Java's \s does not match.
     private val oddSpaces = Regex("[\\u00A0\\u2007\\u202F]")
 
-    fun parse(title: String?, text: String?, subText: String?): NavStep? {
+    /**
+     * [iconManeuver] is the turn read from the large icon (MapsTurnIcons). Current Maps only names the street in
+     * the text, so the icon wins; the keywords below are the fallback for Maps versions that still write "Turn left".
+     */
+    fun parse(title: String?, text: String?, subText: String?, iconManeuver: Maneuver? = null): NavStep? {
         val sub = subText?.replace(oddSpaces, " ")
         val parts = listOfNotNull(title, text).map { it.replace(oddSpaces, " ").trim() }.filter(String::isNotEmpty)
         val distPart = parts.firstOrNull { distance.containsMatchIn(it) } ?: return null
@@ -35,7 +39,7 @@ object MapsNotificationParser {
                 ((m.groupValues[1].toLongOrNull() ?: 0) * 60 + m.groupValues[2].toLong()) * 60
             } ?: 0,
             distanceLeftM = sub?.let(km::find)?.let(::toMeters) ?: 0,
-            maneuver = maneuverOf(instruction).let { m ->
+            maneuver = iconManeuver ?: maneuverOf(instruction).let { m ->
                 // Maps sometimes puts only the street in one field and the direction next to the distance.
                 if (m != Maneuver.STRAIGHT || explicitStraight.containsMatchIn(instruction)) m
                 else maneuverOf("$instruction $distRest")

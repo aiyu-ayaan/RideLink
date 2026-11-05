@@ -34,6 +34,16 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- Keeps the CPU awake while connected so the 2 s status and nav frames keep going with the screen off
+         (stock BaseBleConnectHelperService.startWakelock). -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <!-- Ride screen card: ask to leave RideLink out of battery optimisation so the ride session is not frozen. -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+
+    <!-- The turn arrow is read from Maps' notification icon by matching it against Maps' own turn drawables. -->
+    <queries>
+        <package android:name="com.google.android.apps.maps" />
+    </queries>
 
     <application
         android:name=".RideLinkApp"
