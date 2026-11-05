@@ -141,9 +141,16 @@ FF
 Text source in stock (`NavigationRepoImpl.sendAdviseInfoToCluster`): Mappls `AdviseInfo.getShortText()`
 ("Turn right"), maneuver `AdviseInfo.getManeuverID()`, distance rounded by `NavigationUtils.getFormattedDistance`
 (down to 10 m under 1 km, else 100 m). Short text means stock nearly always sends `lines = 1`.
-Deviation: RideLink always sends `lines = 1`. Google Maps text ("Turn right onto MG Road") is over 17 chars,
-and with `lines = 2` the 2025+ TFT showed the text but no arrow (rider report, 2026-11-05; Console test turn,
-15 chars, showed the arrow). Only 17 bytes of text are sent either way.
+Short text comes from the Mappls SDK file `translations/mappls-directions-en_short_instructions.json` (v5,
+`DirectionsUtils.getShortInstruction`, text before `$`; the number after `$` is the maneuver id): "Turn left",
+"Turn right", "sharp left", "slightly left", "Keep left", "U-turn", "Enter roundabout", "Destination",
+"Go straight". Direction only, never a street name. RideLink sends the same words for each maneuver
+(`ClusterProtocol.directionText`), so `lines` is always 1.
+
+The 2026 Ntorq 125 Race XP (U458) LCD has **no arrow segments**: the text area is two lines of alphanumeric
+segments, distance on top and this text below ("250 m / SHARP LEFT", rider photo 2026-11-06; pictograms
+0, 1, 2, 7, 10, 11, 12, 17, 19, 22, 48 and 57 all drew nothing). The direction reaches the rider only as words.
+Before 2026-11-06 RideLink sent the Maps street name here, so the Race XP showed distance + street and no direction.
 
 Repeat: stock sends the current pair every **2 s** for the whole route (`NavigationRepoImpl.startTimer`,
 `scheduleAtFixedRate(..., 0, 2000)`; `onRouteProgress` only stores the latest `AdviseInfo`). Stock sends no

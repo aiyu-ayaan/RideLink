@@ -369,7 +369,8 @@ class ClusterController @Inject constructor(
             val leg = 300
             while (isActive) {
                 var left = turns.size * leg
-                for ((maneuver, text) in turns) {
+                for (maneuver in turns) {
+                    val text = ClusterProtocol.directionText(maneuver)
                     // Count down to the turn in 50 m steps, so each arrow stays up for a few seconds.
                     for (d in leg downTo 50 step 50) {
                         postNav(NavStep(d, (left / 6.0).toLong(), left, maneuver, text))
@@ -645,20 +646,11 @@ class ClusterController @Inject constructor(
         const val DEMO_STEP_MS = 1_500L
         const val DEMO_NAV_STEP_MS = 1_000L
 
-        /** One of every turn type, text at most 17 characters like the stock Mappls short text. */
+        /** One of every turn type. */
         val DEMO_TURNS = listOf(
-            Maneuver.STRAIGHT to "Continue straight",
-            Maneuver.LEFT to "Turn left",
-            Maneuver.RIGHT to "Turn right",
-            Maneuver.SLIGHT_LEFT to "Slight left",
-            Maneuver.SLIGHT_RIGHT to "Slight right",
-            Maneuver.SHARP_LEFT to "Sharp left",
-            Maneuver.SHARP_RIGHT to "Sharp right",
-            Maneuver.FORK_LEFT to "Keep left",
-            Maneuver.FORK_RIGHT to "Keep right",
-            Maneuver.ROUNDABOUT to "Roundabout",
-            Maneuver.U_TURN to "Make a U-turn",
-            Maneuver.DESTINATION to "Arrive",
+            Maneuver.STRAIGHT, Maneuver.LEFT, Maneuver.RIGHT, Maneuver.SLIGHT_LEFT, Maneuver.SLIGHT_RIGHT,
+            Maneuver.SHARP_LEFT, Maneuver.SHARP_RIGHT, Maneuver.FORK_LEFT, Maneuver.FORK_RIGHT,
+            Maneuver.ROUNDABOUT, Maneuver.U_TURN, Maneuver.DESTINATION,
         )
         const val WEATHER_INTERVAL_MS = 15 * 60_000L
     }

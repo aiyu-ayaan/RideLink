@@ -1,6 +1,7 @@
 package com.aiyu.ridelink.core.protocol
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ClusterProtocolTest {
@@ -52,13 +53,16 @@ class ClusterProtocolTest {
         assertEquals("5a 4e 01 2c 00 0a 01 11 70 0a 01 00 00 00 00 00 00 00 00 ff", hex(control))
     }
 
-    @Test fun longMapsInstructionKeepsOneLineSoArrowShows() {
+    /** Maps gives the street; the display gets the direction in words, like the stock Mappls short text. */
+    @Test fun navTextIsTheDirectionNotTheStreet() {
         val (text, control) = ClusterProtocol.navigation(
-            ClusterModel.NTORQ_U812,
-            ClusterProtocol.NavStep(150, 180, 1_800, Maneuver.RIGHT, "Turn right onto MG Road"),
+            ClusterModel.NTORQ_U458,
+            ClusterProtocol.NavStep(250, 180, 1_800, Maneuver.SHARP_LEFT, "Mohan Khoper Rd"),
         )
-        assertEquals("Turn right onto M", String(text, 2, 17, Charsets.UTF_8))
+        assertEquals("Sharp left", String(text, 2, 10, Charsets.UTF_8))
+        assertEquals(0, text[12].toInt())
         assertEquals(1, control[10].toInt())
+        Maneuver.entries.forEach { assertTrue(it.name, ClusterProtocol.directionText(it).length <= 17) }
     }
 
     @Test fun premiumPictogramUsesHexQuirk() {

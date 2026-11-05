@@ -130,8 +130,9 @@ object ClusterProtocol {
      * (BleEngine.sendNavigationData writes pair.second, sleeps 400 ms, writes pair.first).
      */
     fun navigation(model: ClusterModel, step: NavStep): List<ByteArray> {
-        val instruction = step.instruction.take(TEXT_MAX)
-        val textFrame = frame(START, DID_NAV_TEXT, instruction.toByteArray(Charsets.UTF_8))
+        // The direction in words, not the Maps street name: the 2026 Race XP LCD has no arrow segments and shows
+        // this text as the turn ("250 m / SHARP LEFT"), as stock does with the Mappls short text.
+        val textFrame = frame(START, DID_NAV_TEXT, directionText(step.maneuver).take(TEXT_MAX).toByteArray(Charsets.UTF_8))
         val dist = if (step.distanceToTurnM >= 0xFFFF) 0xFFFF else step.distanceToTurnM.coerceAtLeast(0)
         val etaMin = (step.etaSeconds / 60).toInt().coerceIn(0, 0xFFFF)
         val left = step.distanceLeftM.coerceIn(0, 0xFFFFFF)
@@ -140,13 +141,32 @@ object ClusterProtocol {
             (etaMin shr 8).toByte(), etaMin.toByte(),
             (left shr 16).toByte(), (left shr 8).toByte(), left.toByte(),
             model.pictogram(step.maneuver).toByte(),
-            // Stock sends 2 when the text is over 17 chars, but feeds Mappls short text ("Turn right"), so it is
-            // almost always 1. Long Maps text with 2 left the TFT showing text without the arrow; only 17 bytes go out.
+            // Stock: 2 when the text is over 17 chars, else 1. Every directionText fits, so always 1.
             1,
             (if (step.stopped) 0xFF else 0).toByte(),
             0, 0, 0, 0, 0, 0, 0,
         )
         return listOf(textFrame, frame(START_NAV, DID_NAV_CONTROL, control))
+    }
+
+    /**
+     * Stock nav text: Mappls `AdviseInfo.getShortText()`, from the SDK's `mappls-directions-en_short_instructions.json`
+     * (v5), the part before `$`: "Turn left", "sharp left", "slightly left", "Keep left", "U-turn",
+     * "Enter roundabout", "Destination", "Go straight". Direction only, never the street.
+     */
+    fun directionText(m: Maneuver): String = when (m) {
+        Maneuver.LEFT -> "Turn left"
+        Maneuver.RIGHT -> "Turn right"
+        Maneuver.SHARP_LEFT -> "Sharp left"
+        Maneuver.SHARP_RIGHT -> "Sharp right"
+        Maneuver.SLIGHT_LEFT -> "Slightly left"
+        Maneuver.SLIGHT_RIGHT -> "Slightly right"
+        Maneuver.U_TURN -> "U-turn"
+        Maneuver.STRAIGHT -> "Go straight"
+        Maneuver.DESTINATION -> "Destination"
+        Maneuver.FORK_LEFT -> "Keep left"
+        Maneuver.FORK_RIGHT -> "Keep right"
+        Maneuver.ROUNDABOUT -> "Enter roundabout"
     }
 
     /** Unread counts per app. Telegram is counted by the stock app but never sent. */
