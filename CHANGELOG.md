@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.1-alpha.5](https://github.com/aiyu-ayaan/RideLink/compare/v0.2.1-alpha.4...v0.2.1-alpha.5) (2026-11-05)
+
+### Other changes
+
+* Feat(SmartXonnect) : Experimental notification light clear, food delivery alerts and last-ride CO2
+* Feat(SmartXonnect) : Race stats, last parked spot, display brightness, SMS sender, birthday greeting, missed-call auto-reply
+* Core(Protocol) : SmartXonnect chat counts without checksum, caller cleared at once, arrow test walks every direction
+* Core(Nav) : Race XP arrows use the 2025+ pictogram ids, roundabout exits get their own arrow
+* Core(Protocol) : Auto-detect the SmartXonnect LCD (Race XP) and send its own nav and status frames
+* Core(Nav) : Demo navigation runs even with Forward navigation off and ends with the stop frame
+* Core(Nav) : Send the turn as words like the stock Mappls short text, not the Maps street name
+
 ## [0.2.1-alpha.4](https://github.com/aiyu-ayaan/RideLink/compare/v0.2.1-alpha.3...v0.2.1-alpha.4) (2026-11-05)
 
 ### Other changes
