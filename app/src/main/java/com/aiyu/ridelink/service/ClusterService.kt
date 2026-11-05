@@ -8,6 +8,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
+import android.os.PowerManager
 import android.service.notification.NotificationListenerService
 import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
@@ -19,6 +20,8 @@ import com.aiyu.ridelink.core.ClusterController
 import com.aiyu.ridelink.core.ble.LinkState
 import com.aiyu.ridelink.ui.R
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -28,12 +31,24 @@ class ClusterService : LifecycleService() {
     @Inject lateinit var controller: ClusterController
     private var calls: CallStateWatcher? = null
 
+    /**
+     * Held while the display is connected, like stock BaseBleConnectHelperService.startWakelock (partial, 30 min).
+     * Without it the phone sleeps with the screen off and the 2 s status, nav and caller frames stall.
+     */
+    private val wakeLock by lazy {
+        getSystemService(PowerManager::class.java).newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "RideLink:ride").apply {
+            setReferenceCounted(false)
+        }
+    }
+    private var wakeJob: Job? = null
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         super.onStartCommand(intent, flags, startId)
         if (intent?.action == ACTION_STOP) {
             calls?.stop()
             calls = null
             controller.stop()
+            releaseWakeLock()
             stopSelf()
             return START_NOT_STICKY
         }
@@ -51,13 +66,32 @@ class ClusterService : LifecycleService() {
                     LinkState.Idle -> getString(R.string.status_idle)
                 }
                 getSystemService(NotificationManager::class.java).notify(NOTIFICATION_ID, notification(text))
+                if (state is LinkState.Ready) holdWakeLock() else releaseWakeLock()
             }
         }
         return START_STICKY
     }
 
+    /** Renewed before the timeout for as long as the link stays up, so a long ride keeps it. */
+    private fun holdWakeLock() {
+        if (wakeJob?.isActive == true) return
+        wakeJob = lifecycleScope.launch {
+            while (true) {
+                wakeLock.acquire(WAKE_LOCK_MS)
+                delay(WAKE_LOCK_MS / 2)
+            }
+        }
+    }
+
+    private fun releaseWakeLock() {
+        wakeJob?.cancel()
+        wakeJob = null
+        if (wakeLock.isHeld) wakeLock.release()
+    }
+
     override fun onDestroy() {
         calls?.stop()
+        releaseWakeLock()
         super.onDestroy()
     }
 
@@ -80,6 +114,7 @@ class ClusterService : LifecycleService() {
         private const val CHANNEL = "ride"
         private const val NOTIFICATION_ID = 1
         private const val ACTION_STOP = "stop"
+        private const val WAKE_LOCK_MS = 30 * 60_000L
 
         fun start(context: Context) = ContextCompat.startForegroundService(context, Intent(context, ClusterService::class.java))
         fun stop(context: Context) = context.startService(Intent(context, ClusterService::class.java).setAction(ACTION_STOP))

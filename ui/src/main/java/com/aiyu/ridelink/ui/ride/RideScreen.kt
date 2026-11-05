@@ -1,6 +1,8 @@
 package com.aiyu.ridelink.ui.ride
 
 import android.content.Intent
+import android.net.Uri
+import android.os.PowerManager
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -31,6 +33,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.BatteryAlert
 import androidx.compose.material.icons.rounded.TurnLeft
 import androidx.compose.material.icons.rounded.ForkRight
 import androidx.compose.material.icons.rounded.TurnSlightRight
@@ -133,6 +136,9 @@ fun RideScreen(vm: MainViewModel, onConnect: () -> Unit, onDisconnect: () -> Uni
     val bluetoothOk = remember(refresh) { context.hasBluetooth() }
     val listenerOk = remember(refresh) { context.hasListener() }
     val phoneOk = remember(refresh) { context.hasPhoneState() }
+    val batteryOk = remember(refresh) {
+        context.getSystemService(PowerManager::class.java)?.isIgnoringBatteryOptimizations(context.packageName) != false
+    }
     val askBluetooth = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { refresh++ }
 
     var pairing by remember { mutableStateOf(false) }
@@ -163,6 +169,14 @@ fun RideScreen(vm: MainViewModel, onConnect: () -> Unit, onDisconnect: () -> Uni
             if (bluetoothOk && !phoneOk) {
                 PermissionCard(Icons.Rounded.SignalCellularAlt, R.string.perm_phone_title, R.string.perm_phone_body, R.string.perm_grant, optional = true) {
                     askBluetooth.launch(phonePermissions)
+                }
+            }
+            if (bluetoothOk && !batteryOk) {
+                PermissionCard(Icons.Rounded.BatteryAlert, R.string.perm_battery_title, R.string.perm_battery_body, R.string.perm_grant, optional = true) {
+                    @android.annotation.SuppressLint("BatteryLife") // Personal sideloaded app; the ride session must not be frozen.
+                    val ask = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:${context.packageName}"))
+                    runCatching { context.startActivity(ask) }
+                        .onFailure { context.startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)) }
                 }
             }
 
