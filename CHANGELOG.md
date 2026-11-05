@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.2.1-alpha.4](https://github.com/aiyu-ayaan/RideLink/compare/v0.2.1-alpha.3...v0.2.1-alpha.4) (2026-11-05)
+
+### Other changes
+
+* Docs(Arch) : Document Maps icon turns, nav repeat, wake lock and per-scooter rides
+* Ui(Analytics) : Show rides per scooter with a scooter picker
+* App(Service) : Hold a wake lock while connected and ask to skip battery optimisation
+* Core(Nav) : Read the turn arrow from the Maps notification icon, repeat the turn every 2 s like stock, demo navigation
+
 ## [0.2.1-alpha.3](https://github.com/aiyu-ayaan/RideLink/compare/v0.2.1-alpha.2...v0.2.1-alpha.3) (2026-11-05)
 
 ### Other changes
