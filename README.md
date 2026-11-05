@@ -35,18 +35,31 @@ RideLink connects your phone to your TVS SmartXonnect scooter display over Bluet
 - **Weather & environment**: Optional local temperature, AQI, and location sync via Open-Meteo (no API key required).
 - **Multi-scooter garage**: Pair and manage multiple scooters with per-bike model profiles and auto-reconnect.
 - **Material 3 Expressive UI**: Built entirely in Jetpack Compose with dynamic color, adaptive layouts, dark/light themes, and floating pill navigation.
+- **Auto model detection**: Recognises the SmartXonnect LCD (Race XP), older Ntorq and 2025+ clusters from their own frames.
+- **Race XP extras**: Race stats, display brightness, SMS sender, birthday greeting, last parked location and missed-call auto-reply.
+- **Developer tools**: Demo navigation through every turn type, arrow and alert code sweeps, and a live frame console.
 - **In-app updates**: Built-in GitHub Releases updater supporting Stable, Beta, and Alpha release channels.
 
 ## Supported scooters
 
-RideLink works with TVS Bluetooth-equipped SmartXonnect clusters:
+RideLink detects the display from the frames it sends and picks the right protocol by itself (Settings → Scooter → Auto). You can also pick the model by hand.
 
-| Model | Display type | Features supported |
-|---|---|---|
-| **NTORQ 125 (Disc / Race Edition)** | Segment LCD | Navigation arrows, distance, caller ID, missed calls, battery, signal, clock |
-| **NTORQ Race XP** | Segment LCD (Dual Mode) | Navigation, caller ID, high-speed alerts, ride modes, telemetry |
-| **NTORQ XT** | Hybrid TFT + LCD | Navigation, caller ID, full weather & AQI, social notifications, music info, custom display text lines |
-| **2025+ SmartXonnect Models** | Modern digital clusters | Auto model detection via protocol handshake |
+| Scooter | Years | Display | Protocol in RideLink | Turn-by-turn | Status |
+|---|---|---|---|---|---|
+| **NTORQ 125 Race XP** | 2020 – 2026 | SmartXonnect LCD, arrow pictogram + 2 text lines | SmartXonnect (auto-detected) | Arrow + distance + direction words | ✅ Tested on a 2026 Race XP |
+| **NTORQ 125** Standard / Race Edition / Super Squad / Marvel editions | 2018 – 2024 | SmartXonnect LCD | SmartXonnect (auto-detected) | Arrow + distance + direction words | 🟡 Same protocol as the Race XP, not yet tested |
+| **NTORQ 125 XT** | 2023+ | Hybrid TFT + LCD | Older Ntorq (U577 premium) | Arrow + distance | 🟡 Untested on a real scooter |
+| **NTORQ 125** (U716) / U577 base | 2022 – 2024 | LCD | Older Ntorq | Arrow + distance | 🟡 Untested |
+| **NTORQ 125** 2025+ (U812, N251 Standard, U458 Race, U377 Super Squad) | 2025+ | Digital cluster | 2025+ Ntorq | Arrow + distance + text | 🟡 Built from the TVS app, untested |
+| **NTORQ 150** | 2025+ | TFT / LCD | Not supported yet | – | ❌ |
+
+What works on every supported display: Google Maps turn-by-turn, caller ID with accept/reject from the scooter switch, missed calls, phone battery, signal, clock sync, WhatsApp/Facebook/Instagram counts, rider name and custom text lines, overspeed alert, live ride data and ride analytics.
+
+Extras on the SmartXonnect LCD (Race XP): race stats (best lap, top speed, 0–60), display brightness, SMS sender, birthday / purchase-day greeting, plus experimental notification-light clear, food delivery alerts and last-ride CO2.
+
+Extras on TFT displays: weather + AQI, place name and music info.
+
+Tested your scooter? Open an issue with the model and year and a Console log (Settings → Developer options → Save logs) so it can move to ✅.
 
 ## Screenshots
 
