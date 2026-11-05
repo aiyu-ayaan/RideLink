@@ -36,7 +36,7 @@
 - [ ] Trip meter: 5A 10 [14..16] reads empty on the rider's XT; get a Console "Copy log" with RX frames
 - [ ] Signal bars, call icon, notification badge: still missing? compare decoded STATUS lines, try model U577 premium
 - [ ] Pair the user's Ntorq 125 Race XP (2026, U458) and confirm the display accepts the 2025+ status frame
-- [ ] Race XP (SmartXonnect LCD): Console shows `Display detected: NTORQ_SMARTXONNECT`; Demo navigation shows arrows (stage byte, byte 11 = 1). If not: Console -> Arrow codes 0 to 80 and note which codes draw
+- [ ] Race XP (SmartXonnect LCD): left family arrows confirmed (ids 0/1/2); check right 10, sharp right 11, slight right 12, keep left 7 / right 17, U-turn 19, destination 22, straight 57, roundabout 48 / exits 28 / 32 with Demo navigation (Console -> Arrow codes 0 to 80 to see any other id)
 - [ ] SmartXonnect U445B / U566 themes: alert block, code remap and 5A 49 control 2 not implemented (theme id comes from the TVS account)
 - [ ] Real Maps route on the scooter: Console should show `Maps: <street> = <TURN> (icon ... 1.00)`; check the meter stays in nav mode between Maps updates (2 s repeat)
 - [ ] Calls / WhatsApp on the Race XP: retest with battery optimisation off + wake lock; Console notes show what was detected

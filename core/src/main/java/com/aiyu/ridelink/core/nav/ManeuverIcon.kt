@@ -80,7 +80,7 @@ object ManeuverIcon {
     fun maneuverFor(name: String): Maneuver {
         val left = name.endsWith("left")
         return when {
-            "roundabout" in name -> Maneuver.ROUNDABOUT
+            "roundabout" in name -> roundaboutExit(name)
             "destination" in name -> Maneuver.DESTINATION
             "u_turn" in name -> Maneuver.U_TURN
             "fork" in name || "keep" in name -> if (left) Maneuver.FORK_LEFT else Maneuver.FORK_RIGHT
@@ -89,6 +89,21 @@ object ManeuverIcon {
             "normal" in name -> if (left) Maneuver.LEFT else Maneuver.RIGHT
             else -> Maneuver.STRAIGHT
         }
+    }
+
+    /**
+     * Exit of a `maneuver_roundabout_enter_and_exit_*` drawable. Maps draws India's roundabouts clockwise (`_cw_`);
+     * a U-turn goes almost all the way round, like the sharp right exit. Enter / exit only icons are the plain roundabout.
+     */
+    private fun roundaboutExit(name: String): Maneuver = when {
+        "u_turn" in name -> Maneuver.ROUNDABOUT_SHARP_RIGHT
+        "sharp_left" in name -> Maneuver.ROUNDABOUT_SHARP_LEFT
+        "slight_left" in name -> Maneuver.ROUNDABOUT_SLIGHT_LEFT
+        "normal_left" in name -> Maneuver.ROUNDABOUT_LEFT
+        "sharp_right" in name -> Maneuver.ROUNDABOUT_SHARP_RIGHT
+        "slight_right" in name -> Maneuver.ROUNDABOUT_SLIGHT_RIGHT
+        "normal_right" in name -> Maneuver.ROUNDABOUT_RIGHT
+        else -> Maneuver.ROUNDABOUT
     }
 
     private val SIDES = listOf("left", "right")

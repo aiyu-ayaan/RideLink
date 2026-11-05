@@ -46,6 +46,7 @@ import androidx.compose.material.icons.rounded.Bluetooth
 import androidx.compose.material.icons.rounded.Call
 import androidx.compose.material.icons.rounded.Flag
 import androidx.compose.material.icons.rounded.NotificationsActive
+import androidx.compose.material.icons.rounded.RoundaboutLeft
 import androidx.compose.material.icons.rounded.RoundaboutRight
 import androidx.compose.material.icons.rounded.SignalCellularAlt
 import androidx.compose.material.icons.rounded.Straight
@@ -283,7 +284,9 @@ internal fun Maneuver.icon(): ImageVector = when (this) {
     Maneuver.SLIGHT_RIGHT -> Icons.Rounded.TurnSlightRight
     Maneuver.FORK_RIGHT -> Icons.Rounded.ForkRight
     Maneuver.U_TURN -> Icons.Rounded.UTurnLeft
-    Maneuver.ROUNDABOUT -> Icons.Rounded.RoundaboutRight
+    Maneuver.ROUNDABOUT, Maneuver.ROUNDABOUT_SHARP_RIGHT, Maneuver.ROUNDABOUT_RIGHT, Maneuver.ROUNDABOUT_SLIGHT_RIGHT ->
+        Icons.Rounded.RoundaboutRight
+    Maneuver.ROUNDABOUT_SHARP_LEFT, Maneuver.ROUNDABOUT_LEFT, Maneuver.ROUNDABOUT_SLIGHT_LEFT -> Icons.Rounded.RoundaboutLeft
     Maneuver.DESTINATION -> Icons.Rounded.Flag
     Maneuver.STRAIGHT -> Icons.Rounded.Straight
 }

@@ -8,12 +8,21 @@ package com.aiyu.ridelink.core.protocol
  */
 enum class ClusterFamily { NTORQ, JUPITER, SMARTXONNECT }
 
-/** Turn types, named after the Mappls TurnTypeConstants the stock tables are keyed on. */
+/**
+ * Turn types, named after the Mappls TurnTypeConstants the stock tables are keyed on.
+ * Roundabout exits are Mappls 65..71, the angle travelled round in 45 degree steps (TVSMMapActivity.getManeuverID:
+ * up to 45 -> 65 ... over 270 -> 71); [ROUNDABOUT] (68, 180 degrees) is straight across. Named for India's
+ * clockwise roundabouts: 90 degrees round is the left exit.
+ */
 enum class Maneuver(val mappls: Int) {
     LEFT(0), SHARP_LEFT(1), SLIGHT_LEFT(2),
     RIGHT(3), SHARP_RIGHT(4), SLIGHT_RIGHT(5),
     U_TURN(6), STRAIGHT(7), DESTINATION(8),
     FORK_LEFT(15), FORK_RIGHT(16), ROUNDABOUT(68),
+    ROUNDABOUT_SHARP_LEFT(65), ROUNDABOUT_LEFT(66), ROUNDABOUT_SLIGHT_LEFT(67),
+    ROUNDABOUT_SLIGHT_RIGHT(69), ROUNDABOUT_RIGHT(70), ROUNDABOUT_SHARP_RIGHT(71);
+
+    val isRoundabout: Boolean get() = mappls in 65..71
 }
 
 /** Weather groups RideLink can tell apart; the display picks the icon from them. */
@@ -47,12 +56,14 @@ enum class ClusterModel(val vehicleId: Int, val family: ClusterFamily) {
 
     /** Mappls turn id to cluster arrow id, per BleNavigationDataSourceImp. */
     fun pictogram(m: Maneuver): Int = when (this) {
-        // TVS's own res/raw/en_tvs_short_instuctions.json "$code", sent unmapped (TVSMMapActivity.getPictogramCode).
-        NTORQ_SMARTXONNECT -> SMARTXONNECT_CODES.getValue(m)
-        NTORQ_U577_BASE -> BASE_U577[m.mappls] ?: 5
+        // The U577 tables have no roundabout exits; they get the plain roundabout arrow.
+        NTORQ_U577_BASE -> BASE_U577[m.mappls] ?: BASE_U577[Maneuver.ROUNDABOUT.mappls].takeIf { m.isRoundabout } ?: 5
         // Stock app parses the premium table value as hex: "10" becomes 0x10.
-        NTORQ_U577_PREMIUM -> (PREMIUM_U577[m.mappls] ?: 64).toString().toInt(16)
-        // U716 is not in any stock nav table; it falls back to the U812 one.
+        NTORQ_U577_PREMIUM -> (PREMIUM_U577[m.mappls] ?: PREMIUM_U577[Maneuver.ROUNDABOUT.mappls].takeIf { m.isRoundabout } ?: 64)
+            .toString().toInt(16)
+        // U716 is not in any stock nav table; it falls back to the U812 one. The SmartXonnect LCD (2026 Race XP) draws
+        // this table too: on the rider's display 0, 1 and 2 drew the left arrows, 7 a keep-left arrow and 3, 4, 5, 15,
+        // 16, 41, 72 (the raw codes stock's legacy screen sends) drew nothing (2026-11-06).
         else -> NEW_NTORQ[m.mappls] ?: 0
     }
 
@@ -114,12 +125,11 @@ enum class ClusterModel(val vehicleId: Int, val family: ClusterFamily) {
             }
         }
 
-        private val SMARTXONNECT_CODES = mapOf(
-            Maneuver.LEFT to 0, Maneuver.SHARP_LEFT to 1, Maneuver.FORK_LEFT to 2, Maneuver.RIGHT to 3,
-            Maneuver.SHARP_RIGHT to 4, Maneuver.FORK_RIGHT to 5, Maneuver.STRAIGHT to 7, Maneuver.DESTINATION to 8,
-            Maneuver.SLIGHT_LEFT to 15, Maneuver.SLIGHT_RIGHT to 16, Maneuver.U_TURN to 41, Maneuver.ROUNDABOUT to 72,
+        /** getPictogramMappingForNtorqU812, the Mappls ids RideLink produces. */
+        private val NEW_NTORQ = mapOf(
+            0 to 0, 1 to 1, 2 to 2, 3 to 10, 4 to 11, 5 to 12, 6 to 19, 7 to 57, 8 to 22, 15 to 7, 16 to 17,
+            65 to 27, 66 to 28, 67 to 29, 68 to 48, 69 to 31, 70 to 32, 71 to 33,
         )
-        private val NEW_NTORQ = mapOf(0 to 0, 1 to 1, 2 to 2, 3 to 10, 4 to 11, 5 to 12, 6 to 19, 7 to 57, 8 to 22, 15 to 7, 16 to 17, 68 to 48)
         private val PREMIUM_U577 = mapOf(0 to 0, 1 to 1, 2 to 2, 3 to 10, 4 to 11, 5 to 12, 6 to 9, 7 to 57, 8 to 22, 15 to 7, 16 to 17, 68 to 48)
         private val BASE_U577 = mapOf(0 to 6, 1 to 12, 2 to 10, 3 to 7, 4 to 13, 5 to 11, 6 to 15, 7 to 5, 8 to 2, 15 to 19, 16 to 20, 68 to 45)
     }

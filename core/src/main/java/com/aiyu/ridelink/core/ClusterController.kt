@@ -709,7 +709,7 @@ class ClusterController @Inject constructor(
         val DEMO_TURNS = listOf(
             Maneuver.STRAIGHT, Maneuver.LEFT, Maneuver.RIGHT, Maneuver.SLIGHT_LEFT, Maneuver.SLIGHT_RIGHT,
             Maneuver.SHARP_LEFT, Maneuver.SHARP_RIGHT, Maneuver.FORK_LEFT, Maneuver.FORK_RIGHT,
-            Maneuver.ROUNDABOUT, Maneuver.U_TURN, Maneuver.DESTINATION,
+            Maneuver.ROUNDABOUT, Maneuver.ROUNDABOUT_LEFT, Maneuver.ROUNDABOUT_RIGHT, Maneuver.U_TURN, Maneuver.DESTINATION,
         )
         const val WEATHER_INTERVAL_MS = 15 * 60_000L
     }

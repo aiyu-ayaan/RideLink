@@ -188,26 +188,29 @@ object ClusterProtocol {
      * ```
      * 5A 4E dist(2) etaMin(2) left(3) code lines 01 00 flag stage 00 alertType alertDist(2) FF
      * ```
-     * then, 100 ms later, `5B 4F <text> FF`. `code` is TVS's own maneuver code ([ClusterModel.pictogram]). `stage`
-     * picks what the display draws: 1 = turn within 65..1000 m, 3 / 4 = left / right turn under 65 m, 5 = keep
-     * straight (also for any turn over 1 km, with code 7 and "STAY SAME RD"), 8 = arrived, 0 = text only
-     * (rerouting, U-turn hint). Byte 11 is always 1 while navigating. Alerts (traffic camera etc.) are U445B only.
+     * then, 100 ms later, `5B 4F <text> FF`. `code` is the pictogram id ([ClusterModel.pictogram], the 2025+ table).
+     * `stage` picks what the display draws: 1 = turn within 65..1000 m, 3 / 4 = left / right turn under 65 m (the
+     * display then shows chevrons such as `->->->` in the text lines), 5 = keep straight (also for any turn over
+     * 1 km, with "STAY SAME RD"), 8 = arrived, 0 = text only (rerouting, U-turn hint). Byte 11 is always 1 while
+     * navigating. Alerts (traffic camera etc.) are U445B only.
      * A stopped route sends "You Arrived" when the last turn was the destination, else nothing (stock just stops).
      */
     fun smartXonnectNavigation(step: NavStep): List<ByteArray> {
         val arrived = step.stopped
         if (arrived && step.maneuver != Maneuver.DESTINATION) return emptyList()
         val d = if (arrived) 0 else smartXonnectDistance(step.distanceToTurnM.coerceAtLeast(0))
+        val straight = ClusterModel.NTORQ_SMARTXONNECT.pictogram(Maneuver.STRAIGHT)
         var code = ClusterModel.NTORQ_SMARTXONNECT.pictogram(step.maneuver)
         var text = directionText(step.maneuver)
         val lines = if (text.length > TEXT_MAX) 2 else 1
         val stage: Int
         when {
             arrived -> { stage = 8; text = ARRIVED }
-            step.maneuver == Maneuver.STRAIGHT -> { stage = 5; code = 7; text = STAY_ON_ROAD }
-            d < 65 -> stage = when { "left" in text -> 3; "right" in text -> 4; else -> 0 }
+            step.maneuver == Maneuver.STRAIGHT -> { stage = 5; code = straight; text = STAY_ON_ROAD }
+            // Stock leaves U-turn / roundabout / destination at stage 0 (text only) here; 1 keeps their arrow up.
+            d < 65 -> stage = when { "left" in text -> 3; "right" in text -> 4; else -> 1 }
             d <= 1000 -> stage = 1
-            else -> { stage = 5; code = 7; text = STAY_ON_ROAD }
+            else -> { stage = 5; code = straight; text = STAY_ON_ROAD }
         }
         val dist = d.coerceAtMost(0xFFFF)
         val etaMin = (step.etaSeconds / 60).toInt().coerceIn(0, 0xFFFF)
@@ -239,6 +242,8 @@ object ClusterProtocol {
         Maneuver.FORK_LEFT -> "Keep left"
         Maneuver.FORK_RIGHT -> "Keep right"
         Maneuver.ROUNDABOUT -> "Enter roundabout"
+        Maneuver.ROUNDABOUT_SHARP_LEFT, Maneuver.ROUNDABOUT_LEFT, Maneuver.ROUNDABOUT_SLIGHT_LEFT -> "Roundabout left"
+        Maneuver.ROUNDABOUT_SHARP_RIGHT, Maneuver.ROUNDABOUT_RIGHT, Maneuver.ROUNDABOUT_SLIGHT_RIGHT -> "Roundabout right"
     }
 
     /** Unread counts per app. Telegram is counted by the stock app but never sent. */

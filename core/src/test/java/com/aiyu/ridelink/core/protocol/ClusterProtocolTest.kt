@@ -255,14 +255,22 @@ class ClusterProtocolTest {
         assertEquals(3, stage(nav(Maneuver.SHARP_LEFT, 50)))
         assertEquals(1, code(nav(Maneuver.SHARP_LEFT, 50)))
         assertEquals(4, stage(nav(Maneuver.RIGHT, 40)))
-        assertEquals(0, stage(nav(Maneuver.U_TURN, 30)))
-        assertEquals(41, code(nav(Maneuver.U_TURN, 30)))
+        assertEquals(1, stage(nav(Maneuver.U_TURN, 30)))
+        assertEquals(19, code(nav(Maneuver.U_TURN, 30)))
+        // Right family uses the 2025+ arrow ids: the raw 3 / 4 / 5 drew nothing on the rider's Race XP.
+        assertEquals(10, code(nav(Maneuver.RIGHT, 300)))
+        assertEquals(11, code(nav(Maneuver.SHARP_RIGHT, 300)))
         assertEquals(1, stage(nav(Maneuver.SLIGHT_RIGHT, 600)))
-        assertEquals(16, code(nav(Maneuver.SLIGHT_RIGHT, 600)))
-        assertEquals(72, code(nav(Maneuver.ROUNDABOUT, 600)))
-        // A turn over 1 km away and plain straight both show "keep straight" (code 7, stage 5).
-        nav(Maneuver.RIGHT, 1_500).let { assertEquals(5, stage(it)); assertEquals(7, code(it)); assertEquals("STAY SAME RD", text(it)) }
-        nav(Maneuver.STRAIGHT, 200).let { assertEquals(5, stage(it)); assertEquals(7, code(it)) }
+        assertEquals(12, code(nav(Maneuver.SLIGHT_RIGHT, 600)))
+        assertEquals(17, code(nav(Maneuver.FORK_RIGHT, 600)))
+        assertEquals(7, code(nav(Maneuver.FORK_LEFT, 600)))
+        assertEquals(22, code(nav(Maneuver.DESTINATION, 600)))
+        assertEquals(48, code(nav(Maneuver.ROUNDABOUT, 600)))
+        assertEquals(28, code(nav(Maneuver.ROUNDABOUT_LEFT, 600)))
+        assertEquals(32, code(nav(Maneuver.ROUNDABOUT_RIGHT, 600)))
+        // A turn over 1 km away and plain straight both show "keep straight" (arrow 57, stage 5); 7 is keep-left.
+        nav(Maneuver.RIGHT, 1_500).let { assertEquals(5, stage(it)); assertEquals(57, code(it)); assertEquals("STAY SAME RD", text(it)) }
+        nav(Maneuver.STRAIGHT, 200).let { assertEquals(5, stage(it)); assertEquals(57, code(it)) }
         // Arrived: distance 0, stage 8. A cancelled route sends nothing, like stock.
         nav(Maneuver.DESTINATION, 20, stopped = true).let {
             assertEquals(8, stage(it)); assertEquals(0, it[0][2].toInt()); assertEquals(0, it[0][3].toInt()); assertEquals("You Arrived", text(it))

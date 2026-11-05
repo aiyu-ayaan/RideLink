@@ -282,13 +282,20 @@ Navigation, every **800 ms** (`TVSMMapActivity.sendNavigationData`, `N251N109U34
 ```
 then **100 ms** later `5B 4F <text up to 17> FF`. Raw bytes, no checksum.
 - dist rounded to 5 m under 25 m, else 50 m; `[0, d]` up to 255, else 2 bytes.
-- `code` = TVS's own `res/raw/en_tvs_short_instuctions.json` (v5) `$code`, unmapped: left 0, sharp left 1,
-  keep left 2, right 3, sharp right 4, keep right 5, straight 7 / 21, destination 8, slightly left 15,
-  slightly right 16, U-turn 41, roundabout 72. No code (ramps, "Head north") is sent as straight.
+- `code`: stock's legacy screen sends TVS's own `res/raw/en_tvs_short_instuctions.json` (v5) `$code` unmapped
+  (left 0, sharp left 1, keep left 2, right 3, sharp right 4, keep right 5, straight 7 / 21, destination 8,
+  slightly left 15, slightly right 16, U-turn 41, roundabout 72). The 2026 Race XP does **not** draw those: on the
+  rider's display (2026-11-06) 0, 1 and 2 drew the left arrows, 7 drew a keep-left arrow and 3, 4, 5, 15, 16, 41,
+  72 drew nothing. Its pictogram (2026 owner's manual item 12, "Navigation window (pictogram)": arrowheads in eight
+  directions round a ring, left of the text lines) takes the 2025+ ids of `getPictogramMappingForNtorqU812`, which
+  RideLink sends: left 0, sharp left 1, slight left 2, keep left 7, right 10, sharp right 11, slight right 12,
+  keep right 17, U-turn 19, destination 22, roundabout 48, straight 57, roundabout exits 27 / 28 / 29 / 31 / 32 / 33
+  (Mappls 65..71, the angle travelled round in 45 degree steps; 68 = straight across = 48).
 - `lines` = 2 when the text is over 17 characters, else 1. Byte 11 = 1 while navigating.
 - `flag` = 1 with the "Mobile Data" (stage 7) and "GPS" (stage 6) messages, else 0.
-- `stage`: 1 = turn 65..1000 m ahead; 3 / 4 = text contains "left" / "right" and under 65 m (else the default,
-  0 for a turn); 5 = straight, or any turn over 1 km (code 7, text "STAY SAME RD"); 8 = arrived (dist 0,
+- `stage`: 1 = turn 65..1000 m ahead; 3 / 4 = text contains "left" / "right" and under 65 m (stock: else the
+  default, 0 for a turn; RideLink sends 1 so the U-turn / roundabout / destination arrow stays up). Under stage 4 the
+  rider saw `->->->` in the text lines: the display's own "turn now" chevrons; 5 = straight, or any turn over 1 km (straight arrow, text "STAY SAME RD"); 8 = arrived (dist 0,
   "You Arrived"); 0 with code 72 = "Rerouting"; 0 = "Take U-Turn" hint.
 - Alert block zero (traffic camera / road works only on U445B).
 - Stock sends nothing when a route is cancelled (timer cancelled); RideLink does the same, and sends the

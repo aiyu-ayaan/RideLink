@@ -51,7 +51,11 @@ class ManeuverIconTest {
         assertEquals(Maneuver.SHARP_LEFT, ManeuverIcon.maneuverFor("maneuver_turn_sharp_left"))
         assertEquals(Maneuver.FORK_RIGHT, ManeuverIcon.maneuverFor("maneuver_on_ramp_keep_right"))
         assertEquals(Maneuver.U_TURN, ManeuverIcon.maneuverFor("maneuver_off_ramp_u_turn_left"))
-        assertEquals(Maneuver.ROUNDABOUT, ManeuverIcon.maneuverFor("maneuver_roundabout_enter_and_exit_cw_slight_left"))
+        assertEquals(Maneuver.ROUNDABOUT_SLIGHT_LEFT, ManeuverIcon.maneuverFor("maneuver_roundabout_enter_and_exit_cw_slight_left"))
+        assertEquals(Maneuver.ROUNDABOUT_RIGHT, ManeuverIcon.maneuverFor("maneuver_roundabout_enter_and_exit_cw_normal_right"))
+        assertEquals(Maneuver.ROUNDABOUT_SHARP_RIGHT, ManeuverIcon.maneuverFor("maneuver_roundabout_enter_and_exit_cw_u_turn"))
+        assertEquals(Maneuver.ROUNDABOUT, ManeuverIcon.maneuverFor("maneuver_roundabout_enter_and_exit_cw_straight"))
+        assertEquals(Maneuver.ROUNDABOUT, ManeuverIcon.maneuverFor("maneuver_roundabout_exit_cw"))
         assertEquals(Maneuver.DESTINATION, ManeuverIcon.maneuverFor("maneuver_destination_right"))
         assertEquals(Maneuver.STRAIGHT, ManeuverIcon.maneuverFor("maneuver_merge_left"))
     }
