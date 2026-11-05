@@ -38,6 +38,7 @@ class MainViewModel @Inject constructor(
     val speed = controller.speed
     val demo = controller.demo
     val demoNav = controller.demoNav
+    val arrowSweep = controller.arrowSweep
     val social = controller.social
     val weather = controller.weather
     val place = controller.place
@@ -125,6 +126,7 @@ class MainViewModel @Inject constructor(
 
     fun setDemo(on: Boolean) = controller.setDemo(on)
     fun setDemoNav(on: Boolean) = controller.setDemoNav(on)
+    fun setArrowSweep(on: Boolean) = controller.setArrowSweep(on)
     fun sendText(text: String) = controller.sendTestText(text)
     fun sendTest(which: ClusterController.TestFrame) = controller.sendTest(which)
     fun sendTestTurn() = controller.onNavigation(NavStep(250, 540, 3_400, Maneuver.RIGHT, "Turn right test"))

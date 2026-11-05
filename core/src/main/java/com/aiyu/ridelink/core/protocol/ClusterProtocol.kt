@@ -20,6 +20,15 @@ object ClusterProtocol {
     /** Stock resends the current turn this often for the whole route (NavigationRepoImpl.startTimer). */
     const val NAV_RESEND_MS = 2_000L
 
+    /** SmartXonnect LCD: TVSMMapActivity resends every 800 ms and writes the text 100 ms after the control frame. */
+    const val SMARTXONNECT_NAV_RESEND_MS = 800L
+    const val SMARTXONNECT_NAV_GAP_MS = 100L
+
+    fun navResendMs(model: ClusterModel) = if (model.family == ClusterFamily.SMARTXONNECT) SMARTXONNECT_NAV_RESEND_MS else NAV_RESEND_MS
+
+    /** Pause between the two frames [navigation] returns, in the order they are sent. */
+    fun navGapMs(model: ClusterModel) = if (model.family == ClusterFamily.SMARTXONNECT) SMARTXONNECT_NAV_GAP_MS else NAV_FRAME_GAP_MS
+
     private const val START = 0x5B.toByte()
     private const val START_NAV = 0x5A.toByte()
     private const val END = 0xFF.toByte()
@@ -112,6 +121,13 @@ object ClusterProtocol {
                 // U577 base ends with find-my-vehicle flag; the others end with 0 + call state.
                 if (model == ClusterModel.NTORQ_U577_BASE) head + byteArrayOf(0) else head + byteArrayOf(0, s.callState.code.toByte())
             }
+            // N109U347N251DataSenderToCluster.sendMobileData, themes other than U445B/U566 (Race XP "Racing 2.0",
+            // Marvel, Default): temperature 0, byte 3 = 2, network type 0, then unread and voice-assist state 0.
+            ClusterFamily.SMARTXONNECT -> byteArrayOf(
+                netBatt.toByte(), (s.overSpeedKmh ?: 120).toByte(), 0, 2,
+                s.hour12.toByte(), s.minute.toByte(), s.second.toByte(), (if (s.isPm) 1 else 0).toByte(),
+                s.missedCalls.coerceIn(0, 255).toByte(), 0, s.day.toByte(), s.month.toByte(), (s.year % 100).toByte(), 0, 0, 0, 0,
+            )
         }
         return frame(START, DID_STATUS, body)
     }
@@ -126,10 +142,12 @@ object ClusterProtocol {
     )
 
     /**
-     * Two frames, sent text first, then control after [NAV_FRAME_GAP_MS]
-     * (BleEngine.sendNavigationData writes pair.second, sleeps 400 ms, writes pair.first).
+     * The frames for one turn, in send order, [navGapMs] apart. 2025+ / U577: text first, then control after 400 ms
+     * (BleEngine.sendNavigationData writes pair.second, sleeps 400 ms, writes pair.first). SmartXonnect: see
+     * [smartXonnectNavigation].
      */
     fun navigation(model: ClusterModel, step: NavStep): List<ByteArray> {
+        if (model.family == ClusterFamily.SMARTXONNECT) return smartXonnectNavigation(step)
         // The direction in words, not the Maps street name: the 2026 Race XP LCD has no arrow segments and shows
         // this text as the turn ("250 m / SHARP LEFT"), as stock does with the Mappls short text.
         val textFrame = frame(START, DID_NAV_TEXT, directionText(step.maneuver).take(TEXT_MAX).toByteArray(Charsets.UTF_8))
@@ -147,6 +165,60 @@ object ClusterProtocol {
             0, 0, 0, 0, 0, 0, 0,
         )
         return listOf(textFrame, frame(START_NAV, DID_NAV_CONTROL, control))
+    }
+
+    /**
+     * Developer sweep: a left turn 500 m ahead with a raw arrow [code] and "CODE n" as the text, so the rider can read
+     * on the display which codes draw an arrow (stage 1 on the SmartXonnect LCD).
+     */
+    fun arrowProbe(model: ClusterModel, code: Int): List<ByteArray> =
+        navigation(model, NavStep(500, 300, 2_000, Maneuver.LEFT, "")).map { f ->
+            if ((f[1].toInt() and 0xFF) == DID_NAV_CONTROL) f.copyOf().also { it[9] = code.toByte() } else text(DID_NAV_TEXT, "CODE $code")
+        }
+
+    /** Rounded like stock: 5 m steps under 25 m, else 50 m (TVSMMapActivity.N251N109U347sendNavigationData). */
+    fun smartXonnectDistance(m: Int): Int = if (m < 25) Math.round(m / 5.0).toInt() * 5 else Math.round(m / 50.0).toInt() * 50
+
+    /** Text the SmartXonnect LCD shows instead of an upcoming turn more than 1 km away (R.string.navigation_straight). */
+    const val STAY_ON_ROAD = "STAY SAME RD"
+    const val ARRIVED = "You Arrived"
+
+    /**
+     * Ntorq SmartXonnect LCD (legacy N251, e.g. the 2026 Race XP), from TVSMMapActivity.N251N109U347sendNavigationData:
+     * ```
+     * 5A 4E dist(2) etaMin(2) left(3) code lines 01 00 flag stage 00 alertType alertDist(2) FF
+     * ```
+     * then, 100 ms later, `5B 4F <text> FF`. `code` is TVS's own maneuver code ([ClusterModel.pictogram]). `stage`
+     * picks what the display draws: 1 = turn within 65..1000 m, 3 / 4 = left / right turn under 65 m, 5 = keep
+     * straight (also for any turn over 1 km, with code 7 and "STAY SAME RD"), 8 = arrived, 0 = text only
+     * (rerouting, U-turn hint). Byte 11 is always 1 while navigating. Alerts (traffic camera etc.) are U445B only.
+     * A stopped route sends "You Arrived" when the last turn was the destination, else nothing (stock just stops).
+     */
+    fun smartXonnectNavigation(step: NavStep): List<ByteArray> {
+        val arrived = step.stopped
+        if (arrived && step.maneuver != Maneuver.DESTINATION) return emptyList()
+        val d = if (arrived) 0 else smartXonnectDistance(step.distanceToTurnM.coerceAtLeast(0))
+        var code = ClusterModel.NTORQ_SMARTXONNECT.pictogram(step.maneuver)
+        var text = directionText(step.maneuver)
+        val lines = if (text.length > TEXT_MAX) 2 else 1
+        val stage: Int
+        when {
+            arrived -> { stage = 8; text = ARRIVED }
+            step.maneuver == Maneuver.STRAIGHT -> { stage = 5; code = 7; text = STAY_ON_ROAD }
+            d < 65 -> stage = when { "left" in text -> 3; "right" in text -> 4; else -> 0 }
+            d <= 1000 -> stage = 1
+            else -> { stage = 5; code = 7; text = STAY_ON_ROAD }
+        }
+        val dist = d.coerceAtMost(0xFFFF)
+        val etaMin = (step.etaSeconds / 60).toInt().coerceIn(0, 0xFFFF)
+        val left = step.distanceLeftM.coerceIn(0, 0xFFFFFF)
+        val control = byteArrayOf(
+            (dist shr 8).toByte(), dist.toByte(),
+            (etaMin shr 8).toByte(), etaMin.toByte(),
+            (left shr 16).toByte(), (left shr 8).toByte(), left.toByte(),
+            code.toByte(), lines.toByte(), 1, 0, 0, stage.toByte(), 0, 0, 0, 0,
+        )
+        return listOf(frame(START_NAV, DID_NAV_CONTROL, control), frame(START, DID_NAV_TEXT, text.take(TEXT_MAX).toByteArray(Charsets.UTF_8)))
     }
 
     /**

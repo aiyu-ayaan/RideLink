@@ -13,6 +13,7 @@ import com.aiyu.ridelink.core.diag.LogFile
 import com.aiyu.ridelink.core.ble.ClusterLink
 import com.aiyu.ridelink.core.ble.LinkState
 import com.aiyu.ridelink.core.display.DisplayTemplate
+import com.aiyu.ridelink.core.protocol.ClusterFamily
 import com.aiyu.ridelink.core.protocol.ClusterModel
 import com.aiyu.ridelink.core.protocol.ClusterProtocol
 import com.aiyu.ridelink.core.protocol.ClusterProtocol.CallState
@@ -26,6 +27,7 @@ import com.aiyu.ridelink.core.phone.RejectMessage
 import com.aiyu.ridelink.core.protocol.CallButton
 import com.aiyu.ridelink.core.protocol.DisplayTelemetry
 import com.aiyu.ridelink.core.protocol.FrameDecoder
+import com.aiyu.ridelink.core.settings.GarageStore
 import com.aiyu.ridelink.core.settings.SettingsRepository
 import com.aiyu.ridelink.core.weather.WeatherRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -64,6 +66,7 @@ class ClusterController @Inject constructor(
     private val calls: CallControl,
     private val missedCalls: MissedCalls,
     private val logFile: LogFile,
+    private val garage: GarageStore,
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private var session: Job? = null
@@ -131,13 +134,31 @@ class ClusterController @Inject constructor(
     val demo: StateFlow<Boolean> = _demo.asStateFlow()
     private var demoJob: Job? = null
 
-    private fun model(s: Settings) = s.model ?: _detected.value ?: ClusterModel.DEFAULT
+    /**
+     * A display that proves it is a SmartXonnect LCD wins over a manual pick: its frames only exist in that protocol,
+     * and the 2025+ format leaves its turn arrow blank.
+     */
+    private fun model(s: Settings) =
+        _detected.value?.takeIf { it.family == ClusterFamily.SMARTXONNECT } ?: s.model ?: _detected.value ?: ClusterModel.DEFAULT
 
     init {
         scope.launch {
             link.incoming.collect { frame ->
                 log(frame, ok = true, rx = true)
-                ClusterModel.detect(frame)?.let { _detected.value = it }
+                ClusterModel.detect(frame)?.let { found ->
+                    if (_detected.value != found) {
+                        _detected.value = found
+                        note("Display detected: ${found.name} (from ${"%02x %02x".format(frame[0], frame[1])})")
+                        // Saved for this scooter, so the next connect uses the right format from its first frame.
+                        if (found.family == ClusterFamily.SMARTXONNECT) {
+                            val s = settings.current()
+                            if (s.model != found) {
+                                settings.setModel(found)
+                                s.deviceAddress?.let { garage.setModel(it, found) }
+                            }
+                        }
+                    }
+                }
                 val before = _telemetry.value
                 val after = before.merge(frame)
                 if (after !== before) {
@@ -237,9 +258,9 @@ class ClusterController @Inject constructor(
     private suspend fun sendWeather() {
         val s = settings.current()
         val m = model(s)
-        if (!m.hasTft || link.state.value !is LinkState.Ready) return
+        if (!m.hasLocation || link.state.value !is LinkState.Ready) return
         val w = _weather.value
-        if (s.showWeather && w != null && _nav.value == null) {
+        if (m.hasTft && s.showWeather && w != null && _nav.value == null) {
             send(ClusterProtocol.screen(ClusterProtocol.Screen.WEATHER))
             weatherScreenOn = true
             send(ClusterProtocol.weather(m, w))
@@ -262,7 +283,7 @@ class ClusterController @Inject constructor(
     private suspend fun sendMusic(force: Boolean) = musicLock.withLock {
         val s = settings.current()
         val m = _music.value ?: return@withLock
-        if (!s.showMusic || link.state.value !is LinkState.Ready) return@withLock
+        if (!s.showMusic || !model(s).hasMusic || link.state.value !is LinkState.Ready) return@withLock
         val last = sentMusic.takeUnless { force }
         if (last?.title != m.title) send(ClusterProtocol.song(m.title))
         if (last?.artist != m.artist) send(ClusterProtocol.artist(m.artist))
@@ -280,7 +301,7 @@ class ClusterController @Inject constructor(
 
     /** A Google Maps step. Ignored while Demo navigation runs, so the two routes do not mix on the display. */
     fun onNavigation(step: NavStep) {
-        if (_demoNav.value) return
+        if (_demoNav.value || _arrowSweep.value) return
         postNav(step)
     }
 
@@ -311,10 +332,11 @@ class ClusterController @Inject constructor(
         if (navKeepAlive?.isActive == true) return
         navKeepAlive = scope.launch {
             while (isActive) {
-                delay(ClusterProtocol.NAV_RESEND_MS)
+                val every = ClusterProtocol.navResendMs(model(settings.current()))
+                delay(every)
                 val step = _nav.value ?: break
-                if (link.state.value !is LinkState.Ready) continue
-                if (System.currentTimeMillis() - navSentAt < ClusterProtocol.NAV_RESEND_MS) continue
+                if (link.state.value !is LinkState.Ready || _arrowSweep.value) continue
+                if (System.currentTimeMillis() - navSentAt < every) continue
                 val seq = navSeq.get()
                 navLock.withLock { if (seq == navSeq.get() && _nav.value === step) sendNav(settings.current(), step) }
             }
@@ -326,10 +348,11 @@ class ClusterController @Inject constructor(
             weatherScreenOn = false
             send(ClusterProtocol.screen(ClusterProtocol.Screen.DEFAULT))
         }
-        val (text, control) = ClusterProtocol.navigation(model(s), step)
-        send(text)
-        delay(ClusterProtocol.NAV_FRAME_GAP_MS)
-        send(control)
+        val m = model(s)
+        ClusterProtocol.navigation(m, step).forEachIndexed { i, f ->
+            if (i > 0) delay(ClusterProtocol.navGapMs(m))
+            send(f)
+        }
         navSentAt = System.currentTimeMillis()
     }
 
@@ -346,10 +369,43 @@ class ClusterController @Inject constructor(
                 val last = _nav.value ?: return@withLock
                 _nav.value = null
                 val s = settings.current()
-                if (s.forwardNavigation || demo) ClusterProtocol.navigation(model(s), last.copy(stopped = true)).forEach { send(it) }
+                if (s.forwardNavigation || demo) {
+                    val m = model(s)
+                    ClusterProtocol.navigation(m, last.copy(stopped = true)).forEachIndexed { i, f ->
+                        if (i > 0) delay(ClusterProtocol.navGapMs(m))
+                        send(f)
+                    }
+                }
                 // Custom lines were held back during the route (see the status loop); put them back.
                 if (link.state.value is LinkState.Ready) sendDisplayText(s, force = true)
             }
+        }
+    }
+
+    private val _arrowSweep = MutableStateFlow(false)
+    /** Console: every arrow code from 0 to [ARROW_CODE_MAX] in turn, about 2.4 s each, with "CODE n" as the text. */
+    val arrowSweep: StateFlow<Boolean> = _arrowSweep.asStateFlow()
+    private var sweepJob: Job? = null
+
+    fun setArrowSweep(on: Boolean) {
+        sweepJob?.cancel()
+        _arrowSweep.value = on
+        if (!on) return
+        if (_demoNav.value) setDemoNav(false)
+        sweepJob = scope.launch {
+            for (code in 0..ARROW_CODE_MAX) {
+                repeat(3) {
+                    val m = model(settings.current())
+                    navLock.withLock {
+                        ClusterProtocol.arrowProbe(m, code).forEachIndexed { i, f ->
+                            if (i > 0) delay(ClusterProtocol.navGapMs(m))
+                            send(f)
+                        }
+                    }
+                    delay(ClusterProtocol.SMARTXONNECT_NAV_RESEND_MS)
+                }
+            }
+            _arrowSweep.value = false
         }
     }
 
@@ -359,6 +415,7 @@ class ClusterController @Inject constructor(
     private var demoNavJob: Job? = null
 
     fun setDemoNav(on: Boolean) {
+        if (on && _arrowSweep.value) setArrowSweep(false)
         demoNavJob?.cancel()
         _demoNav.value = on
         if (!on) {
@@ -646,6 +703,7 @@ class ClusterController @Inject constructor(
         const val LOG_SIZE = 300
         const val DEMO_STEP_MS = 1_500L
         const val DEMO_NAV_STEP_MS = 1_000L
+        const val ARROW_CODE_MAX = 80
 
         /** One of every turn type. */
         val DEMO_TURNS = listOf(

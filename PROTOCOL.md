@@ -147,10 +147,10 @@ Short text comes from the Mappls SDK file `translations/mappls-directions-en_sho
 "Go straight". Direction only, never a street name. RideLink sends the same words for each maneuver
 (`ClusterProtocol.directionText`), so `lines` is always 1.
 
-The 2026 Ntorq 125 Race XP (U458) LCD has **no arrow segments**: the text area is two lines of alphanumeric
-segments, distance on top and this text below ("250 m / SHARP LEFT", rider photo 2026-11-06; pictograms
-0, 1, 2, 7, 10, 11, 12, 17, 19, 22, 48 and 57 all drew nothing). The direction reaches the rider only as words.
-Before 2026-11-06 RideLink sent the Maps street name here, so the Race XP showed distance + street and no direction.
+This layout is **not** what the 2026 Ntorq 125 Race XP takes: that display is a SmartXonnect LCD (vehicle code 9,
+see "SmartXonnect LCD" below). Sent this frame it shows the distance and the text ("250 m / SHARP LEFT", rider photo
+2026-11-06) but never an arrow, for every code tried (0, 1, 2, 7, 10, 11, 12, 17, 19, 22, 48, 57). Most likely the
+arrow needs byte 11 = 1 and the stage byte of the SmartXonnect layout (unconfirmed until tested on the scooter).
 
 Repeat: stock sends the current pair every **2 s** for the whole route (`NavigationRepoImpl.startTimer`,
 `scheduleAtFixedRate(..., 0, 2000)`; `onRouteProgress` only stores the latest `AdviseInfo`). Stock sends no
@@ -265,10 +265,45 @@ Reject with SMS (3) rejects, then (if enabled) texts the newest call-log number 
 Settings message (`SEND_SMS` + `READ_CALL_LOG`). Voice assistant (4) opens `ACTION_VOICE_COMMAND` / `ACTION_ASSIST`
 at any time; needs the "display over other apps" grant to start from the background.
 
+## SmartXonnect LCD (vehicle code 9, legacy app: `TVSMMapActivity`, `N109U347N251DataSenderToCluster`, `N251ClusterDataReceiver`)
+Account code "9" (`nTorq251`) covers the legacy Ntorq trims; the theme id comes from the account
+(`N251Theme`: Default 0, Marvel 2/3/4, Racing 2.0 = 5 = Race XP (`u458_ntroq_tile_bg`), U445B 6, Spiderman 7, Thor 8).
+Everything below is for themes other than U445B/U566, which add alerts and remap codes.
+
+Display frames: `5A 10`, `5A 11`, `5A 18` like the other families, plus two only this receiver parses:
+- `5A 16` race stats: best lap `[6]` min `[7]` s `[8]` cs, top speed `[10]`, lap distance `[11..13]`/10 km,
+  best 0-60 `[14]`/10 s, average speed `[15]`. (Rider's display: 7:23.30, 69 km/h, 15.0 s, 35 km/h.)
+- `5B 42` the display's Bluetooth MAC in `[8..13]` (stock checks it against the account: the "MAC ID" error).
+RideLink detects this family from either frame and saves it as the scooter's model.
+
+Navigation, every **800 ms** (`TVSMMapActivity.sendNavigationData`, `N251N109U347sendNavigationData`):
+```
+5A 4E dist(2) etaMin(2) left(3) code lines 01 00 flag stage 00 alertType alertDist(2) FF
+```
+then **100 ms** later `5B 4F <text up to 17> FF`. Raw bytes, no checksum.
+- dist rounded to 5 m under 25 m, else 50 m; `[0, d]` up to 255, else 2 bytes.
+- `code` = TVS's own `res/raw/en_tvs_short_instuctions.json` (v5) `$code`, unmapped: left 0, sharp left 1,
+  keep left 2, right 3, sharp right 4, keep right 5, straight 7 / 21, destination 8, slightly left 15,
+  slightly right 16, U-turn 41, roundabout 72. No code (ramps, "Head north") is sent as straight.
+- `lines` = 2 when the text is over 17 characters, else 1. Byte 11 = 1 while navigating.
+- `flag` = 1 with the "Mobile Data" (stage 7) and "GPS" (stage 6) messages, else 0.
+- `stage`: 1 = turn 65..1000 m ahead; 3 / 4 = text contains "left" / "right" and under 65 m (else the default,
+  0 for a turn); 5 = straight, or any turn over 1 km (code 7, text "STAY SAME RD"); 8 = arrived (dist 0,
+  "You Arrived"); 0 with code 72 = "Rerouting"; 0 = "Take U-Turn" hint.
+- Alert block zero (traffic camera / road works only on U445B).
+- Stock sends nothing when a route is cancelled (timer cancelled); RideLink does the same, and sends the
+  "You Arrived" frame when the route ended at the destination.
+
+Status, DID `4A` (`sendMobileData`): `netBatt overspeed(120 off) 00 02 hour12 min sec ampm(0 AM) missed 00
+day month yy 00 voiceAssist 00 00` (temperature 0, byte 3 = 2, network type 0 on these themes).
+No music frames (`5B 63` is this display's second text line, used for "NAVIGATION / ASSIST ON"); location `5B 5C`
+and rider name `5B 52` as elsewhere.
+
 ## Model detection
 The display never reports its model; the stock app takes `VehicleId` from the TVS account.
-RideLink's Auto mode uses the 2025+ format and switches to the older Ntorq format when the display
-sends `5A 6B` or `5A 29`, which only older Ntorq displays send.
+RideLink's Auto mode uses the 2025+ format until a frame proves otherwise:
+- `5A 16` or `5B 42` -> SmartXonnect LCD (saved as the scooter's model; wins over a manual pick).
+- `5A 6B` or `5A 29` -> older Ntorq (U577 premium format).
 
 ## Bike families (VehicleId from TVS account, stored in prefs `VehicleId`)
 
@@ -279,8 +314,8 @@ sends `5A 6B` or `5A 29`, which only older Ntorq displays send.
 
 Account-side vehicle codes (`com/tvsm/unified/utils/VehicleCode`): legacy Ntorq trims
 (Standard, Race Edition, Super Squad, XP, XT, Spider, Thor) are all code `"9"` with theme 0..8.
-That is an older SmartXonnect generation handled by separate legacy code
-(`com.tvsm.connect.bluetooth.bluetoothlegatt`), not yet analysed. Newer codes:
+That is the SmartXonnect LCD generation (section above), handled by the legacy code in
+`com.tvsm.connect.bluetooth.bluetoothlegatt` and `TVSMMapActivity`; the 2026 Race XP is one of them. Newer codes:
 U716 `34`, U577 base `37`, U577 premium `38`, U812 `39`, N251 `43`, U458 `44`, U377 `45`.
 U577 code has TFT-style features (image transfer, Wi-Fi mirroring frame `0x29`, Mappls pictogram
 map), so a TFT Ntorq XT is most likely **U577 premium (38)** or **U812 (39)**. This is

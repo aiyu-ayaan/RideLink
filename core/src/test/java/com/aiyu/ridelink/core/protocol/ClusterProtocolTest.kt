@@ -1,6 +1,7 @@
 package com.aiyu.ridelink.core.protocol
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -220,5 +221,69 @@ class ClusterProtocolTest {
         assertEquals("5b 63 4b 41 31 32 41 42 31 32 33 34 00 00 00 00 00 00 00 ff", hex(ClusterProtocol.customLine2("KA12AB1234")))
         // Never starts with 00, so it cannot be mistaken for the 5B 4C 00 <id> screen switch.
         assertEquals(0x4B, ClusterProtocol.customLine1("Kesari@").let { it[2].toInt() })
+    }
+
+    /** N109U347N251DataSenderToCluster.sendMobileData for the Race XP theme: temp 0, byte 3 = 2, network type 0. */
+    @Test fun smartXonnectStatusFrame() {
+        assertEquals(
+            "5b 4a 35 78 00 02 09 05 07 01 00 00 04 0b 1a 00 00 00 00 ff",
+            hex(ClusterProtocol.status(ClusterModel.NTORQ_SMARTXONNECT, status)),
+        )
+    }
+
+    /** TVSMMapActivity.N251N109U347sendNavigationData: control first (byte 11 = 1, stage in byte 14), then text. */
+    @Test fun smartXonnectNavigationFrames() {
+        val frames = ClusterProtocol.navigation(
+            ClusterModel.NTORQ_SMARTXONNECT,
+            ClusterProtocol.NavStep(310, 600, 3_300, Maneuver.LEFT, "Mohan Khoper Rd"),
+        )
+        assertEquals(2, frames.size)
+        assertEquals("5a 4e 01 2c 00 0a 00 0c e4 00 01 01 00 00 01 00 00 00 00 ff", hex(frames[0]))
+        assertEquals("5b 4f 54 75 72 6e 20 6c 65 66 74 00 00 00 00 00 00 00 00 ff", hex(frames[1]))
+        assertEquals(100L, ClusterProtocol.navGapMs(ClusterModel.NTORQ_SMARTXONNECT))
+        assertEquals(800L, ClusterProtocol.navResendMs(ClusterModel.NTORQ_SMARTXONNECT))
+    }
+
+    @Test fun smartXonnectStageFollowsDistance() {
+        fun nav(m: Maneuver, d: Int, stopped: Boolean = false) = ClusterProtocol.navigation(
+            ClusterModel.NTORQ_SMARTXONNECT, ClusterProtocol.NavStep(d, 120, 2_000, m, "", stopped),
+        )
+        fun stage(f: List<ByteArray>) = f[0][14].toInt()
+        fun code(f: List<ByteArray>) = f[0][9].toInt() and 0xFF
+        fun text(f: List<ByteArray>) = String(f[1], 2, 17, Charsets.UTF_8).trimEnd('\u0000')
+
+        assertEquals(3, stage(nav(Maneuver.SHARP_LEFT, 50)))
+        assertEquals(1, code(nav(Maneuver.SHARP_LEFT, 50)))
+        assertEquals(4, stage(nav(Maneuver.RIGHT, 40)))
+        assertEquals(0, stage(nav(Maneuver.U_TURN, 30)))
+        assertEquals(41, code(nav(Maneuver.U_TURN, 30)))
+        assertEquals(1, stage(nav(Maneuver.SLIGHT_RIGHT, 600)))
+        assertEquals(16, code(nav(Maneuver.SLIGHT_RIGHT, 600)))
+        assertEquals(72, code(nav(Maneuver.ROUNDABOUT, 600)))
+        // A turn over 1 km away and plain straight both show "keep straight" (code 7, stage 5).
+        nav(Maneuver.RIGHT, 1_500).let { assertEquals(5, stage(it)); assertEquals(7, code(it)); assertEquals("STAY SAME RD", text(it)) }
+        nav(Maneuver.STRAIGHT, 200).let { assertEquals(5, stage(it)); assertEquals(7, code(it)) }
+        // Arrived: distance 0, stage 8. A cancelled route sends nothing, like stock.
+        nav(Maneuver.DESTINATION, 20, stopped = true).let {
+            assertEquals(8, stage(it)); assertEquals(0, it[0][2].toInt()); assertEquals(0, it[0][3].toInt()); assertEquals("You Arrived", text(it))
+        }
+        assertTrue(nav(Maneuver.LEFT, 200, stopped = true).isEmpty())
+    }
+
+    @Test fun smartXonnectDistanceIsRoundedLikeStock() {
+        assertEquals(10, ClusterProtocol.smartXonnectDistance(12))
+        assertEquals(25, ClusterProtocol.smartXonnectDistance(23))
+        assertEquals(100, ClusterProtocol.smartXonnectDistance(120))
+        assertEquals(150, ClusterProtocol.smartXonnectDistance(130))
+    }
+
+    /** Frames from the rider's 2026 Race XP log: race stats 5A 16 and the display MAC 5B 42. */
+    @Test fun detectsSmartXonnectFromRaceStatsOrMacFrame() {
+        fun bytes(h: String) = h.split(" ").map { it.toInt(16).toByte() }.toByteArray()
+        assertEquals(ClusterModel.NTORQ_SMARTXONNECT, ClusterModel.detect(bytes("5a 16 00 00 00 00 07 17 1e 00 45 00 00 42 96 23 00 00 00 ff")))
+        assertEquals(ClusterModel.NTORQ_SMARTXONNECT, ClusterModel.detect(bytes("5b 42 00 00 00 00 00 00 a4 b0 f5 3a 2b b8 00 00 00 00 00 ff")))
+        assertNull(ClusterModel.detect(bytes("5a 10 00 00 07 f5 05 00 00 00 09 69 00 00 00 00 00 00 00 ff")))
+        assertEquals(false, ClusterModel.NTORQ_SMARTXONNECT.hasMusic)
+        assertEquals(true, ClusterModel.NTORQ_SMARTXONNECT.hasLocation)
     }
 }

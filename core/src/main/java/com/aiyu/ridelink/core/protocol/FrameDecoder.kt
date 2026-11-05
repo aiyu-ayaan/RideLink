@@ -38,7 +38,14 @@ object FrameDecoder {
             start == 0x5B && did == 0x5C -> "LOCATION '${text(2)}'"
             start == 0x5B && did == 0x60 -> "PLAY state=${u(3)} vol=${u(7)}"
             start == 0x5B && did in textDids -> "TEXT ${textDids[did]} '${text(2)}'"
-            start == 0x5A && did == 0x4E -> "NAV dist=${be(2, 2)}m eta=${be(4, 2)}min left=${be(6, 3)}m arrow=${u(9)} ${if (u(11) == 0xFF) "stopped" else "running"}"
+            start == 0x5A && did == 0x4E ->
+                "NAV dist=${be(2, 2)}m eta=${be(4, 2)}min left=${be(6, 3)}m arrow=${u(9)} ${if (u(11) == 0xFF) "stopped" else "running"}" +
+                    (u(14)?.takeIf { it != 0 }?.let { " stage=$it" } ?: "")
+            // SmartXonnect LCD only (legacy N251ClusterDataReceiver).
+            start == 0x5A && did == 0x16 ->
+                "RACE bestLap=${u(6)}:${"%02d".format(u(7))}.${"%02d".format(u(8))} top=${u(10)} lapKm=${be(11, 3)?.let { it / 10.0 }} " +
+                    "best0to60=${u(14)?.let { it / 10.0 }}s avg=${u(15)}"
+            start == 0x5B && did == 0x42 && f.size >= 14 -> "DISPLAY MAC ${(8 until 14).joinToString(":") { "%02X".format(u(it)) }}"
             start == 0x5A && did == 0x10 ->
                 "SPEEDO1 speed=${u(2)} odo=${be(3, 3)} fuel=${u(6)} avg=${u(7)} tripStatus=${u(8)} top=${u(9)} " +
                     "throttle=${u(10)} backlight=${u(11)} switch=${u(12)} zeroTo60=${u(13)} trip=${be(14, 3)} rpm=${be(17, 2)}"

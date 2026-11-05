@@ -92,6 +92,7 @@ import com.aiyu.ridelink.ui.theme.Dimens
 
 private val ClusterModel.label
     get() = when (this) {
+        ClusterModel.NTORQ_SMARTXONNECT -> R.string.model_smartxonnect
         ClusterModel.NTORQ_U716 -> R.string.model_u716
         ClusterModel.NTORQ_U577_BASE -> R.string.model_u577_base
         ClusterModel.NTORQ_U577_PREMIUM -> R.string.model_u577_premium

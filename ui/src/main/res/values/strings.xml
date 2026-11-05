@@ -77,7 +77,7 @@
     <string name="settings_model">Model</string>
     <string name="settings_model_hint">For the selected scooter. Picks the message format. Leave on Auto unless the display shows wrong data.</string>
     <string name="model_auto">Auto (recommended)</string>
-    <string name="model_auto_using">Using: %1$s. Switches to the older format if the display sends older-Ntorq frames.</string>
+    <string name="model_auto_using">Using: %1$s. Picked from the frames the display sends: the SmartXonnect LCD (Race XP) and the older Ntorq are recognised on their own.</string>
     <string name="settings_display_text">Display text</string>
     <string name="settings_line1">Display line 1</string>
     <string name="settings_line2">Display line 2</string>
@@ -121,8 +121,9 @@
     <string name="settings_add_scooter">Add scooter</string>
     <string name="settings_bike_active">Selected · %1$s</string>
     <string name="settings_remove_scooter">Remove %1$s</string>
+    <string name="model_smartxonnect">Ntorq 125 SmartXonnect LCD (Race XP, Marvel)</string>
     <string name="model_u716">Ntorq 125 (U716)</string>
-    <string name="model_u577_base">Ntorq XT / Race XP, LCD (U577 base)</string>
+    <string name="model_u577_base">Ntorq, LCD (U577 base)</string>
     <string name="model_u577_premium">Ntorq XT, TFT (U577 premium)</string>
     <string name="model_u812">Ntorq 125, 2025+ (U812)</string>
     <string name="model_n251">Ntorq 125 Standard, 2025+ (N251)</string>
@@ -140,6 +141,7 @@
     <string name="console_social">Chat counts</string>
     <string name="console_music">Music</string>
     <string name="console_default_screen">Default screen</string>
+    <string name="console_arrow_sweep">Arrow codes 0 to 80</string>
     <string name="console_copy">Copy log</string>
     <string name="console_empty">Frames sent to the scooter show up here.</string>
     <string name="console_failed">Not delivered</string>

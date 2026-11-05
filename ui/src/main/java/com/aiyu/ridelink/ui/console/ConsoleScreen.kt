@@ -18,6 +18,7 @@ import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.material3.AssistChip
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonGroupDefaults
 import androidx.compose.material3.Icon
@@ -53,6 +54,7 @@ fun ConsoleScreen(vm: MainViewModel, onBack: () -> Unit) {
     val log by vm.log.collectAsStateWithLifecycle()
     val caller by vm.caller.collectAsStateWithLifecycle()
     val demo by vm.demo.collectAsStateWithLifecycle()
+    val sweep by vm.arrowSweep.collectAsStateWithLifecycle()
     var text by rememberSaveable { mutableStateOf("") }
 
     val context = LocalContext.current
@@ -119,6 +121,8 @@ fun ConsoleScreen(vm: MainViewModel, onBack: () -> Unit) {
                 TestFrameChip(R.string.console_social) { vm.sendTest(ClusterController.TestFrame.SOCIAL) }
                 TestFrameChip(R.string.console_music) { vm.sendTest(ClusterController.TestFrame.MUSIC) }
                 TestFrameChip(R.string.console_default_screen) { vm.sendTest(ClusterController.TestFrame.DEFAULT_SCREEN) }
+                // Raw arrow codes with "CODE n" on the display, to see which numbers this display draws.
+                FilterChip(selected = sweep, onClick = { vm.setArrowSweep(!sweep) }, label = { Text(stringResource(R.string.console_arrow_sweep)) })
             }
             if (log.isEmpty()) {
                 Text(
