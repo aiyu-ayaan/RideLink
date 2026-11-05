@@ -36,6 +36,7 @@ class RideRecorder @Inject constructor(
     private var current: MutableList<RideSample>? = null
     private val turns = mutableListOf<RideTurn>()
     private var currentIsDemo = false
+    private var currentBike: String? = null
     private var lastMovingAt = 0L
 
     private val _recording = MutableStateFlow(false)
@@ -45,6 +46,8 @@ class RideRecorder @Inject constructor(
     fun start() {
         if (started) return
         started = true
+        // Rides recorded before per-bike analytics belong to the scooter selected now.
+        scope.launch { settings.current().deviceAddress?.let { store.adoptUnassigned(it) } }
         scope.launch { controller.telemetry.collect { telemetryAt = System.currentTimeMillis() } }
         scope.launch {
             while (isActive) {
@@ -70,6 +73,7 @@ class RideRecorder @Inject constructor(
                 turns.clear()
                 noteTurn(now)
                 currentIsDemo = demo
+                currentBike = settings.current().deviceAddress
                 lastMovingAt = now
                 _recording.value = true
             }
@@ -107,14 +111,15 @@ class RideRecorder @Inject constructor(
         val summary = RideMath.summarize(trimmed, ZoneId.systemDefault()) ?: return
         val kept = turns.filter { it.t <= lastMovingAt + RideMath.SAMPLE_MS }
         turns.clear()
-        if (RideMath.worthKeeping(summary)) store.save(summary, trimmed, currentIsDemo, kept)
+        if (RideMath.worthKeeping(summary)) store.save(summary, trimmed, currentIsDemo, kept, currentBike)
     }
 
     /** Fills Analytics with labelled sample rides (demo = true) so it can be previewed without riding. */
     fun addSampleRides() = scope.launch {
         val zone = ZoneId.systemDefault()
+        val bike = settings.current().deviceAddress
         SampleRides.generate(LocalDate.now(zone), zone).forEach { samples ->
-            RideMath.summarize(samples, zone)?.let { store.save(it, samples, demo = true, turns = SampleRides.turnsFor(samples)) }
+            RideMath.summarize(samples, zone)?.let { store.save(it, samples, demo = true, turns = SampleRides.turnsFor(samples), bike = bike) }
         }
     }
 

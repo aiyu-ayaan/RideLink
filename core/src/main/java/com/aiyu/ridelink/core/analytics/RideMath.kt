@@ -74,7 +74,8 @@ data class RideSummary(
 }
 
 /** A stored ride: id, whether it is a demo/sample ride, and its summary. */
-data class RideRecord(val id: Long, val demo: Boolean, val summary: RideSummary)
+/** [bike] is the scooter's Bluetooth address (GarageStore); null for rides recorded with no scooter paired. */
+data class RideRecord(val id: Long, val demo: Boolean, val summary: RideSummary, val bike: String? = null)
 
 enum class Period(val days: Int?) { WEEK(7), MONTH(30), YEAR(365), ALL(null) }
 

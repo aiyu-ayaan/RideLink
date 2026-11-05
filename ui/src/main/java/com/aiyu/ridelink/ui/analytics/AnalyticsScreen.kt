@@ -6,7 +6,12 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
+import com.aiyu.ridelink.core.settings.Bike
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -94,6 +99,8 @@ fun AnalyticsScreen(onOpenRide: (Long) -> Unit, vm: AnalyticsViewModel = hiltVie
     val state by vm.state.collectAsStateWithLifecycle()
     val recording by vm.recording.collectAsStateWithLifecycle()
     val telemetry by vm.telemetry.collectAsStateWithLifecycle()
+    val bikes by vm.bikes.collectAsStateWithLifecycle()
+    val bike by vm.bike.collectAsStateWithLifecycle()
     val context = LocalContext.current
     var menu by remember { mutableStateOf(false) }
     val export = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/csv")) { uri ->
@@ -105,6 +112,8 @@ fun AnalyticsScreen(onOpenRide: (Long) -> Unit, vm: AnalyticsViewModel = hiltVie
         topBar = {
             MediumFlexibleTopAppBar(
                 title = { Text(stringResource(R.string.tab_analytics)) },
+                // Stats are per scooter; name the one shown.
+                subtitle = { bikes.firstOrNull { it.address == bike }?.let { Text(it.name ?: it.address) } },
                 actions = {
                     IconButton(onClick = { menu = true }) { Icon(Icons.Rounded.MoreVert, contentDescription = stringResource(R.string.analytics_more)) }
                     DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
@@ -126,6 +135,7 @@ fun AnalyticsScreen(onOpenRide: (Long) -> Unit, vm: AnalyticsViewModel = hiltVie
             Modifier.padding(padding).widthIn(max = Dimens.contentMaxWidth),
             verticalArrangement = Arrangement.spacedBy(Dimens.md),
         ) {
+            if (bikes.size > 1) item { BikePicker(bikes, bike, vm::pickBike) }
             item { PeriodPicker(state.period, vm::setPeriod) }
             if (recording) item { RecordingRow() }
             if (!state.hasAnyRide) {
@@ -217,6 +227,23 @@ private fun PeriodPicker(current: Period, onPick: (Period) -> Unit) {
                 },
                 modifier = Modifier.weight(1f),
             ) { Text(stringResource(p.label)) }
+        }
+    }
+}
+
+@Composable
+private fun BikePicker(bikes: List<Bike>, current: String?, onPick: (String) -> Unit) {
+    Row(
+        Modifier.padding(horizontal = Dimens.gutter).horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(Dimens.sm),
+    ) {
+        bikes.forEach { b ->
+            FilterChip(
+                selected = b.address == current,
+                onClick = { onPick(b.address) },
+                label = { Text(b.name ?: b.address) },
+                leadingIcon = { Icon(Icons.Rounded.TwoWheeler, contentDescription = null, modifier = Modifier.size(FilterChipDefaults.IconSize)) },
+            )
         }
     }
 }

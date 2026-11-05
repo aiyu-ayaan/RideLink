@@ -35,12 +35,18 @@ class RideStore @Inject constructor(@ApplicationContext context: Context) {
 
     init { io.launch { reload() } }
 
-    suspend fun save(summary: RideSummary, samples: List<RideSample>, demo: Boolean, turns: List<RideTurn> = emptyList()): Long = withContext(Dispatchers.IO) {
+    suspend fun save(
+        summary: RideSummary,
+        samples: List<RideSample>,
+        demo: Boolean,
+        turns: List<RideTurn> = emptyList(),
+        bike: String? = null,
+    ): Long = withContext(Dispatchers.IO) {
         val w = db.writableDatabase
         var id = -1L
         w.beginTransaction()
         try {
-            id = w.insert(T_RIDES, null, summary.toValues(demo))
+            id = w.insert(T_RIDES, null, summary.toValues(demo).apply { put("bike", bike) })
             samples.forEach { w.insert(T_SAMPLES, null, it.toValues(id)) }
             turns.forEach { w.insert(T_TURNS, null, it.toValues(id)) }
             w.setTransactionSuccessful()
@@ -79,6 +85,12 @@ class RideStore @Inject constructor(@ApplicationContext context: Context) {
         reload()
     }
 
+    /** Rides from before per-bike analytics (or with no scooter paired) go to [bike]. */
+    suspend fun adoptUnassigned(bike: String) = withContext(Dispatchers.IO) {
+        val n = db.writableDatabase.update(T_RIDES, ContentValues().apply { put("bike", bike) }, "bike IS NULL", null)
+        if (n > 0) reload()
+    }
+
     /** Removes sample and demo-ride data only; real rides stay. */
     suspend fun deleteDemo() = withContext(Dispatchers.IO) {
         db.writableDatabase.delete(T_TURNS, "ride IN (SELECT id FROM $T_RIDES WHERE demo = 1)", null)
@@ -88,12 +100,12 @@ class RideStore @Inject constructor(@ApplicationContext context: Context) {
     }
 
     /** CSV with one line per ride, oldest first; units in the header. */
-    suspend fun exportCsv(out: Writer, zone: ZoneId) = withContext(Dispatchers.IO) {
+    suspend fun exportCsv(out: Writer, zone: ZoneId, include: (RideRecord) -> Boolean = { true }) = withContext(Dispatchers.IO) {
         out.appendLine(
             "start,end,distance_km,duration_min,moving_min,avg_speed_kmh,max_speed_kmh,avg_economy_kmpl,fuel_used_level," +
                 "odometer_start_km,odometer_end_km,sample",
         )
-        for (r in _rides.value.asReversed()) {
+        for (r in _rides.value.asReversed().filter(include)) {
             val s = r.summary
             fun time(ms: Long) = Instant.ofEpochMilli(ms).atZone(zone).toLocalDateTime().toString()
             out.appendLine(
@@ -148,6 +160,7 @@ class RideStore @Inject constructor(@ApplicationContext context: Context) {
     private fun Cursor.ride() = RideRecord(
         id = long("id"),
         demo = int("demo") == 1,
+        bike = getString(getColumnIndexOrThrow("bike")),
         summary = RideSummary(
             start = long("start"), end = long("end_t"), distanceM = int("distance_m") ?: 0, durationS = int("duration_s") ?: 0,
             movingS = int("moving_s") ?: 0, maxSpeedKmh = int("max_speed") ?: 0, avgMovingSpeedKmh = dbl("avg_speed") ?: 0.0,
@@ -163,7 +176,7 @@ class RideStore @Inject constructor(@ApplicationContext context: Context) {
         navLeftM = int("nav_left"),
     )
 
-    private class Helper(context: Context) : SQLiteOpenHelper(context, "rides.db", null, 2) {
+    private class Helper(context: Context) : SQLiteOpenHelper(context, "rides.db", null, 3) {
         override fun onCreate(db: SQLiteDatabase) {
             db.execSQL(
                 """CREATE TABLE $T_RIDES (id INTEGER PRIMARY KEY AUTOINCREMENT, start INTEGER NOT NULL, end_t INTEGER NOT NULL,
@@ -176,10 +189,17 @@ class RideStore @Inject constructor(@ApplicationContext context: Context) {
             )
             db.execSQL("CREATE INDEX samples_ride ON $T_SAMPLES (ride, t)")
             upgradeTo2(db)
+            upgradeTo3(db)
         }
 
         override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
             if (oldVersion < 2) upgradeTo2(db)
+            if (oldVersion < 3) upgradeTo3(db)
+        }
+
+        /** v3: the scooter a ride belongs to, so Analytics shows one bike at a time. Old rows are adopted later. */
+        private fun upgradeTo3(db: SQLiteDatabase) {
+            db.execSQL("ALTER TABLE $T_RIDES ADD COLUMN bike TEXT")
         }
 
         /**
