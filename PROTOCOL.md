@@ -303,8 +303,15 @@ then **100 ms** later `5B 4F <text up to 17> FF`. Raw bytes, no checksum.
 
 Status, DID `4A` (`sendMobileData`): `netBatt overspeed(120 off) 00 02 hour12 min sec ampm(0 AM) missed 00
 day month yy 00 voiceAssist 00 00` (temperature 0, byte 3 = 2, network type 0 on these themes).
-No music frames (`5B 63` is this display's second text line, used for "NAVIGATION / ASSIST ON"); location `5B 5C`
-and rider name `5B 52` as elsewhere.
+No music frames (`5B 63` is this display's second text line, used for "NAVIGATION / ASSIST ON"); location `5B 5C`,
+caller `5B 43` (`BluetoothUtil.createCallerNameArray`) and rider name `5B 52` as elsewhere.
+
+Chat counts (`sendMobileDataNotificationAndAlert(getWhatsappByte(), getFBByte(), getInstaByte(), 0, 0, 0)`):
+`5B 9C <WA> <FB> <IG> 00 <alert> 00 ... FF`, **no checksum**; WA = messages (5 bits) << 3 with chats 0,
+FB = messages (4 bits) << 4. Call ended (`onDisconnectCall`): the status frame three times, 100 ms apart.
+Not used by RideLink: `5A F1` vehicle data (illumination, ride mode, date, "clear call / SMS" flags for the
+notification LED), the "NAVIGATION / ASSIST ON" text before a route, and `5B 5D` climate text (a fixed
+placeholder string in stock).
 
 ## Model detection
 The display never reports its model; the stock app takes `VehicleId` from the TVS account.

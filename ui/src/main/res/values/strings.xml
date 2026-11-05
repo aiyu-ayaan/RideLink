@@ -141,7 +141,7 @@
     <string name="console_social">Chat counts</string>
     <string name="console_music">Music</string>
     <string name="console_default_screen">Default screen</string>
-    <string name="console_arrow_sweep">Arrow codes 0 to 80</string>
+    <string name="console_arrow_sweep">Arrow test: all directions, then codes 0 to 80</string>
     <string name="console_copy">Copy log</string>
     <string name="console_empty">Frames sent to the scooter show up here.</string>
     <string name="console_failed">Not delivered</string>

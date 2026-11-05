@@ -171,10 +171,32 @@ object ClusterProtocol {
      * Developer sweep: a left turn 500 m ahead with a raw arrow [code] and "CODE n" as the text, so the rider can read
      * on the display which codes draw an arrow (stage 1 on the SmartXonnect LCD).
      */
-    fun arrowProbe(model: ClusterModel, code: Int): List<ByteArray> =
+    fun arrowProbe(model: ClusterModel, code: Int, label: String = "CODE $code"): List<ByteArray> =
         navigation(model, NavStep(500, 300, 2_000, Maneuver.LEFT, "")).map { f ->
-            if ((f[1].toInt() and 0xFF) == DID_NAV_CONTROL) f.copyOf().also { it[9] = code.toByte() } else text(DID_NAV_TEXT, "CODE $code")
+            if ((f[1].toInt() and 0xFF) == DID_NAV_CONTROL) f.copyOf().also { it[9] = code.toByte() } else text(DID_NAV_TEXT, label)
         }
+
+    /** Short name of each turn for the Console arrow test, at most 12 characters with its id. */
+    fun shortName(m: Maneuver): String = when (m) {
+        Maneuver.LEFT -> "LEFT"
+        Maneuver.SHARP_LEFT -> "SHARP L"
+        Maneuver.SLIGHT_LEFT -> "SLIGHT L"
+        Maneuver.FORK_LEFT -> "KEEP L"
+        Maneuver.RIGHT -> "RIGHT"
+        Maneuver.SHARP_RIGHT -> "SHARP R"
+        Maneuver.SLIGHT_RIGHT -> "SLIGHT R"
+        Maneuver.FORK_RIGHT -> "KEEP R"
+        Maneuver.STRAIGHT -> "STRAIGHT"
+        Maneuver.U_TURN -> "U TURN"
+        Maneuver.DESTINATION -> "DEST"
+        Maneuver.ROUNDABOUT -> "RB AHEAD"
+        Maneuver.ROUNDABOUT_SHARP_LEFT -> "RB SHARP L"
+        Maneuver.ROUNDABOUT_LEFT -> "RB LEFT"
+        Maneuver.ROUNDABOUT_SLIGHT_LEFT -> "RB SLIGHT L"
+        Maneuver.ROUNDABOUT_SLIGHT_RIGHT -> "RB SLIGHT R"
+        Maneuver.ROUNDABOUT_RIGHT -> "RB RIGHT"
+        Maneuver.ROUNDABOUT_SHARP_RIGHT -> "RB SHARP R"
+    }
 
     /** Rounded like stock: 5 m steps under 25 m, else 50 m (TVSMMapActivity.N251N109U347sendNavigationData). */
     fun smartXonnectDistance(m: Int): Int = if (m < 25) Math.round(m / 5.0).toInt() * 5 else Math.round(m / 50.0).toInt() * 50
@@ -260,6 +282,22 @@ object ClusterProtocol {
      * WA = msgs (5 bits) << 3 | chats (3 bits). FB = msgs (4 bits) << 4 | chats (4 bits); the stock app passes
      * the message count for both FB fields, so we do too.
      */
+    /**
+     * SmartXonnect LCD (N109U347N251DataSenderToCluster.sendMobileDataNotificationAndAlert with getWhatsappByte /
+     * getFBByte / getInstaByte): `5B 9C <WA> <FB> <IG> 00 <alert 0> 00 ... FF`, no checksum; WA = messages (5 bits)
+     * << 3 with chats 0, FB = messages (4 bits) << 4.
+     */
+    fun socialCounts(model: ClusterModel, c: SocialCounts): ByteArray =
+        if (model.family != ClusterFamily.SMARTXONNECT) socialCounts(c)
+        else frame(
+            START, DID_SOCIAL,
+            byteArrayOf(
+                (c.whatsappMessages.coerceIn(0, 0x1F) shl 3).toByte(),
+                (c.facebookMessages.coerceIn(0, 0x0F) shl 4).toByte(),
+                c.instagram.coerceIn(0, 0xFF).toByte(),
+            ),
+        )
+
     fun socialCounts(c: SocialCounts): ByteArray {
         val wa = (c.whatsappMessages.coerceIn(0, 0x1F) shl 3) or c.whatsappChats.coerceIn(0, 0x07)
         val fbCount = c.facebookMessages.coerceIn(0, 0x0F)

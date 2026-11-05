@@ -294,4 +294,28 @@ class ClusterProtocolTest {
         assertEquals(false, ClusterModel.NTORQ_SMARTXONNECT.hasMusic)
         assertEquals(true, ClusterModel.NTORQ_SMARTXONNECT.hasLocation)
     }
+
+    /** sendMobileDataNotificationAndAlert(getWhatsappByte(), getFBByte(), getInstaByte(), 0, 0, 0): no checksum. */
+    @Test fun smartXonnectSocialFrame() {
+        assertEquals(
+            "5b 9c 28 30 09 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ff",
+            hex(ClusterProtocol.socialCounts(ClusterModel.NTORQ_SMARTXONNECT, ClusterProtocol.SocialCounts(5, 2, 3, 9))),
+        )
+        // Other families keep the stock checksummed layout.
+        assertEquals(
+            hex(ClusterProtocol.socialCounts(ClusterProtocol.SocialCounts(5, 2, 3, 9))),
+            hex(ClusterProtocol.socialCounts(ClusterModel.NTORQ_U812, ClusterProtocol.SocialCounts(5, 2, 3, 9))),
+        )
+    }
+
+    @Test fun arrowTestLabelsFitTheDisplay() {
+        Maneuver.entries.forEach { m ->
+            val label = "${ClusterProtocol.shortName(m)} ${ClusterModel.NTORQ_SMARTXONNECT.pictogram(m)}"
+            assertTrue(label, label.length <= 17)
+        }
+        val (control, text) = ClusterProtocol.arrowProbe(ClusterModel.NTORQ_SMARTXONNECT, 10, "RIGHT 10")
+        assertEquals(10, control[9].toInt())
+        assertEquals(1, control[14].toInt())
+        assertEquals("RIGHT 10", String(text, 2, 8, Charsets.UTF_8))
+    }
 }

@@ -383,7 +383,10 @@ class ClusterController @Inject constructor(
     }
 
     private val _arrowSweep = MutableStateFlow(false)
-    /** Console: every arrow code from 0 to [ARROW_CODE_MAX] in turn, about 2.4 s each, with "CODE n" as the text. */
+    /**
+     * Console arrow test, about 2.4 s per step: every direction by name ("RIGHT 10"), then every id from 0 to
+     * [ARROW_CODE_MAX] with its direction when RideLink uses it ("10 RIGHT") or "CODE n".
+     */
     val arrowSweep: StateFlow<Boolean> = _arrowSweep.asStateFlow()
     private var sweepJob: Job? = null
 
@@ -393,11 +396,15 @@ class ClusterController @Inject constructor(
         if (!on) return
         if (_demoNav.value) setDemoNav(false)
         sweepJob = scope.launch {
-            for (code in 0..ARROW_CODE_MAX) {
+            val m = model(settings.current())
+            val names = Maneuver.entries.associateBy({ m.pictogram(it) }, { ClusterProtocol.shortName(it) })
+            // Every direction RideLink uses, by name, then each raw id with its direction when it has one.
+            val plan = Maneuver.entries.map { m.pictogram(it) to "${ClusterProtocol.shortName(it)} ${m.pictogram(it)}" } +
+                (0..ARROW_CODE_MAX).map { code -> code to (names[code]?.let { "$code $it" } ?: "CODE $code") }
+            for ((code, label) in plan) {
                 repeat(3) {
-                    val m = model(settings.current())
                     navLock.withLock {
-                        ClusterProtocol.arrowProbe(m, code).forEachIndexed { i, f ->
+                        ClusterProtocol.arrowProbe(m, code, label).forEachIndexed { i, f ->
                             if (i > 0) delay(ClusterProtocol.navGapMs(m))
                             send(f)
                         }
@@ -464,7 +471,17 @@ class ClusterController @Inject constructor(
         _caller.value = null
         callState = CallState.ENDED
         scope.launch {
-            if (link.state.value is LinkState.Ready) sendDisplayText(settings.current(), force = false)
+            if (link.state.value is LinkState.Ready) {
+                val s = settings.current()
+                // Stock writes the status frame at once when a call ends, so the display drops the caller now
+                // (SmartXonnect: three times, 100 ms apart, N109U347N251DataSenderToCluster.onDisconnectCall).
+                val m = model(s)
+                repeat(if (m.family == ClusterFamily.SMARTXONNECT) 3 else 1) {
+                    if (it > 0) delay(100)
+                    send(ClusterProtocol.status(m, phoneStatus(s)))
+                }
+                sendDisplayText(s, force = false)
+            }
             delay(ClusterProtocol.STATUS_INTERVAL_MS * 2)
             callState = CallState.IDLE
         }
@@ -481,7 +498,8 @@ class ClusterController @Inject constructor(
     }
 
     private suspend fun sendSocial() {
-        if (settings.current().showSocial && link.state.value is LinkState.Ready) send(ClusterProtocol.socialCounts(_social.value))
+        val s = settings.current()
+        if (s.showSocial && link.state.value is LinkState.Ready) send(ClusterProtocol.socialCounts(model(s), _social.value))
     }
 
     fun setDemo(on: Boolean) {
@@ -618,7 +636,7 @@ class ClusterController @Inject constructor(
                 send(ClusterProtocol.weather(m, w))
             }
             TestFrame.LOCATION -> send(ClusterProtocol.location(_place.value ?: "Test place"))
-            TestFrame.SOCIAL -> send(ClusterProtocol.socialCounts(ClusterProtocol.SocialCounts(3, 2, 1, 4)))
+            TestFrame.SOCIAL -> send(ClusterProtocol.socialCounts(m, ClusterProtocol.SocialCounts(3, 2, 1, 4)))
             TestFrame.MUSIC -> {
                 val music = _music.value ?: ClusterProtocol.Music("Test song", "Test artist", ClusterProtocol.PlayState.PLAYING, 60_000, 200_000, 50)
                 send(ClusterProtocol.song(music.title))
