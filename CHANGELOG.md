@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.2.1-alpha.3](https://github.com/aiyu-ayaan/RideLink/compare/v0.2.1-alpha.2...v0.2.1-alpha.3) (2026-11-05)
+
+### Other changes
+
+* Core(Nav) : Always send one text line in the nav control frame so the TFT shows the turn arrow
+* Docs(Readme) : Add demo ride data & analytics screenshots to gallery
+* Docs(Readme) : Switch screenshots path to docs/screenshots to bust Camo cache
+* Docs(Screenshots) : Fix corrupted PNG headers from multi-display screencap
+* Docs(Screenshots) : Refresh screenshots from running app build
+* Docs(Screenshots) : Capture current AVD ride screen
+* Docs(Readme) : Add project README with architecture, features and setup
+* Ui(Update) : Keep the space before the download size
+
 ## [0.2.1-alpha.2](https://github.com/aiyu-ayaan/RideLink/compare/v0.2.1-alpha.1...v0.2.1-alpha.2) (2026-11-04)
 
 ### Other changes
