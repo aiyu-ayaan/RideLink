@@ -35,12 +35,14 @@
 - [ ] Analytics: check recorded distance against the scooter's trip meter on a real ride
 - [ ] Trip meter: 5A 10 [14..16] reads empty on the rider's XT; get a Console "Copy log" with RX frames
 - [ ] Signal bars, call icon, notification badge: still missing? compare decoded STATUS lines, try model U577 premium
-- [ ] Pair the user's Ntorq XT (2026) and confirm the display accepts the 2025+ status frame
-- [ ] Confirm turn arrows show the right pictogram for each maneuver (nav `lines` byte now always 1; recheck the arrow on a real Maps route)
+- [ ] Pair the user's Ntorq 125 Race XP (2026, U458) and confirm the display accepts the 2025+ status frame
+- [ ] Confirm turn arrows on the meter: run Developer options -> Demo navigation and note which arrow each turn type shows
+- [ ] Real Maps route on the scooter: Console should show `Maps: <street> = <TURN> (icon ... 1.00)`; check the meter stays in nav mode between Maps updates (2 s repeat)
+- [ ] Calls / WhatsApp on the Race XP: retest with battery optimisation off + wake lock; Console notes show what was detected
 - [ ] Confirm caller frame clears correctly when a call ends (stock app relies on call state)
 - [ ] Capture the display's incoming frames to refine Auto detection (U716 vs U577 base)
 - [ ] Check whether the display needs Bluetooth bonding
 
 ## Later
-- [ ] Map Google Maps non-English instructions (`MapsNotificationParser` is English-only)
+- [ ] Turn arrow fallback if a Maps update renames its `maneuver_*` drawables (Console note then says `0 Maps icons`)
 - [ ] Legacy Ntorq SmartXonnect (VehicleCode "9") uses separate code, not analysed
