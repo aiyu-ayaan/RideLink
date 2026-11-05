@@ -52,6 +52,15 @@ class ClusterProtocolTest {
         assertEquals("5a 4e 01 2c 00 0a 01 11 70 0a 01 00 00 00 00 00 00 00 00 ff", hex(control))
     }
 
+    @Test fun longMapsInstructionKeepsOneLineSoArrowShows() {
+        val (text, control) = ClusterProtocol.navigation(
+            ClusterModel.NTORQ_U812,
+            ClusterProtocol.NavStep(150, 180, 1_800, Maneuver.RIGHT, "Turn right onto MG Road"),
+        )
+        assertEquals("Turn right onto M", String(text, 2, 17, Charsets.UTF_8))
+        assertEquals(1, control[10].toInt())
+    }
+
     @Test fun premiumPictogramUsesHexQuirk() {
         assertEquals(0x10, ClusterModel.NTORQ_U577_PREMIUM.pictogram(Maneuver.RIGHT))
         assertEquals(0x57, ClusterModel.NTORQ_U577_PREMIUM.pictogram(Maneuver.STRAIGHT))

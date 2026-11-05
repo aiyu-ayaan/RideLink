@@ -138,6 +138,13 @@ navOn                  1 byte (0 = running, 0xFF = stopped; Raider "29": 1/0)
 00 00 00 00
 FF
 ```
+Text source in stock (`NavigationRepoImpl.sendAdviseInfoToCluster`): Mappls `AdviseInfo.getShortText()`
+("Turn right"), maneuver `AdviseInfo.getManeuverID()`, distance rounded by `NavigationUtils.getFormattedDistance`
+(down to 10 m under 1 km, else 100 m). Short text means stock nearly always sends `lines = 1`.
+Deviation: RideLink always sends `lines = 1`. Google Maps text ("Turn right onto MG Road") is over 17 chars,
+and with `lines = 2` the 2025+ TFT showed the text but no arrow (rider report, 2026-11-05; Console test turn,
+15 chars, showed the arrow). Only 17 bytes of text are sent either way.
+
 Pictogram mapping for NTORQ_U812/N251/U458/U377 (`getPictogramMappingForNtorqU812`),
 Mappls maneuver id -> cluster id:
 `0>0 1>1 2>2 3>10 4>11 5>12 6>19 7>57 8>22 11>0 12>10 13>0 14>10 15>7 16>17 17>1 18>11 19>7 20>17 21>57 22>0 23>7 24>10 25>17 36>23 41>19 50>24 51>38 52>10 53>36 54>24 55>35 56>0 57>40 65>27 66>28 67>29 68>48 69>31 70>32 71>33 72>61 73>0 74>8 75>18`

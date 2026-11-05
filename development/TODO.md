@@ -36,7 +36,7 @@
 - [ ] Trip meter: 5A 10 [14..16] reads empty on the rider's XT; get a Console "Copy log" with RX frames
 - [ ] Signal bars, call icon, notification badge: still missing? compare decoded STATUS lines, try model U577 premium
 - [ ] Pair the user's Ntorq XT (2026) and confirm the display accepts the 2025+ status frame
-- [ ] Confirm turn arrows show the right pictogram for each maneuver
+- [ ] Confirm turn arrows show the right pictogram for each maneuver (nav `lines` byte now always 1; recheck the arrow on a real Maps route)
 - [ ] Confirm caller frame clears correctly when a call ends (stock app relies on call state)
 - [ ] Capture the display's incoming frames to refine Auto detection (U716 vs U577 base)
 - [ ] Check whether the display needs Bluetooth bonding

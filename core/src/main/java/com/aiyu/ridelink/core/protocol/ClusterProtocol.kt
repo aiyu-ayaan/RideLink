@@ -138,7 +138,9 @@ object ClusterProtocol {
             (etaMin shr 8).toByte(), etaMin.toByte(),
             (left shr 16).toByte(), (left shr 8).toByte(), left.toByte(),
             model.pictogram(step.maneuver).toByte(),
-            (if (step.instruction.length > TEXT_MAX) 2 else 1).toByte(),
+            // Stock sends 2 when the text is over 17 chars, but feeds Mappls short text ("Turn right"), so it is
+            // almost always 1. Long Maps text with 2 left the TFT showing text without the arrow; only 17 bytes go out.
+            1,
             (if (step.stopped) 0xFF else 0).toByte(),
             0, 0, 0, 0, 0, 0, 0,
         )
