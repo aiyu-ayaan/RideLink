@@ -312,7 +312,7 @@ object ClusterProtocol {
      * getFBByte / getInstaByte): `5B 9C <WA> <FB> <IG> 00 <alert 0> 00 ... FF`, no checksum; WA = messages (5 bits)
      * << 3 with chats 0, FB = messages (4 bits) << 4.
      */
-    fun socialCounts(model: ClusterModel, c: SocialCounts): ByteArray =
+    fun socialCounts(model: ClusterModel, c: SocialCounts, delivery: Int = 0, carbon: Int = 0): ByteArray =
         if (model.family != ClusterFamily.SMARTXONNECT) socialCounts(c)
         else frame(
             START, DID_SOCIAL,
@@ -320,8 +320,23 @@ object ClusterProtocol {
                 (c.whatsappMessages.coerceIn(0, 0x1F) shl 3).toByte(),
                 (c.facebookMessages.coerceIn(0, 0x0F) shl 4).toByte(),
                 c.instagram.coerceIn(0, 0xFF).toByte(),
+                // sendDeliveryAlert puts its code here, carbonEmission its value in the next byte.
+                delivery.coerceIn(0, 0xFF).toByte(),
+                carbon.coerceIn(0, 0xFF).toByte(),
             ),
         )
+
+    /** Stock onClearCall: `5A F1 05 00 00 00 00 00 00 <d> <m> <yy> 01 00 01 00 00 00 00 FF` (never called in stock). */
+    fun clearCallLed(date: java.time.LocalDate): ByteArray = byteArrayOf(
+        0x5A, 0xF1.toByte(), 5, 0, 0, 0, 0, 0, 0,
+        date.dayOfMonth.toByte(), date.monthValue.toByte(), (date.year % 100).toByte(), 1, 0, 1, 0, 0, 0, 0, END,
+    )
+
+    /** Stock onClearSMS: `5A F1 <brightness> 00 00 02 AA 00 00 <d> <m> <yy> 00 01 01 00 00 00 00 FF` (never called). */
+    fun clearSmsLed(brightness: Int, date: java.time.LocalDate): ByteArray = byteArrayOf(
+        0x5A, 0xF1.toByte(), brightness.coerceIn(2, 5).toByte(), 0, 0, 2, 0xAA.toByte(), 0, 0,
+        date.dayOfMonth.toByte(), date.monthValue.toByte(), (date.year % 100).toByte(), 0, 1, 1, 0, 0, 0, 0, END,
+    )
 
     fun socialCounts(c: SocialCounts): ByteArray {
         val wa = (c.whatsappMessages.coerceIn(0, 0x1F) shl 3) or c.whatsappChats.coerceIn(0, 0x07)

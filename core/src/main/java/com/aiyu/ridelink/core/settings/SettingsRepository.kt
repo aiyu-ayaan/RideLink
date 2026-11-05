@@ -79,6 +79,12 @@ data class Settings(
     val parkedLng: Double? = null,
     val parkedAt: Long = 0,
     val parkedBike: String? = null,
+    /** Experimental SmartXonnect extras (stock has the frames but never calls them, or needs TVS cloud data). */
+    val ledClear: Boolean = false,
+    val deliveryAlerts: Boolean = false,
+    /** Alert code for the delivery byte of `5B 9C`; meaning unknown, find it with the Console alert sweep. */
+    val deliveryCode: Int = 1,
+    val carbon: Boolean = false,
 ) {
     companion object {
         val BRIGHTNESS_RANGE = 2..5
@@ -129,6 +135,10 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
         val parkedLng = doublePreferencesKey("parked_lng")
         val parkedAt = longPreferencesKey("parked_at")
         val parkedBike = stringPreferencesKey("parked_bike")
+        val ledClear = booleanPreferencesKey("led_clear")
+        val delivery = booleanPreferencesKey("delivery_alerts")
+        val deliveryCode = intPreferencesKey("delivery_code")
+        val carbon = booleanPreferencesKey("carbon")
     }
 
     val settings: Flow<Settings> = context.store.data.map { p ->
@@ -170,6 +180,10 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
             parkedLng = p[K.parkedLng],
             parkedAt = p[K.parkedAt] ?: 0,
             parkedBike = p[K.parkedBike],
+            ledClear = p[K.ledClear] ?: false,
+            deliveryAlerts = p[K.delivery] ?: false,
+            deliveryCode = p[K.deliveryCode] ?: 1,
+            carbon = p[K.carbon] ?: false,
         )
     }
 
@@ -217,6 +231,10 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
     suspend fun setAutoReply(on: Boolean) { context.store.edit { it[K.autoReply] = on } }
     suspend fun setBirthday(iso: String) { context.store.edit { it[K.birthday] = iso } }
     suspend fun setPurchaseDate(iso: String) { context.store.edit { it[K.purchase] = iso } }
+    suspend fun setLedClear(on: Boolean) { context.store.edit { it[K.ledClear] = on } }
+    suspend fun setDeliveryAlerts(on: Boolean) { context.store.edit { it[K.delivery] = on } }
+    suspend fun setDeliveryCode(code: Int) { context.store.edit { it[K.deliveryCode] = code.coerceIn(1, 255) } }
+    suspend fun setCarbon(on: Boolean) { context.store.edit { it[K.carbon] = on } }
     suspend fun setParked(lat: Double, lng: Double, at: Long, bike: String?) {
         context.store.edit {
             it[K.parkedLat] = lat; it[K.parkedLng] = lng; it[K.parkedAt] = at

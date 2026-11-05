@@ -80,6 +80,15 @@
     <string name="settings_date_clear">Clear</string>
     <string name="settings_auto_reply">Auto-reply to missed calls</string>
     <string name="settings_auto_reply_hint">While the scooter is connected, text a caller you missed with your reject message. Once per caller every 10 minutes.</string>
+    <string name="settings_experimental">Experimental</string>
+    <string name="settings_led_clear">Turn off the notification light</string>
+    <string name="settings_led_clear_hint">After a call ends or an SMS is read, send the TVS app\'s unused "clear" frame. Turn off if the display acts oddly.</string>
+    <string name="settings_delivery">Food delivery alerts</string>
+    <string name="settings_delivery_hint">Swiggy, Zomato, Blinkit, Zepto and Dunzo updates flash an alert on the display. The TVS app never used this, so find the right code with Console, Alert codes.</string>
+    <string name="settings_delivery_code">Alert code: %1$d</string>
+    <string name="settings_carbon">CO2 of the last ride</string>
+    <string name="settings_carbon_hint">Sends the last ride\'s CO2 in kg, worked out from its distance and mileage. TVS used its own cloud value here.</string>
+    <string name="console_alert_sweep">Alert codes 1 to 20</string>
     <string name="race_title">Race stats</string>
     <string name="race_best_lap">Best lap</string>
     <string name="race_top">Top speed</string>

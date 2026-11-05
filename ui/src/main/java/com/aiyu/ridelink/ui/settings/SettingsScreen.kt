@@ -228,6 +228,11 @@ fun SettingsScreen(
                 item { SwitchRow(R.string.settings_sms_alerts, R.string.settings_sms_alerts_hint, s.smsAlerts, vm::setSmsAlerts) }
                 item { DateRow(R.string.settings_birthday, s.birthday, vm::setBirthday) }
                 item { DateRow(R.string.settings_purchase_date, s.purchaseDate, vm::setPurchaseDate) }
+                item { Section(R.string.settings_experimental) }
+                item { SwitchRow(R.string.settings_led_clear, R.string.settings_led_clear_hint, s.ledClear, vm::setLedClear) }
+                item { SwitchRow(R.string.settings_delivery, R.string.settings_delivery_hint, s.deliveryAlerts, vm::setDeliveryAlerts) }
+                if (s.deliveryAlerts) item { DeliveryCodeSlider(s.deliveryCode, vm::setDeliveryCode) }
+                item { SwitchRow(R.string.settings_carbon, R.string.settings_carbon_hint, s.carbon, vm::setCarbon) }
             }
 
                 }
@@ -472,6 +477,16 @@ private fun BrightnessSlider(saved: Int, onSave: (Int) -> Unit) {
             valueRange = range.first.toFloat()..range.last.toFloat(),
             steps = range.last - range.first - 1,
         )
+    }
+}
+
+/** Delivery alert code 1..20; which one the display shows is found with the Console alert sweep. */
+@Composable
+private fun DeliveryCodeSlider(saved: Int, onSave: (Int) -> Unit) {
+    var value by remember(saved) { mutableFloatStateOf(saved.toFloat().coerceIn(1f, 20f)) }
+    Column(Modifier.padding(horizontal = Dimens.gutter)) {
+        Text(stringResource(R.string.settings_delivery_code, value.roundToInt()), style = MaterialTheme.typography.bodyLarge)
+        Slider(value = value, onValueChange = { value = it }, onValueChangeFinished = { onSave(value.roundToInt()) }, valueRange = 1f..20f, steps = 18)
     }
 }
 

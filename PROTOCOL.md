@@ -315,8 +315,11 @@ Extras RideLink sends to this display:
 - `5A 7E <whose: 1 purchase, 2 birthday> <day> <month> <yy> 00 ... FF` (`sendBirthDate`) on connect.
 - `5B 53 <SMS sender up to 17> FF` (`createSendSMSNameArray`), 8 times 100 ms apart, for a new SMS.
 - Auto-reply SMS to a missed caller while connected (stock DND / auto reply; phone side only).
-Unused in stock (no callers), so not sent: `sendDeliveryAlert`, `onClearCall` / `onClearSMS`. `carbonEmission`
-needs TVS's cloud ride data. Not used by RideLink: `5A F1` vehicle data (illumination, ride mode, date, "clear call / SMS" flags for the
+Experimental, off by default (stock has the code but never calls it, or feeds it TVS cloud data):
+- `onClearCall` `5A F1 05 00 00 00 00 00 00 <d> <m> <yy> 01 00 01 00 00 00 00 FF` after a call ends,
+  `onClearSMS` `5A F1 <brightness> 00 00 02 AA 00 00 <d> <m> <yy> 00 01 01 00 00 00 00 FF` after an SMS is read.
+- `sendDeliveryAlert(code)`: `5B 9C` byte 5 (code meaning unknown; Console sweeps 1..20) on a delivery-app update.
+- `carbonEmission(value)`: `5B 9C` byte 6; RideLink sends the last ride's CO2 in kg (distance / mileage x 2.31). Not used by RideLink: `5A F1` vehicle data (illumination, ride mode, date, "clear call / SMS" flags for the
 notification LED), the "NAVIGATION / ASSIST ON" text before a route, and `5B 5D` climate text (a fixed
 placeholder string in stock).
 

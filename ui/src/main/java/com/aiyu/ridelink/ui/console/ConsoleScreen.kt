@@ -55,6 +55,7 @@ fun ConsoleScreen(vm: MainViewModel, onBack: () -> Unit) {
     val caller by vm.caller.collectAsStateWithLifecycle()
     val demo by vm.demo.collectAsStateWithLifecycle()
     val sweep by vm.arrowSweep.collectAsStateWithLifecycle()
+    val alerts by vm.alertSweep.collectAsStateWithLifecycle()
     var text by rememberSaveable { mutableStateOf("") }
 
     val context = LocalContext.current
@@ -123,6 +124,7 @@ fun ConsoleScreen(vm: MainViewModel, onBack: () -> Unit) {
                 TestFrameChip(R.string.console_default_screen) { vm.sendTest(ClusterController.TestFrame.DEFAULT_SCREEN) }
                 // Raw arrow codes with "CODE n" on the display, to see which numbers this display draws.
                 FilterChip(selected = sweep, onClick = { vm.setArrowSweep(!sweep) }, label = { Text(stringResource(R.string.console_arrow_sweep)) })
+                FilterChip(selected = alerts, onClick = { vm.setAlertSweep(!alerts) }, label = { Text(stringResource(R.string.console_alert_sweep)) })
             }
             if (log.isEmpty()) {
                 Text(

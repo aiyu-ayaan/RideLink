@@ -48,6 +48,7 @@ import kotlinx.coroutines.withTimeoutOrNull
 import java.time.LocalDateTime
 import java.util.concurrent.atomic.AtomicLong
 import javax.inject.Inject
+import kotlin.math.roundToInt
 import javax.inject.Singleton
 
 /** [rx] = sent by the display; otherwise written by us and [ok] tells if it was acknowledged. */
@@ -67,6 +68,7 @@ class ClusterController @Inject constructor(
     private val missedCalls: MissedCalls,
     private val logFile: LogFile,
     private val garage: GarageStore,
+    private val rides: com.aiyu.ridelink.core.analytics.RideStore,
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private var session: Job? = null
@@ -468,10 +470,62 @@ class ClusterController @Inject constructor(
         if (link.state.value !is LinkState.Ready) return
         val s = settings.current()
         send(ClusterProtocol.vehicleData(s.displayBrightness, java.time.LocalDate.now()))
+        if (s.carbon) smartXonnectAlert()
         listOf(ClusterProtocol.Anniversary.BIRTHDAY to s.birthday, ClusterProtocol.Anniversary.PURCHASE to s.purchaseDate)
             .forEach { (whose, iso) ->
                 runCatching { java.time.LocalDate.parse(iso) }.getOrNull()?.let { send(ClusterProtocol.anniversary(whose, it)) }
             }
+    }
+
+    /** CO2 of the last saved ride in kg (petrol 2.31 kg/l, litres from distance and mileage), for `carbonEmission`. */
+    private fun lastRideCarbonKg(): Int {
+        val r = rides.rides.value.firstOrNull { !it.demo }?.summary ?: return 0
+        val eco = r.avgEconomy?.takeIf { it > 0 } ?: return 0
+        return (r.distanceKm / eco * 2.31).roundToInt()
+    }
+
+    private suspend fun smartXonnectAlert(delivery: Int = 0) {
+        val s = settings.current()
+        val m = model(s)
+        if (m.family != ClusterFamily.SMARTXONNECT || link.state.value !is LinkState.Ready) return
+        send(ClusterProtocol.socialCounts(m, _social.value, delivery, if (s.carbon) lastRideCarbonKg() else 0))
+    }
+
+    /** Experimental: a food-delivery app posted; the display gets alert code [Settings.deliveryCode] for 5 s. */
+    fun onDelivery() = scope.launch {
+        val s = settings.current()
+        if (!s.deliveryAlerts) return@launch
+        smartXonnectAlert(s.deliveryCode)
+        delay(5_000)
+        smartXonnectAlert(0)
+    }
+
+    /** Experimental: the SMS was read, turn the notification LED off (stock onClearSMS). */
+    fun onSmsRead() = scope.launch {
+        val s = settings.current()
+        if (s.ledClear && model(s).family == ClusterFamily.SMARTXONNECT && link.state.value is LinkState.Ready) {
+            send(ClusterProtocol.clearSmsLed(s.displayBrightness, java.time.LocalDate.now()))
+        }
+    }
+
+    private val _alertSweep = MutableStateFlow(false)
+    /** Console: delivery alert codes 1..20, 4 s each, to see which the display shows. */
+    val alertSweep: StateFlow<Boolean> = _alertSweep.asStateFlow()
+    private var alertJob: Job? = null
+
+    fun setAlertSweep(on: Boolean) {
+        alertJob?.cancel()
+        _alertSweep.value = on
+        if (!on) return
+        alertJob = scope.launch {
+            for (code in 1..20) {
+                note("Alert code $code")
+                smartXonnectAlert(code)
+                delay(4_000)
+            }
+            smartXonnectAlert(0)
+            _alertSweep.value = false
+        }
     }
 
     /** Settings changed brightness or a date: send them now. */
@@ -532,6 +586,7 @@ class ClusterController @Inject constructor(
                     if (it > 0) delay(100)
                     send(ClusterProtocol.status(m, phoneStatus(s)))
                 }
+                if (s.ledClear && m.family == ClusterFamily.SMARTXONNECT) send(ClusterProtocol.clearCallLed(java.time.LocalDate.now()))
                 sendDisplayText(s, force = false)
             }
             delay(ClusterProtocol.STATUS_INTERVAL_MS * 2)
@@ -551,7 +606,9 @@ class ClusterController @Inject constructor(
 
     private suspend fun sendSocial() {
         val s = settings.current()
-        if (s.showSocial && link.state.value is LinkState.Ready) send(ClusterProtocol.socialCounts(model(s), _social.value))
+        if (s.showSocial && link.state.value is LinkState.Ready) {
+            send(ClusterProtocol.socialCounts(model(s), _social.value, 0, if (s.carbon) lastRideCarbonKg() else 0))
+        }
     }
 
     fun setDemo(on: Boolean) {

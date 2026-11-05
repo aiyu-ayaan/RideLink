@@ -340,4 +340,15 @@ class ClusterProtocolTest {
         assertEquals(35, t.raceAverageKmh)
         assertEquals(66, t.raceLapTenths)
     }
+
+    /** Stock onClearCall / onClearSMS and the delivery + carbon bytes of sendMobileDataNotificationAndAlert. */
+    @Test fun smartXonnectExperimentalFrames() {
+        val day = java.time.LocalDate.of(2026, 11, 6)
+        assertEquals("5a f1 05 00 00 00 00 00 00 06 0b 1a 01 00 01 00 00 00 00 ff", hex(ClusterProtocol.clearCallLed(day)))
+        assertEquals("5a f1 04 00 00 02 aa 00 00 06 0b 1a 00 01 01 00 00 00 00 ff", hex(ClusterProtocol.clearSmsLed(4, day)))
+        assertEquals(
+            "5b 9c 28 30 09 03 0c 00 00 00 00 00 00 00 00 00 00 00 00 ff",
+            hex(ClusterProtocol.socialCounts(ClusterModel.NTORQ_SMARTXONNECT, ClusterProtocol.SocialCounts(5, 2, 3, 9), delivery = 3, carbon = 12)),
+        )
+    }
 }

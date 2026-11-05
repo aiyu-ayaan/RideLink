@@ -100,6 +100,12 @@ class MainViewModel @Inject constructor(
     fun setForwardNavigation(on: Boolean) = viewModelScope.launch { repo.setForwardNavigation(on) }
     fun setDisplayBrightness(level: Int) = viewModelScope.launch { repo.setDisplayBrightness(level); controller.applyDisplaySettings() }
     fun setSmsAlerts(on: Boolean) = viewModelScope.launch { repo.setSmsAlerts(on) }
+    fun setLedClear(on: Boolean) = viewModelScope.launch { repo.setLedClear(on) }
+    fun setDeliveryAlerts(on: Boolean) = viewModelScope.launch { repo.setDeliveryAlerts(on) }
+    fun setDeliveryCode(code: Int) = viewModelScope.launch { repo.setDeliveryCode(code) }
+    fun setCarbon(on: Boolean) = viewModelScope.launch { repo.setCarbon(on); controller.applyDisplaySettings() }
+    val alertSweep = controller.alertSweep
+    fun setAlertSweep(on: Boolean) = controller.setAlertSweep(on)
     fun setAutoReply(on: Boolean) = viewModelScope.launch { repo.setAutoReply(on) }
     fun setBirthday(iso: String) = viewModelScope.launch { repo.setBirthday(iso); controller.applyDisplaySettings() }
     fun setPurchaseDate(iso: String) = viewModelScope.launch { repo.setPurchaseDate(iso); controller.applyDisplaySettings() }

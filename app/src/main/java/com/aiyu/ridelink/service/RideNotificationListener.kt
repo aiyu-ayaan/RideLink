@@ -56,6 +56,14 @@ class RideNotificationListener : NotificationListenerService() {
                 }
             }
             SocialNotificationParser.app(sbn.packageName) != null -> recountSocial()
+            // Experimental delivery alert, once per order update.
+            sbn.packageName in DELIVERY_APPS && (n.flags and Notification.FLAG_GROUP_SUMMARY) == 0 -> {
+                val id = "${sbn.key}|${n.`when`}"
+                if (id != lastDelivery) {
+                    lastDelivery = id
+                    controller.onDelivery()
+                }
+            }
             // SMS sender on the SmartXonnect display; each message once (the SMS app reposts and groups).
             sbn.packageName == smsPackage && (n.flags and Notification.FLAG_GROUP_SUMMARY) == 0 && !title.isNullOrBlank() -> {
                 val id = "${sbn.key}|${n.`when`}"
@@ -68,6 +76,7 @@ class RideNotificationListener : NotificationListenerService() {
     }
 
     private var lastSms: String? = null
+    private var lastDelivery: String? = null
     private val smsPackage: String? by lazy { runCatching { Telephony.Sms.getDefaultSmsPackage(this) }.getOrNull() }
 
     private var lastNote: String? = null
@@ -97,6 +106,7 @@ class RideNotificationListener : NotificationListenerService() {
                 controller.onNavigationEnded()
             }
             sbn.notification.category == Notification.CATEGORY_CALL -> controller.onCallEnded()
+            sbn.packageName == smsPackage -> controller.onSmsRead()
             SocialNotificationParser.app(sbn.packageName) != null -> recountSocial()
         }
     }
@@ -157,5 +167,10 @@ class RideNotificationListener : NotificationListenerService() {
         val type = n.extras.getInt(Notification.EXTRA_CALL_TYPE, -1)
         if (type != -1) return type == Notification.CallStyle.CALL_TYPE_INCOMING
         return n.fullScreenIntent != null || !n.extras.getBoolean(Notification.EXTRA_SHOW_CHRONOMETER)
+    }
+
+    private companion object {
+        /** Swiggy, Zomato, Blinkit, Zepto, Swiggy Instamart (same app), Dunzo. */
+        val DELIVERY_APPS = setOf("in.swiggy.android", "com.application.zomato", "com.grofers.customerapp", "com.zeptoconsumerapp", "com.dunzo.user")
     }
 }
