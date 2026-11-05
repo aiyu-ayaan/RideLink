@@ -192,7 +192,7 @@ class ClusterController @Inject constructor(
         sendSocial()
         sendMusic(force = true)
         // After a reconnect the display has lost the route; put the current turn back without waiting for Maps.
-        _nav.value?.let { postNav(it) }
+        _nav.value?.let { postNav(it, demo = _demoNav.value) }
         startWeather()
         statusJob?.cancel()
         statusJob = scope.launch {
@@ -284,11 +284,12 @@ class ClusterController @Inject constructor(
         postNav(step)
     }
 
-    private fun postNav(step: NavStep) {
+    /** [demo] steps go out even with "Forward navigation" off: the demo exists to test the display. */
+    private fun postNav(step: NavStep, demo: Boolean = false) {
         val seq = navSeq.incrementAndGet()
         scope.launch {
             val s = settings.current()
-            if (!s.forwardNavigation || seq != navSeq.get()) return@launch
+            if (!(s.forwardNavigation || demo) || seq != navSeq.get()) return@launch
             _nav.value = step
             navLock.withLock {
                 if (seq != navSeq.get()) return@withLock
@@ -337,7 +338,7 @@ class ClusterController @Inject constructor(
         endNav()
     }
 
-    private fun endNav() {
+    private fun endNav(demo: Boolean = false) {
         navSeq.incrementAndGet()
         navKeepAlive?.cancel()
         scope.launch {
@@ -345,7 +346,7 @@ class ClusterController @Inject constructor(
                 val last = _nav.value ?: return@withLock
                 _nav.value = null
                 val s = settings.current()
-                if (s.forwardNavigation) ClusterProtocol.navigation(model(s), last.copy(stopped = true)).forEach { send(it) }
+                if (s.forwardNavigation || demo) ClusterProtocol.navigation(model(s), last.copy(stopped = true)).forEach { send(it) }
                 // Custom lines were held back during the route (see the status loop); put them back.
                 if (link.state.value is LinkState.Ready) sendDisplayText(s, force = true)
             }
@@ -361,7 +362,7 @@ class ClusterController @Inject constructor(
         demoNavJob?.cancel()
         _demoNav.value = on
         if (!on) {
-            endNav()
+            endNav(demo = true)
             return
         }
         demoNavJob = scope.launch {
@@ -373,7 +374,7 @@ class ClusterController @Inject constructor(
                     val text = ClusterProtocol.directionText(maneuver)
                     // Count down to the turn in 50 m steps, so each arrow stays up for a few seconds.
                     for (d in leg downTo 50 step 50) {
-                        postNav(NavStep(d, (left / 6.0).toLong(), left, maneuver, text))
+                        postNav(NavStep(d, (left / 6.0).toLong(), left, maneuver, text), demo = true)
                         left -= 50
                         delay(DEMO_NAV_STEP_MS)
                     }

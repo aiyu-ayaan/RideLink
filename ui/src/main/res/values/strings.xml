@@ -225,7 +225,7 @@
     <string name="settings_developer_mode">Developer mode</string>
     <string name="settings_developer_mode_hint">Shows the Console: frame log, test frames and demo ride.</string>
     <string name="settings_demo_nav">Demo navigation</string>
-    <string name="settings_demo_nav_hint">Sends a fake route with every turn type to the display and the Ride screen, one arrow every few seconds. No Maps route or ride needed.</string>
+    <string name="settings_demo_nav_hint">Sends a fake route through all 12 turn types to the display and the Ride screen, a new turn every 6 seconds, even with Forward navigation off. No Maps route or ride needed.</string>
     <string name="settings_console_desc">Every frame sent to and received from the display</string>
     <string name="settings_save_logs">Save logs</string>
     <string name="settings_save_logs_hint">Also write the Console log to a file on this phone (last 7 days). Logs include caller names and numbers.</string>
