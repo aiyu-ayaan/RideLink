@@ -1,5 +1,6 @@
 package com.aiyu.ridelink.ui
 
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.animation.core.SeekableTransitionState
 import androidx.compose.animation.core.rememberTransition
@@ -110,6 +111,9 @@ fun RideLinkRoot(onConnect: () -> Unit, onDisconnect: () -> Unit) {
             throw c
         }
     }
+
+    // Back on Analytics or Settings goes to the Ride tab first; only Ride (the home tab) leaves the app.
+    BackHandler(enabled = stack.isEmpty() && tab != 0) { tab = 0 }
 
     AutoConnect(vm, onConnect)
     LaunchedEffect(Unit) { updates.checkQuietly() }
