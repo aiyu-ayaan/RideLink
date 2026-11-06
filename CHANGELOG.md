@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.2.1-alpha.6](https://github.com/aiyu-ayaan/RideLink/compare/v0.2.1-alpha.5...v0.2.1-alpha.6) (2026-11-06)
+
+### Other changes
+
+* Fix(Nav) : Back on Analytics or Settings returns to the Ride tab before leaving the app
+* Fix(Theme) : Reapply status bar icon colour on resume and focus so the system cannot leave white icons on a light bar
+* Ui(Care) : Fuel and service page, messages settings, Console feature tests
+* App(Care) : Care notifications, WhatsApp auto-reply, location foreground service
+* Core(Care) : Fuel log, refuel and low-fuel detection, service reminders, check-in SMS
+* Ui(Theme) : Top bars stay on surface colour when scrolled
+* Fix(Theme) : Dark window background stops white flash on predictive back
+* Fix(Nav) : Keep scroll state of tabs and pages across navigation
+* Docs(Readme) : Ntorq compatibility matrix and new SmartXonnect features
+
 ## [0.2.1-alpha.5](https://github.com/aiyu-ayaan/RideLink/compare/v0.2.1-alpha.4...v0.2.1-alpha.5) (2026-11-05)
 
 ### Other changes
