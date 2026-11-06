@@ -17,6 +17,7 @@ import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.ErrorOutline
+import com.aiyu.ridelink.ui.nav.appBarColors
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Button
@@ -62,6 +63,7 @@ fun ConsoleScreen(vm: MainViewModel, onBack: () -> Unit) {
     Scaffold(
         topBar = {
             MediumFlexibleTopAppBar(
+                colors = appBarColors(),
                 title = { Text(stringResource(R.string.tab_console)) },
                 navigationIcon = { BackButton(onBack) },
                 actions = {

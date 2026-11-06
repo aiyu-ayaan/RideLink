@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.rememberScrollState
+import com.aiyu.ridelink.ui.nav.appBarColors
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import com.aiyu.ridelink.core.settings.Bike
@@ -111,6 +112,7 @@ fun AnalyticsScreen(onOpenRide: (Long) -> Unit, vm: AnalyticsViewModel = hiltVie
     Scaffold(
         topBar = {
             MediumFlexibleTopAppBar(
+                colors = appBarColors(),
                 title = { Text(stringResource(R.string.tab_analytics)) },
                 // Stats are per scooter; name the one shown.
                 subtitle = { bikes.firstOrNull { it.address == bike }?.let { Text(it.name ?: it.address) } },

@@ -52,6 +52,7 @@ import androidx.compose.material.icons.rounded.SignalCellularAlt
 import androidx.compose.material.icons.rounded.Straight
 import androidx.compose.material.icons.rounded.TwoWheeler
 import androidx.compose.material.icons.rounded.UTurnLeft
+import com.aiyu.ridelink.ui.nav.appBarColors
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -147,7 +148,7 @@ fun RideScreen(vm: MainViewModel, onConnect: () -> Unit, onDisconnect: () -> Uni
     val paired = settings.deviceAddress != null
     val rideOn = link !is LinkState.Idle
 
-    Scaffold(topBar = { MediumFlexibleTopAppBar(title = { Text(stringResource(R.string.app_name)) }) }) { padding ->
+    Scaffold(topBar = { MediumFlexibleTopAppBar(colors = appBarColors(), title = { Text(stringResource(R.string.app_name)) }) }) { padding ->
         Column(
             Modifier
                 .padding(padding)

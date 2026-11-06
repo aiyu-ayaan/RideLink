@@ -15,6 +15,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.toggleable
+import com.aiyu.ridelink.ui.nav.appBarColors
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
@@ -160,8 +161,9 @@ fun SettingsScreen(
     Scaffold(
         modifier = Modifier.nestedScroll(scroll.nestedScrollConnection),
         topBar = {
-            if (section == null) MediumFlexibleTopAppBar(title = { Text(stringResource(title)) }, scrollBehavior = scroll)
+            if (section == null) MediumFlexibleTopAppBar(colors = appBarColors(), title = { Text(stringResource(title)) }, scrollBehavior = scroll)
             else LargeFlexibleTopAppBar(
+                colors = appBarColors(),
                 title = { Text(stringResource(title)) },
                 navigationIcon = { BackButton(onBack) },
                 scrollBehavior = scroll,

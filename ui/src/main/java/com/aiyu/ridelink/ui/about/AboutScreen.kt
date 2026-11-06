@@ -22,6 +22,7 @@ import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.SystemUpdate
 import androidx.compose.material.icons.rounded.Warning
+import com.aiyu.ridelink.ui.nav.appBarColors
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -69,6 +70,7 @@ fun AboutScreen(onBack: () -> Unit, onOpenUpdates: () -> Unit, onOpenAcknowledge
         modifier = Modifier.nestedScroll(scroll.nestedScrollConnection),
         topBar = {
             LargeFlexibleTopAppBar(
+                colors = appBarColors(),
                 title = { Text(stringResource(R.string.about_title)) },
                 subtitle = { Text(stringResource(R.string.about_tagline)) },
                 navigationIcon = { BackButton(onBack) },
@@ -158,6 +160,7 @@ fun AcknowledgementsScreen(onBack: () -> Unit) {
         modifier = Modifier.nestedScroll(scroll.nestedScrollConnection),
         topBar = {
             LargeFlexibleTopAppBar(
+                colors = appBarColors(),
                 title = { Text(stringResource(R.string.about_acknowledgements)) },
                 subtitle = { Text(stringResource(R.string.about_acknowledgements_subtitle)) },
                 navigationIcon = { BackButton(onBack) },

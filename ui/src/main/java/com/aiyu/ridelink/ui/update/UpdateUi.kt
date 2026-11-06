@@ -19,6 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
 import androidx.compose.material.icons.rounded.SystemUpdate
+import com.aiyu.ridelink.ui.nav.appBarColors
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -154,6 +155,7 @@ fun UpdateScreen(onBack: () -> Unit) {
         modifier = Modifier.nestedScroll(scroll.nestedScrollConnection),
         topBar = {
             LargeFlexibleTopAppBar(
+                colors = appBarColors(),
                 title = { Text(stringResource(R.string.update_title)) },
                 subtitle = { Text(stringResource(R.string.update_subtitle, vm.installedName)) },
                 navigationIcon = { BackButton(onBack) },

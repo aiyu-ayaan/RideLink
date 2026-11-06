@@ -14,6 +14,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.Map
+import com.aiyu.ridelink.ui.nav.appBarColors
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -71,6 +72,7 @@ fun RideDetailScreen(rideId: Long, onBack: () -> Unit, vm: AnalyticsViewModel = 
         modifier = Modifier.nestedScroll(scroll.nestedScrollConnection),
         topBar = {
             LargeFlexibleTopAppBar(
+                colors = appBarColors(),
                 title = { Text(ride?.let { Fmt.dateTime(it.summary.start) } ?: stringResource(R.string.detail_title)) },
                 subtitle = {
                     ride?.let { r ->
