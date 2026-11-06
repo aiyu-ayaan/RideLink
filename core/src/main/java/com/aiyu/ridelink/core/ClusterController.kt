@@ -12,6 +12,7 @@ import androidx.core.content.ContextCompat
 import com.aiyu.ridelink.core.diag.LogFile
 import com.aiyu.ridelink.core.ble.ClusterLink
 import com.aiyu.ridelink.core.ble.LinkState
+import com.aiyu.ridelink.core.analytics.RideMath
 import com.aiyu.ridelink.core.display.DisplayTemplate
 import com.aiyu.ridelink.core.protocol.ClusterFamily
 import com.aiyu.ridelink.core.protocol.ClusterModel
@@ -149,9 +150,11 @@ class ClusterController @Inject constructor(
             var wasReady = false
             link.state.collect { st ->
                 val ready = st is LinkState.Ready
-                if (wasReady && !ready) {
-                    weatherRepo.location()?.let { settings.setParked(it.latitude, it.longitude, System.currentTimeMillis(), settings.current().deviceAddress) }
+                // A drop while the wheels still turn is a lost signal, not parking.
+                if (wasReady && !ready && (_telemetry.value.speedKmh ?: 0) == 0) {
+                    weatherRepo.location(precise = true)?.let { settings.setParked(it.latitude, it.longitude, System.currentTimeMillis(), settings.current().deviceAddress) }
                 }
+                if (!ready) repliedChats.clear()
                 wasReady = ready
             }
         }
@@ -178,10 +181,76 @@ class ClusterController @Inject constructor(
                 if (after !== before) {
                     _telemetry.value = after
                     after.speedKmh?.let { _speed.value = it }
+                    if ((after.speedKmh ?: 0) >= RideMath.MOVING_KMH) lastMovingAt = System.currentTimeMillis()
                     onSwitchStatus(before.switchStatus, after.switchStatus)
                 }
             }
         }
+    }
+
+    @Volatile private var lastMovingAt = 0L
+
+    /** Connected and the scooter moved in the last [RIDING_GAP_MS] (a red light still counts as riding). */
+    fun isRiding(): Boolean = _pretendRiding.value ||
+        link.state.value is LinkState.Ready && System.currentTimeMillis() - lastMovingAt < RIDING_GAP_MS
+
+    private val _pretendRiding = MutableStateFlow(false)
+    /** Developer test: treat the phone as riding (WhatsApp auto-reply) without a scooter. Cleared on restart. */
+    val pretendRiding: StateFlow<Boolean> = _pretendRiding.asStateFlow()
+
+    fun setPretendRiding(on: Boolean) {
+        _pretendRiding.value = on
+        if (!on) repliedChats.clear()
+        note("Pretend riding ${if (on) "on" else "off"}")
+    }
+
+    /** Developer test: save the phone's position as the parked spot, as a disconnect does. */
+    fun saveParkedNow() = scope.launch {
+        val at = weatherRepo.location(precise = true)
+        if (at == null) note("Parked test: no location (permission or GPS off)")
+        else {
+            settings.setParked(at.latitude, at.longitude, System.currentTimeMillis(), settings.current().deviceAddress)
+            note("Parked test: saved ${"%.5f, %.5f".format(at.latitude, at.longitude)} (accuracy ${at.accuracy.toInt()} m)")
+        }
+    }
+
+    /** Chats already answered this ride; cleared when the link drops. */
+    private val repliedChats = java.util.concurrent.ConcurrentHashMap.newKeySet<String>()
+
+    /**
+     * A new WhatsApp message in [chat]. While riding, [reply] sends the riding message through the notification's
+     * own reply action; once per chat per ride, so a conversation never gets a stream of auto-replies.
+     */
+    fun onChatMessage(chat: String, reply: (String) -> Boolean) = scope.launch {
+        val s = settings.current()
+        if (!s.chatAutoReply || !isRiding() || !repliedChats.add(chat)) return@launch
+        if (reply(RejectMessage.text(s.rejectSmsText))) note("Auto-reply sent on WhatsApp to $chat")
+        else {
+            repliedChats.remove(chat)
+            note("WhatsApp auto-reply failed for $chat (no reply action)")
+        }
+    }
+
+    /** The display format in use: the saved pick, else what the display proved, else the default. */
+    suspend fun currentModel(): ClusterModel = model(settings.current())
+
+    @Volatile private var textHeldUntil = 0L
+
+    /**
+     * Shows [text] on custom line 1 for [ms], then puts the rider's own line back (or blanks it). Skipped during a
+     * route: on the SmartXonnect LCD the line shares the turn text area.
+     */
+    fun flashText(text: String, ms: Long = FLASH_MS) = scope.launch {
+        if (link.state.value !is LinkState.Ready || _nav.value != null) return@launch
+        textHeldUntil = System.currentTimeMillis() + ms
+        send(ClusterProtocol.customLine1(text))
+        delay(ms)
+        textHeldUntil = 0
+        sentLine1 = null
+        val s = settings.current()
+        if (link.state.value !is LinkState.Ready) return@launch
+        // An empty text frame blanks the line.
+        if (s.displayLine1.isBlank()) send(ClusterProtocol.customLine1("")) else sendDisplayText(s, force = true)
     }
 
     /** Called by the foreground service. Connects to the saved cluster and keeps the session alive. */
@@ -674,7 +743,7 @@ class ClusterController @Inject constructor(
      * written only when its text changed, or always with [force].
      */
     private suspend fun sendDisplayText(s: Settings, force: Boolean) {
-        if (s.displayLine1.isNotBlank()) {
+        if (s.displayLine1.isNotBlank() && System.currentTimeMillis() >= textHeldUntil) {
             val line = renderLine(s.displayLine1, s)
             if (force || line != sentLine1) { send(ClusterProtocol.customLine1(line)); sentLine1 = line }
         }
@@ -839,5 +908,7 @@ class ClusterController @Inject constructor(
             Maneuver.ROUNDABOUT, Maneuver.ROUNDABOUT_LEFT, Maneuver.ROUNDABOUT_RIGHT, Maneuver.U_TURN, Maneuver.DESTINATION,
         )
         const val WEATHER_INTERVAL_MS = 15 * 60_000L
+        const val RIDING_GAP_MS = 5 * 60_000L
+        const val FLASH_MS = 10_000L
     }
 }

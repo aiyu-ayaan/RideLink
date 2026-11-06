@@ -48,6 +48,16 @@ class CallControl @Inject constructor(@ApplicationContext private val context: C
         runCatching { sms().sendTextMessage(number, null, message, null, null) }.isSuccess
     }
 
+    /** Plain SMS to [to] (SEND_SMS only); split into parts when longer than one segment. */
+    fun sendSms(to: String, message: String): Boolean {
+        if (!granted(Manifest.permission.SEND_SMS)) return false
+        return runCatching {
+            val sms = sms()
+            val parts = sms.divideMessage(message)
+            if (parts.size > 1) sms.sendMultipartTextMessage(to, null, parts, null, null) else sms.sendTextMessage(to, null, message, null, null)
+        }.isSuccess
+    }
+
     private val autoReplied = mutableMapOf<String, Long>()
 
     /**

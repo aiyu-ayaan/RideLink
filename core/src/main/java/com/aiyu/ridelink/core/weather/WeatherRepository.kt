@@ -35,16 +35,30 @@ import kotlin.coroutines.resume
 class WeatherRepository @Inject constructor(@ApplicationContext private val context: Context) {
     private val executor = Executors.newSingleThreadExecutor()
 
-    fun hasLocation() =
+    fun hasLocation() = hasPrecise() ||
         ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
 
+    /** Precise location: the parked spot and check-in links need metres, not the ~2 km coarse fix. */
+    fun hasPrecise() =
+        ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+
+    /**
+     * A fresh fix, else the newest last-known one. With precise access it asks the fused provider (Android 12+)
+     * or GPS; [precise] = false (weather) keeps to the cheap network fix.
+     */
     @SuppressLint("MissingPermission")
-    suspend fun location(): Location? {
+    suspend fun location(precise: Boolean = false): Location? {
         if (!hasLocation()) return null
         val lm = context.getSystemService(LocationManager::class.java) ?: return null
-        val fresh = withTimeoutOrNull(15_000) {
+        val fresh = withTimeoutOrNull(if (precise) 30_000 else 15_000) {
             suspendCancellableCoroutine<Location?> { cont ->
-                val provider = if (lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) LocationManager.NETWORK_PROVIDER else LocationManager.PASSIVE_PROVIDER
+                val provider = when {
+                    precise && hasPrecise() && android.os.Build.VERSION.SDK_INT >= 31 && lm.isProviderEnabled(LocationManager.FUSED_PROVIDER) ->
+                        LocationManager.FUSED_PROVIDER
+                    precise && hasPrecise() && lm.isProviderEnabled(LocationManager.GPS_PROVIDER) -> LocationManager.GPS_PROVIDER
+                    lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER) -> LocationManager.NETWORK_PROVIDER
+                    else -> LocationManager.PASSIVE_PROVIDER
+                }
                 // android.os.CancellationSignal picks the non-deprecated overload (a bare null matches both).
                 val cancel = CancellationSignal()
                 cont.invokeOnCancellation { cancel.cancel() }

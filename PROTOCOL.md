@@ -253,6 +253,28 @@ only when they change, plus once on every connect.
 
 Odometer and trip are in **0.1 km** steps (confirmed: raw 1718 shown as 171.8 km on the rider's Ntorq XT).
 Fuel and the other fields are raw until confirmed. Trip [14..16] read 0/empty on the rider's scooter; needs a capture.
+
+Fuel bars: the SmartXonnect LCD (legacy `N251ClusterDataReceiver`) keeps them in the **low nibble** of `5A 10` [6]
+(`String.format("0x%02X ", b[6]).substring(3, 4)`); `JupiterSpeedOMeter1` / `NtorqSpeedOMeter1` store the whole byte.
+The rider's Race XP reports `05` (5 bars). Stock low-fuel rule (`N251ClusterDataReceiver`, `N360ClusterDataReceiver`):
+bars <= 1 broadcasts `ACTION_LOW_FUEL_ALERT` (petrol pump dialog), bars > 1 clears it. RideLink: `DisplayTelemetry.fuelBars`,
+`LowFuelWatch` (range from 5A 19 when present, else that bar rule).
+
+Mileage and range: `N251ClusterDataReceiver` reads `5A 19` [8] average economy, [9] instant, [10] trip mileage,
+[11..12] distance to empty, but only feeds them to the U566 theme model. The rider's 2026 Race XP (Racing 2.0 theme)
+never sends `5A 19` (log of 2026-11-06: only 5A 10 / 11 / 16 / 18, and 5A 18 injection volume [16..17] is 0), so the
+display gives no mileage or range at all; RideLink shows the fuel-log mileage (full-to-full) instead.
+
+Service: `5A 11` [4] service reminder is display -> phone only (raw). Stock has no phone -> display service frame;
+its service reminders come from the TVS server. RideLink's reminders are phone-side and use custom line 1 (`5B 4C`).
+
+Find my vehicle: the status-frame flag is set only for the Jupiter U279 theme, for the first 10 status frames after
+`JupiterBleService` starts with `EXTRA_IS_FIND_ME` (`JupiterMobileToCluster.sendMobileData`,
+`DashboardViewModel`). Not used for Ntorq; RideLink keeps sending 0. Stock "last parked location" is the phone's
+location at ride stop (`BaseClusterDataReceiver.callLastParkedLocationAPI`), the same as RideLink.
+
+SOS / location sharing: stock texts a Google Maps link by `SmsManager` (`Utils.sendSendSosMessage`); there is no live
+location sharing. Stock has no chat auto-reply (no `RemoteInput` use); RideLink's WhatsApp reply is its own.
 RideLink also keeps 5A 11 software version [7], MIL code [8], vehicle model [9] (shown in Settings to identify the
 model) and 5A 18 engine load, intake/engine temp, battery voltage and run time for the Vehicle card.
 

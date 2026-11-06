@@ -54,6 +54,13 @@ data class DisplayTelemetry(
     val odometerKm: Double? get() = odometerTenths?.let { it / 10.0 }
     val tripKm: Double? get() = tripTenths?.let { it / 10.0 }
 
+    /**
+     * Fuel gauge bars. The SmartXonnect LCD keeps them in the low nibble of `5A 10` [6]
+     * (N251ClusterDataReceiver: `String.format("0x%02X ", b[6]).substring(3, 4)`); the other receivers store the
+     * whole byte (JupiterSpeedOMeter1 / NtorqSpeedOMeter1 `fuelLevel`, start = 7).
+     */
+    fun fuelBars(family: ClusterFamily): Int? = fuelLevel?.let { if (family == ClusterFamily.SMARTXONNECT) it and 0x0F else it }
+
     /** Folds one notified frame in; unknown frames return this unchanged. */
     fun merge(frame: ByteArray): DisplayTelemetry {
         if (frame.size < 3 || frame[0] != 0x5A.toByte()) return this

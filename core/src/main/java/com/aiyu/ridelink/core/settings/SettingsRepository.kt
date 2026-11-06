@@ -85,11 +85,28 @@ data class Settings(
     /** Alert code for the delivery byte of `5B 9C`; meaning unknown, find it with the Console alert sweep. */
     val deliveryCode: Int = 1,
     val carbon: Boolean = false,
+    /** Log a fuel stop when the fuel bars jump while standing; the rider adds litres and price later. */
+    val refuelDetect: Boolean = true,
+    /** Notify (and open Maps on "petrol pump") when the range or fuel bars run low. */
+    val lowFuelAlert: Boolean = true,
+    val lowFuelKm: Int = DEFAULT_LOW_FUEL_KM,
+    /** Notify when a service item or paper is due, and flash it on the display on connect. */
+    val careReminders: Boolean = true,
+    /** ISO date of the last care notification, so it comes at most once a day. */
+    val careNotifiedOn: String = "",
+    /** Reply to WhatsApp chats with the riding message while riding, once per chat per ride. */
+    val chatAutoReply: Boolean = false,
+    /** Text [checkInNumber] a location link when a ride starts and when it ends. */
+    val checkIn: Boolean = false,
+    val checkInNumber: String = "",
+    val checkInName: String = "",
 ) {
     companion object {
         val BRIGHTNESS_RANGE = 2..5
         const val DEFAULT_OVERSPEED_KMH = 80
         val OVERSPEED_RANGE = 30..120
+        const val DEFAULT_LOW_FUEL_KM = 25
+        val LOW_FUEL_RANGE = 10..60
     }
 }
 
@@ -139,6 +156,15 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
         val delivery = booleanPreferencesKey("delivery_alerts")
         val deliveryCode = intPreferencesKey("delivery_code")
         val carbon = booleanPreferencesKey("carbon")
+        val refuelDetect = booleanPreferencesKey("refuel_detect")
+        val lowFuel = booleanPreferencesKey("low_fuel_alert")
+        val lowFuelKm = intPreferencesKey("low_fuel_km")
+        val careReminders = booleanPreferencesKey("care_reminders")
+        val careNotified = stringPreferencesKey("care_notified_on")
+        val chatReply = booleanPreferencesKey("chat_auto_reply")
+        val checkIn = booleanPreferencesKey("check_in")
+        val checkInNumber = stringPreferencesKey("check_in_number")
+        val checkInName = stringPreferencesKey("check_in_name")
     }
 
     val settings: Flow<Settings> = context.store.data.map { p ->
@@ -184,6 +210,15 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
             deliveryAlerts = p[K.delivery] ?: false,
             deliveryCode = p[K.deliveryCode] ?: 1,
             carbon = p[K.carbon] ?: false,
+            refuelDetect = p[K.refuelDetect] ?: true,
+            lowFuelAlert = p[K.lowFuel] ?: true,
+            lowFuelKm = p[K.lowFuelKm] ?: Settings.DEFAULT_LOW_FUEL_KM,
+            careReminders = p[K.careReminders] ?: true,
+            careNotifiedOn = p[K.careNotified] ?: "",
+            chatAutoReply = p[K.chatReply] ?: false,
+            checkIn = p[K.checkIn] ?: false,
+            checkInNumber = p[K.checkInNumber] ?: "",
+            checkInName = p[K.checkInName] ?: "",
         )
     }
 
@@ -235,6 +270,16 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
     suspend fun setDeliveryAlerts(on: Boolean) { context.store.edit { it[K.delivery] = on } }
     suspend fun setDeliveryCode(code: Int) { context.store.edit { it[K.deliveryCode] = code.coerceIn(1, 255) } }
     suspend fun setCarbon(on: Boolean) { context.store.edit { it[K.carbon] = on } }
+    suspend fun setRefuelDetect(on: Boolean) { context.store.edit { it[K.refuelDetect] = on } }
+    suspend fun setLowFuelAlert(on: Boolean) { context.store.edit { it[K.lowFuel] = on } }
+    suspend fun setLowFuelKm(km: Int) { context.store.edit { it[K.lowFuelKm] = km.coerceIn(Settings.LOW_FUEL_RANGE) } }
+    suspend fun setCareReminders(on: Boolean) { context.store.edit { it[K.careReminders] = on } }
+    suspend fun setCareNotifiedOn(iso: String) { context.store.edit { it[K.careNotified] = iso } }
+    suspend fun setChatAutoReply(on: Boolean) { context.store.edit { it[K.chatReply] = on } }
+    suspend fun setCheckIn(on: Boolean) { context.store.edit { it[K.checkIn] = on } }
+    suspend fun setCheckInContact(number: String, name: String) {
+        context.store.edit { it[K.checkInNumber] = number; it[K.checkInName] = name }
+    }
     suspend fun setParked(lat: Double, lng: Double, at: Long, bike: String?) {
         context.store.edit {
             it[K.parkedLat] = lat; it[K.parkedLng] = lng; it[K.parkedAt] = at

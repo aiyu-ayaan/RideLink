@@ -71,6 +71,13 @@ class DisplayTelemetryTest {
         assertEquals(171.8, t.odometerKm!!, 0.001)
     }
 
+    @Test fun fuelBarsUseLowNibbleOnSmartXonnect() {
+        val t = DisplayTelemetry().merge(frame("5a 10 00 00 07 f5 35 00 00 00 09 69 00 00 00 00 00 00 00 ff"))
+        assertEquals(5, t.fuelBars(ClusterFamily.SMARTXONNECT))
+        assertEquals(0x35, t.fuelBars(ClusterFamily.JUPITER))
+        assertEquals(null, DisplayTelemetry().fuelBars(ClusterFamily.NTORQ))
+    }
+
     @Test fun callButtons() {
         assertEquals(CallButton.ACCEPT, CallButton.from(1))
         assertEquals(CallButton.REJECT, CallButton.from(2))
