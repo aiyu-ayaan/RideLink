@@ -4,6 +4,7 @@ import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.animation.core.SeekableTransitionState
 import androidx.compose.animation.core.rememberTransition
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import com.aiyu.ridelink.ui.settings.SettingsSection
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
@@ -114,6 +115,7 @@ fun RideLinkRoot(onConnect: () -> Unit, onDisconnect: () -> Unit) {
     val connect = { vm.userStopped = false; onConnect() }
     val disconnect = { vm.userStopped = true; onDisconnect() }
 
+    val holder = rememberSaveableStateHolder()
     val motion = MaterialTheme.motionScheme
     val spatial = motion.defaultSpatialSpec<IntOffset>()
     val effects = motion.defaultEffectsSpec<Float>()
@@ -140,22 +142,29 @@ fun RideLinkRoot(onConnect: () -> Unit, onDisconnect: () -> Unit) {
                 onOpenAbout = { push(Page.About.name) },
             )
         }
+        // AnimatedContent drops a page's composition when it leaves; the holder keeps its scroll state for the way back.
         Surface(Modifier.fillMaxSize()) {
             when {
                 top == null -> Tabs(tab, { tab = it }) { current ->
-                    when (current) {
-                        0 -> RideScreen(vm, connect, disconnect)
-                        1 -> AnalyticsScreen(onOpenRide = { push(RIDE + it) })
-                        else -> settings(null)
+                    holder.SaveableStateProvider("tab:$current") {
+                        when (current) {
+                            0 -> RideScreen(vm, connect, disconnect)
+                            1 -> AnalyticsScreen(onOpenRide = { push(RIDE + it) })
+                            else -> settings(null)
+                        }
                     }
                 }
-                top.startsWith(SETTINGS) -> settings(SettingsSection.valueOf(top.removePrefix(SETTINGS)))
-                top.startsWith(RIDE) -> RideDetailScreen(top.removePrefix(RIDE).toLong(), onBack = pop)
-                else -> when (Page.valueOf(top)) {
-                    Page.Console -> ConsoleScreen(vm, onBack = pop)
-                    Page.Updates -> UpdateScreen(onBack = pop)
-                    Page.About -> AboutScreen(onBack = pop, onOpenUpdates = { push(Page.Updates.name) }, onOpenAcknowledgements = { push(Page.Acknowledgements.name) })
-                    Page.Acknowledgements -> AcknowledgementsScreen(onBack = pop)
+                else -> holder.SaveableStateProvider(top) {
+                    when {
+                        top.startsWith(SETTINGS) -> settings(SettingsSection.valueOf(top.removePrefix(SETTINGS)))
+                        top.startsWith(RIDE) -> RideDetailScreen(top.removePrefix(RIDE).toLong(), onBack = pop)
+                        else -> when (Page.valueOf(top)) {
+                            Page.Console -> ConsoleScreen(vm, onBack = pop)
+                            Page.Updates -> UpdateScreen(onBack = pop)
+                            Page.About -> AboutScreen(onBack = pop, onOpenUpdates = { push(Page.Updates.name) }, onOpenAcknowledgements = { push(Page.Acknowledgements.name) })
+                            Page.Acknowledgements -> AcknowledgementsScreen(onBack = pop)
+                        }
+                    }
                 }
             }
         }
