@@ -2,6 +2,9 @@ package com.aiyu.ridelink.service
 
 import android.app.Notification
 import android.app.Person
+import android.app.RemoteInput
+import android.content.Intent
+import android.os.Bundle
 import android.content.ComponentName
 import android.os.Build
 import android.provider.Telephony
@@ -55,7 +58,10 @@ class RideNotificationListener : NotificationListenerService() {
                     controller.caller.value != null -> controller.onCallEnded()
                 }
             }
-            SocialNotificationParser.app(sbn.packageName) != null -> recountSocial()
+            SocialNotificationParser.app(sbn.packageName) != null -> {
+                recountSocial()
+                if (SocialNotificationParser.app(sbn.packageName) == SocialNotificationParser.App.WHATSAPP) offerChatReply(sbn)
+            }
             // Experimental delivery alert, once per order update.
             sbn.packageName in DELIVERY_APPS && (n.flags and Notification.FLAG_GROUP_SUMMARY) == 0 -> {
                 val id = "${sbn.key}|${n.`when`}"
@@ -74,6 +80,29 @@ class RideNotificationListener : NotificationListenerService() {
             }
         }
     }
+
+    /**
+     * WhatsApp auto-reply while riding: one-to-one chats only (group conversations are skipped), through the
+     * notification's own reply action (RemoteInput), the same way a watch or Android Auto replies.
+     */
+    private fun offerChatReply(sbn: StatusBarNotification) {
+        val n = sbn.notification
+        if ((n.flags and Notification.FLAG_GROUP_SUMMARY) != 0 || n.category == Notification.CATEGORY_CALL) return
+        val extras = n.extras
+        if (extras.getBoolean(Notification.EXTRA_IS_GROUP_CONVERSATION)) return
+        val chat = (extras.getCharSequence(Notification.EXTRA_CONVERSATION_TITLE) ?: extras.getCharSequence(Notification.EXTRA_TITLE))
+            ?.toString()?.takeIf { it.isNotBlank() && it != "WhatsApp" } ?: return
+        val action = n.actions?.firstOrNull { a -> a.remoteInputs?.any { it.allowFreeFormInput } == true } ?: return
+        controller.onChatMessage("${sbn.packageName}|${n.shortcutId ?: chat}") { text -> reply(action, text) }
+    }
+
+    private fun reply(action: Notification.Action, text: String): Boolean = runCatching {
+        val inputs = action.remoteInputs
+        val results = Bundle().apply { inputs.forEach { putCharSequence(it.resultKey, text) } }
+        val fill = Intent()
+        RemoteInput.addResultsToIntent(inputs, fill, results)
+        action.actionIntent.send(this, 0, fill)
+    }.isSuccess
 
     private var lastSms: String? = null
     private var lastDelivery: String? = null

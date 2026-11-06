@@ -1,5 +1,6 @@
 package com.aiyu.ridelink.service
 
+import android.Manifest
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -7,7 +8,9 @@ import android.app.PendingIntent
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
+import android.os.Build
 import android.os.PowerManager
 import android.service.notification.NotificationListenerService
 import androidx.core.app.NotificationCompat
@@ -52,7 +55,7 @@ class ClusterService : LifecycleService() {
             stopSelf()
             return START_NOT_STICKY
         }
-        ServiceCompat.startForeground(this, NOTIFICATION_ID, notification(getString(R.string.status_connecting)), ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE)
+        startForegroundTyped(notification(getString(R.string.status_connecting)))
         controller.start()
         if (calls == null) calls = CallStateWatcher(this, controller).takeIf { it.start() }
         // Android can leave the listener unbound after an app update; without it no Maps or call events arrive.
@@ -71,6 +74,22 @@ class ClusterService : LifecycleService() {
         }
         return START_STICKY
     }
+
+    /**
+     * Also typed `location` when location is granted, so the parked spot, check-in links and weather get a fix
+     * while the screen is off. Android refuses that type when the service is started from the background (boot):
+     * then it runs as `connectedDevice` only, and the next start from the app adds location.
+     */
+    private fun startForegroundTyped(n: Notification) {
+        val device = ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE
+        val withLocation = Build.VERSION.SDK_INT >= 29 && hasLocation() && runCatching {
+            ServiceCompat.startForeground(this, NOTIFICATION_ID, n, device or ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION)
+        }.isSuccess
+        if (!withLocation) ServiceCompat.startForeground(this, NOTIFICATION_ID, n, device)
+    }
+
+    private fun hasLocation() = listOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
+        .any { ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED }
 
     /** Renewed before the timeout for as long as the link stays up, so a long ride keeps it. */
     private fun holdWakeLock() {

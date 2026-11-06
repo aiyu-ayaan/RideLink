@@ -11,7 +11,8 @@
     <!-- Android 8-11 need legacy Bluetooth + location to scan. -->
     <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" android:maxSdkVersion="30" />
+    <!-- Also: precise spot of the parked scooter and the check-in SMS link (asked from the Ride screen). -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 
     <!-- Status frame: network type needs READ_PHONE_STATE; signal level and weather need coarse location. -->
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
@@ -20,7 +21,7 @@
     <uses-permission android:name="android.permission.ANSWER_PHONE_CALLS" />
     <!-- Missed-call badge on older Ntorq displays. -->
     <uses-permission android:name="android.permission.READ_CALL_LOG" />
-    <!-- "Reject with SMS" from the scooter switch. -->
+    <!-- "Reject with SMS" from the scooter switch, and the ride check-in text. -->
     <uses-permission android:name="android.permission.SEND_SMS" />
     <!-- Lets the scooter's voice button open the assistant while RideLink is in the background. -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
@@ -33,6 +34,8 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
+    <!-- Location fixes (parked spot, check-in, weather) while the ride service runs with the screen off. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <!-- Keeps the CPU awake while connected so the 2 s status and nav frames keep going with the screen off
          (stock BaseBleConnectHelperService.startWakelock). -->
@@ -70,7 +73,7 @@
         <service
             android:name=".service.ClusterService"
             android:exported="false"
-            android:foregroundServiceType="connectedDevice" />
+            android:foregroundServiceType="connectedDevice|location" />
 
         <service
             android:name=".service.RideNotificationListener"
