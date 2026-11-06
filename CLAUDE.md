@@ -22,7 +22,9 @@ Modules:
   `ble/ClusterLink` (GATT), `ClusterController` (ride session logic), `nav/MapsNotificationParser`,
   `notify/SocialNotificationParser`, `weather/WeatherRepository` (Open-Meteo + coarse location + Geocoder),
   `phone/CallControl` (TelecomManager), `display/DisplayTemplate` (live custom lines), `settings/` (DataStore),
-  `analytics/` (`RideMath` pure stats, `RideRecorder` auto-records rides, `RideStore` framework SQLite).
+  `analytics/` (`RideMath` pure stats, `RideRecorder` auto-records rides, `RideStore` framework SQLite),
+  `care/` (`CareMath` mileage + due status, `FuelWatch` refuel / low fuel, `CareMonitor`, `CareStore` care.db),
+  `phone/RideCheckIn` (start/end SMS).
 - `ui` => all Compose screens, theme, and **all strings** (`ui/src/main/res/values/strings.xml`).
   `core` and `app` hold no user-facing strings; the app module reads them via `com.aiyu.ridelink.ui.R`.
 
@@ -70,7 +72,8 @@ Modules:
   dashboard (big arrow, distance, ETA, left, speed), ride data card, vehicle card, weather card, music card, call card,
   one primary button (Connect / Disconnect). New cards live in `ui/ride/RideCards.kt`.
 - Console is a developer option (Settings -> Developer options -> Developer mode): manual text, test turn,
-  test call, demo ride, one chip per TFT frame, frame log. "Save logs" also writes it to `files/logs` for export.
+  test call, demo ride, one chip per TFT frame, Feature tests (refuel, low fuel, service due, park here,
+  check-in SMS, pretend riding), frame log. "Save logs" also writes it to `files/logs` for export.
 - Settings home is grouped section cards (`SettingsSection`); each section is its own page. Rows that open
   something use `ui/nav/LinkRow` (icons stay centred on wrapped text).
 

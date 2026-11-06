@@ -44,3 +44,9 @@ internal fun Context.hasPhoneState() = phonePermissions.all { granted(it) }
 internal val smsPermissions = arrayOf(Manifest.permission.SEND_SMS, Manifest.permission.READ_CALL_LOG)
 
 internal fun Context.hasSms() = smsPermissions.all { granted(it) }
+
+/** Parked spot and check-in links in metres; Android asks fine and coarse together. */
+internal val preciseLocationPermissions = arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
+
+/** Ride check-in: send the SMS and put a precise link in it. */
+internal val checkInPermissions = arrayOf(Manifest.permission.SEND_SMS) + preciseLocationPermissions

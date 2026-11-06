@@ -33,6 +33,8 @@ RideLink connects your phone to your TVS SmartXonnect scooter display over Bluet
 - **Live telemetry & status**: Real-time speed, trip meters, odometer, fuel level, range, engine temperatures, service reminders, and MIL diagnostics.
 - **Ride analytics & history**: Automatic ride recording with split distance sourcing (Google Maps route progress vs. odometer vs. speed integration), elevation, speed bands, and SQLite history exportable to CSV.
 - **Weather & environment**: Optional local temperature, AQI, and location sync via Open-Meteo (no API key required).
+- **Fuel and service**: Fuel log with real full-to-full mileage and cost per km (₹), automatic refuel detection from the fuel gauge, low-fuel alert that finds a petrol pump in Maps, and service / insurance / PUC reminders shown on the display.
+- **Riding safety**: WhatsApp auto-reply while riding (one-to-one chats, once per ride), ride check-in SMS with a Google Maps link at start and end, and a precise last-parked spot.
 - **Multi-scooter garage**: Pair and manage multiple scooters with per-bike model profiles and auto-reconnect.
 - **Material 3 Expressive UI**: Built entirely in Jetpack Compose with dynamic color, adaptive layouts, dark/light themes, and floating pill navigation.
 - **Auto model detection**: Recognises the SmartXonnect LCD (Race XP), older Ntorq and 2025+ clusters from their own frames.

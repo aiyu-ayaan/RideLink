@@ -6,7 +6,7 @@
 graph LR
     app[":app<br/>MainActivity, ClusterService,<br/>RideNotificationListener, BootReceiver"]
     ui[":ui<br/>Compose screens, theme, strings,<br/>MainViewModel"]
-    core[":core<br/>protocol, ble, ClusterController,<br/>nav + social parsers, weather, phone, settings"]
+    core[":core<br/>protocol, ble, ClusterController,<br/>nav + social parsers, weather, phone, settings,<br/>care (fuel log, service), check-in"]
     app --> ui
     app --> core
     ui --> core
@@ -69,12 +69,32 @@ Google Maps route progress (drop in distance-left) while navigating; the rest fr
 agrees with integrated speed within 2x, otherwise integrated speed. The split is stored per ride (`maps_m`,
 `odo_m`, `speed_m`).
 
+## Fuel, service and safety
+
+```mermaid
+graph LR
+    T[ClusterController.telemetry<br/>5A 10 odometer + fuel bars, 5A 19 range] --> M[CareMonitor<br/>while Ready, not demo]
+    M -->|RefuelDetector: +2 bars held 10 s, standing| F[(CareStore care.db<br/>fills, items, readings per bike)]
+    M -->|LowFuelWatch: range under limit or 1 bar, 30 s| E[events]
+    M -->|once per connect: CareMath.status SOON/OVERDUE| X[ClusterController.flashText<br/>custom line 1 for 10 s]
+    M --> E
+    E --> CN[app CareNotifier<br/>notifications, Maps petrol pump search]
+    F --> VM[CareViewModel<br/>CareMath.spans full-to-full mileage] --> CS[CareScreen + Ride CareCard]
+    RR[RideRecorder.recording] --> CI[RideCheckIn<br/>SMS start + end with Maps link]
+    WA[WhatsApp notification<br/>RemoteInput reply action] --> L[RideNotificationListener] -->|onChatMessage: riding, once per chat| C[ClusterController]
+    LD[link drop at speed 0] --> P[parked spot, precise when granted]
+```
+
+`ClusterService` runs as `connectedDevice|location` when location is granted (falls back to `connectedDevice`
+when started from boot), so the parked spot and check-in link get a fix with the screen off.
+Console -> Feature tests runs each of these paths without a scooter (Pretend riding enables WhatsApp replies).
+
 ## App shell and updates
 
 ```mermaid
 graph TD
     Root[RideLinkRoot] --> Tabs[Ride / Analytics / Settings<br/>floating pill, hides on scroll]
-    Root --> Stack[page stack: settings:SECTION, ride:ID, Console, Updates, About, Acknowledgements<br/>SeekableTransitionState + PredictiveBackHandler]
+    Root --> Stack[page stack: settings:SECTION, ride:ID, Console, Updates, About, Acknowledgements, Care<br/>SeekableTransitionState + PredictiveBackHandler]
     Root --> Host[UpdateHost sheet]
     Host --> U[AppUpdater: GitHub releases API -> RideLink-version.apk -> PackageInstaller session]
     U --> IR[UpdateInstallReceiver: confirm / failure reason]

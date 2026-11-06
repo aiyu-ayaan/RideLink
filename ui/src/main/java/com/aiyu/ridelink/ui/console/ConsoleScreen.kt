@@ -57,6 +57,7 @@ fun ConsoleScreen(vm: MainViewModel, onBack: () -> Unit) {
     val demo by vm.demo.collectAsStateWithLifecycle()
     val sweep by vm.arrowSweep.collectAsStateWithLifecycle()
     val alerts by vm.alertSweep.collectAsStateWithLifecycle()
+    val riding by vm.pretendRiding.collectAsStateWithLifecycle()
     var text by rememberSaveable { mutableStateOf("") }
 
     val context = LocalContext.current
@@ -127,6 +128,24 @@ fun ConsoleScreen(vm: MainViewModel, onBack: () -> Unit) {
                 // Raw arrow codes with "CODE n" on the display, to see which numbers this display draws.
                 FilterChip(selected = sweep, onClick = { vm.setArrowSweep(!sweep) }, label = { Text(stringResource(R.string.console_arrow_sweep)) })
                 FilterChip(selected = alerts, onClick = { vm.setAlertSweep(!alerts) }, label = { Text(stringResource(R.string.console_alert_sweep)) })
+            }
+            // Phone-side features: same code path as the real trigger; results show as notes in the log below.
+            Text(
+                stringResource(R.string.console_features),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(start = Dimens.gutter, top = Dimens.sm),
+            )
+            FlowRow(
+                Modifier.padding(horizontal = Dimens.gutter).fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(Dimens.sm),
+            ) {
+                TestFrameChip(R.string.console_test_refuel, vm::testRefuel)
+                TestFrameChip(R.string.console_test_low_fuel, vm::testLowFuel)
+                TestFrameChip(R.string.console_test_due, vm::testDue)
+                TestFrameChip(R.string.console_test_parked, vm::testParked)
+                TestFrameChip(R.string.console_test_check_in, vm::testCheckIn)
+                FilterChip(selected = riding, onClick = { vm.setPretendRiding(!riding) }, label = { Text(stringResource(R.string.console_pretend_riding)) })
             }
             if (log.isEmpty()) {
                 Text(

@@ -131,7 +131,6 @@
     <string name="settings_call_buttons_hint">Accept or reject a ringing call with the scooter\'s switch</string>
     <string name="settings_reject_sms">Text the caller on "reject with SMS"</string>
     <string name="settings_reject_sms_hint">Sends your message to the caller you rejected from the scooter</string>
-    <string name="settings_reject_sms_text">Message</string>
     <string name="settings_reject_sms_perm">Needs SMS and call log access. Turn the switch off and on to ask again.</string>
     <string name="settings_voice_button">Voice assistant button</string>
     <string name="settings_voice_button_hint">The scooter\'s voice button opens your phone\'s assistant</string>
@@ -328,7 +327,7 @@
     <string name="settings_display_text_desc">Rider name and custom lines on the display</string>
     <string name="settings_forwarding_desc">Navigation, chats, weather, location, music, overspeed</string>
     <string name="settings_calls_section">Calls</string>
-    <string name="settings_calls_section_desc">Caller on the display, scooter buttons, reject with SMS</string>
+    <string name="settings_calls_section_desc">Caller on the display, scooter buttons, auto-replies, ride check-in</string>
     <string name="settings_in_app_desc">Ride data, vehicle health, ride recording</string>
     <string name="settings_developer_desc">Console, saved logs</string>
     <!-- Caller shown on the display when the number is unknown -->
@@ -366,4 +365,97 @@
     <string name="readout_band">%1$s km/h: %2$s</string>
     <string name="readout_band_idle">Minutes spent in each %1$s band. Tap a bar.</string>
     <string name="ride_add_scooter">Add scooter</string>
+
+    <!-- Fuel and service -->
+    <string name="care_title">Fuel and service</string>
+    <string name="console_features">Feature tests</string>
+    <string name="console_test_refuel">Refuel</string>
+    <string name="console_test_low_fuel">Low fuel</string>
+    <string name="console_test_due">Service due</string>
+    <string name="console_test_parked">Park here</string>
+    <string name="console_test_check_in">Check-in SMS</string>
+    <string name="console_pretend_riding">Pretend riding</string>
+    <string name="ride_mileage_log">Mileage (log)</string>
+    <string name="care_card_empty">Log fuel stops, service and papers</string>
+    <string name="care_card_refuel">Refuel found at %1$s km. Add litres and price.</string>
+    <string name="care_card_mileage">%1$s km/l from your fuel log</string>
+    <string name="care_mileage">Real mileage</string>
+    <string name="care_mileage_none">Log two full-tank fills to measure it</string>
+    <string name="care_mileage_hint">Kilometres on the odometer between two full-tank fills, divided by the litres poured in. The display\'s own figure is an estimate.</string>
+    <string name="care_last_fill">Last tank</string>
+    <string name="care_cost_per_km">Cost per km</string>
+    <string name="care_odometer">Odometer</string>
+    <string name="care_fuel_log">Fuel log</string>
+    <string name="care_add_fill">Add fuel stop</string>
+    <string name="care_fill_empty">No fuel stops yet. RideLink adds one when the fuel gauge jumps while the scooter stands.</string>
+    <string name="care_fill_line">%1$s l · %2$s</string>
+    <string name="care_fill_line_unknown">Litres not added yet</string>
+    <string name="care_fill_meta">%1$s km · %2$s</string>
+    <string name="care_fill_auto">found by RideLink</string>
+    <string name="care_fill_partial">partial</string>
+    <string name="care_fill_odometer">Odometer (km)</string>
+    <string name="care_fill_litres">Litres</string>
+    <string name="care_fill_cost">Price paid (₹)</string>
+    <string name="care_fill_full">Filled to the brim</string>
+    <string name="care_fill_full_hint">Mileage is measured between two full fills</string>
+    <string name="care_save">Save</string>
+    <string name="care_delete">Delete</string>
+    <string name="care_delete_fill">Delete fuel stop</string>
+    <string name="care_service">Service</string>
+    <string name="care_service_hint">Intervals are a guide; check your owner\'s manual and set your own.</string>
+    <string name="care_papers">Papers</string>
+    <string name="care_engine_oil">Engine oil</string>
+    <string name="care_air_filter">Air filter</string>
+    <string name="care_brakes">Brakes</string>
+    <string name="care_spark_plug">Spark plug</string>
+    <string name="care_insurance">Insurance</string>
+    <string name="care_puc">PUC certificate</string>
+    <string name="care_every">Every %1$d km</string>
+    <string name="care_not_set">Tap to set when it was last done</string>
+    <string name="care_left_km">%1$s in %2$d km</string>
+    <string name="care_overdue_km">%1$s overdue by %2$d km</string>
+    <string name="care_left_days">%1$s expires in %2$d days</string>
+    <string name="care_expired">%1$s has expired</string>
+    <string name="care_status_km">%1$d km left</string>
+    <string name="care_status_overdue">Overdue by %1$d km</string>
+    <string name="care_status_days">Expires in %1$d days</string>
+    <string name="care_status_expired">Expired</string>
+    <string name="care_expires">Expires %1$s</string>
+    <string name="care_date_none">Not set. Tap to add the expiry date.</string>
+    <string name="care_interval">Interval (km)</string>
+    <string name="care_done_at">Last done at (km)</string>
+    <string name="care_done_now">Done today at %1$s km</string>
+    <string name="care_options">Alerts</string>
+    <string name="care_refuel_detect">Find fuel stops</string>
+    <string name="care_refuel_detect_hint">Adds a fuel stop when the gauge rises by 2 bars or more while standing. A one-bar top-up is not caught.</string>
+    <string name="care_low_fuel">Low fuel alert</string>
+    <string name="care_low_fuel_hint">A notification that finds a petrol pump in Maps when the range drops below the limit, or at 1 bar when the display has no range.</string>
+    <string name="care_low_fuel_limit">Alert below %1$d km of range</string>
+    <string name="care_reminders">Service reminders</string>
+    <string name="care_reminders_hint">On connect, shows what is due on the display; a notification at most once a day.</string>
+    <string name="channel_care">Fuel and service</string>
+    <string name="notify_refuel_title">Fuel stop added</string>
+    <string name="notify_refuel_body">At %1$.1f km. Add the litres and price to track real mileage.</string>
+    <string name="notify_low_fuel_title">Fuel is low</string>
+    <string name="notify_low_fuel_range">About %1$d km left in the tank</string>
+    <string name="notify_low_fuel_bars">The fuel gauge is on its last bar</string>
+    <string name="notify_low_fuel_action">Find petrol pump</string>
+    <string name="notify_fuel_query">petrol pump</string>
+    <string name="notify_due_title">Scooter care due</string>
+
+    <!-- Parked location -->
+    <string name="parked_when_precise">%1$s</string>
+    <string name="parked_precise">Use precise location</string>
+
+    <!-- Messages while riding -->
+    <string name="settings_messages">Messages</string>
+    <string name="settings_chat_reply">Auto-reply on WhatsApp</string>
+    <string name="settings_chat_reply_hint">While riding, answers a one-to-one chat with your riding message, once per chat per ride. Groups are skipped. Replying marks the chat as read.</string>
+    <string name="settings_check_in">Ride check-in</string>
+    <string name="settings_check_in_hint">Texts a contact a Google Maps link when a ride starts and when it ends. Uses SMS; live location sharing cannot be started by another app.</string>
+    <string name="settings_check_in_number">Phone number</string>
+    <string name="settings_check_in_pick">Pick contact</string>
+    <string name="settings_check_in_perm">Needs SMS and precise location access. Turn the switch off and on to ask again.</string>
+    <string name="settings_riding_message">Riding message</string>
+    <string name="settings_riding_message_hint">Used for reject with SMS, missed-call replies and WhatsApp replies</string>
 </resources>

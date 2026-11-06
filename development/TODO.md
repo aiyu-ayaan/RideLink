@@ -31,7 +31,15 @@
 
 - [x] Logo ("Closed loop"), launcher + themed + notification icons, animated splash screen
 
+- [x] Fuel log with full-to-full mileage, refuel detection, low-fuel prompt, service items + papers, display flash
+- [x] Parked spot only when stopped, precise location; WhatsApp auto-reply while riding; ride check-in SMS
+- [x] Console -> Feature tests (refuel, low fuel, service due, park here, check-in SMS, pretend riding)
+
 ## Needs the real scooter
+- [ ] Refuel detection: check the bar jump at a real pump (ignition off and on) and that a slosh does not log a stop
+- [ ] Service flash on custom line 1: does the Race XP / XT show it on connect
+- [ ] WhatsApp auto-reply with a real chat while riding (or Pretend riding)
+- [ ] Location while screen off: parked spot accuracy after a ride (FGS location type)
 - [ ] Analytics: check recorded distance against the scooter's trip meter on a real ride
 - [ ] Trip meter: 5A 10 [14..16] reads empty on the rider's XT; get a Console "Copy log" with RX frames
 - [ ] Signal bars, call icon, notification badge: still missing? compare decoded STATUS lines, try model U577 premium

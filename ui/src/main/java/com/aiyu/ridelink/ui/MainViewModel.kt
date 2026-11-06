@@ -9,6 +9,8 @@ import com.aiyu.ridelink.core.protocol.ClusterModel
 import com.aiyu.ridelink.core.protocol.ClusterProtocol.NavStep
 import com.aiyu.ridelink.core.protocol.Maneuver
 import com.aiyu.ridelink.core.diag.LogFile
+import com.aiyu.ridelink.core.care.CareMonitor
+import com.aiyu.ridelink.core.phone.RideCheckIn
 import com.aiyu.ridelink.core.settings.Bike
 import com.aiyu.ridelink.core.settings.GarageStore
 import com.aiyu.ridelink.core.settings.Settings
@@ -26,6 +28,8 @@ class MainViewModel @Inject constructor(
     private val repo: SettingsRepository,
     private val garage: GarageStore,
     private val logFile: LogFile,
+    private val care: CareMonitor,
+    private val checkIn: RideCheckIn,
 ) : ViewModel() {
     val settings = repo.settings.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), Settings())
     val linkState = link.state
@@ -107,6 +111,9 @@ class MainViewModel @Inject constructor(
     val alertSweep = controller.alertSweep
     fun setAlertSweep(on: Boolean) = controller.setAlertSweep(on)
     fun setAutoReply(on: Boolean) = viewModelScope.launch { repo.setAutoReply(on) }
+    fun setChatAutoReply(on: Boolean) = viewModelScope.launch { repo.setChatAutoReply(on) }
+    fun setCheckIn(on: Boolean) = viewModelScope.launch { repo.setCheckIn(on) }
+    fun setCheckInContact(number: String, name: String) = viewModelScope.launch { repo.setCheckInContact(number, name) }
     fun setBirthday(iso: String) = viewModelScope.launch { repo.setBirthday(iso); controller.applyDisplaySettings() }
     fun setPurchaseDate(iso: String) = viewModelScope.launch { repo.setPurchaseDate(iso); controller.applyDisplaySettings() }
     fun setForwardCalls(on: Boolean) = viewModelScope.launch { repo.setForwardCalls(on) }
@@ -141,5 +148,13 @@ class MainViewModel @Inject constructor(
     fun sendText(text: String) = controller.sendTestText(text)
     fun sendTest(which: ClusterController.TestFrame) = controller.sendTest(which)
     fun sendTestTurn() = controller.onNavigation(NavStep(250, 540, 3_400, Maneuver.RIGHT, "Turn right test"))
+    // Feature tests (Console): each runs the real store, display and notification path.
+    val pretendRiding = controller.pretendRiding
+    fun setPretendRiding(on: Boolean) = controller.setPretendRiding(on)
+    fun testRefuel() = care.testRefuel()
+    fun testLowFuel() = care.testLowFuel()
+    fun testDue() = care.testDue()
+    fun testCheckIn() = checkIn.sendTest()
+    fun testParked() = controller.saveParkedNow()
     fun testCall(start: Boolean) = if (start) controller.onIncomingCall("Test caller") else controller.onCallEnded()
 }

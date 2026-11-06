@@ -107,6 +107,13 @@ import androidx.compose.material3.FilterChipDefaults
 import com.aiyu.ridelink.ui.nav.BottomBarSpacer
 import com.aiyu.ridelink.ui.R
 import com.aiyu.ridelink.ui.bluetoothPermissions
+import com.aiyu.ridelink.ui.care.CareCard
+import com.aiyu.ridelink.ui.care.CareViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.aiyu.ridelink.core.protocol.ClusterFamily
+import com.aiyu.ridelink.core.protocol.ClusterModel
+import com.aiyu.ridelink.ui.granted
+import com.aiyu.ridelink.ui.preciseLocationPermissions
 import com.aiyu.ridelink.ui.hasBluetooth
 import com.aiyu.ridelink.ui.hasListener
 import com.aiyu.ridelink.ui.hasPhoneState
@@ -114,7 +121,7 @@ import com.aiyu.ridelink.ui.phonePermissions
 import com.aiyu.ridelink.ui.theme.Dimens
 
 @Composable
-fun RideScreen(vm: MainViewModel, onConnect: () -> Unit, onDisconnect: () -> Unit) {
+fun RideScreen(vm: MainViewModel, onConnect: () -> Unit, onDisconnect: () -> Unit, onOpenCare: () -> Unit) {
     val context = LocalContext.current
     val settings by vm.settings.collectAsStateWithLifecycle()
     val link by vm.linkState.collectAsStateWithLifecycle()
@@ -126,6 +133,11 @@ fun RideScreen(vm: MainViewModel, onConnect: () -> Unit, onDisconnect: () -> Uni
     val place by vm.place.collectAsStateWithLifecycle()
     val music by vm.music.collectAsStateWithLifecycle()
     val telemetry by vm.telemetry.collectAsStateWithLifecycle()
+    val detected by vm.detected.collectAsStateWithLifecycle()
+    val care: CareViewModel = hiltViewModel()
+    val careUi by care.ui.collectAsStateWithLifecycle()
+    // Same rule as ClusterController.model: a display that proved it is SmartXonnect wins over the saved pick.
+    val family = (detected?.takeIf { it.family == ClusterFamily.SMARTXONNECT } ?: settings.model ?: detected ?: ClusterModel.DEFAULT).family
 
     // Re-check grants each time we come back from system settings.
     var refresh by remember { mutableIntStateOf(0) }
@@ -142,6 +154,7 @@ fun RideScreen(vm: MainViewModel, onConnect: () -> Unit, onDisconnect: () -> Uni
         context.getSystemService(PowerManager::class.java)?.isIgnoringBatteryOptimizations(context.packageName) != false
     }
     val askBluetooth = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { refresh++ }
+    val preciseOk = remember(refresh) { context.granted(android.Manifest.permission.ACCESS_FINE_LOCATION) }
 
     var pairing by remember { mutableStateOf(false) }
     val bikes by vm.bikes.collectAsStateWithLifecycle()
@@ -188,7 +201,7 @@ fun RideScreen(vm: MainViewModel, onConnect: () -> Unit, onDisconnect: () -> Uni
                 RideDashboard(nav, speed)
             }
             AnimatedVisibility(settings.showRideData && telemetry.hasRideData, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
-                RideDataCard(telemetry)
+                RideDataCard(telemetry, family, careUi.averageKmpl)
             }
             AnimatedVisibility(settings.showVehicle && telemetry.hasHealth, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
                 VehicleCard(telemetry)
@@ -201,8 +214,9 @@ fun RideScreen(vm: MainViewModel, onConnect: () -> Unit, onDisconnect: () -> Uni
             val showParked = pLat != null && pLng != null && link !is LinkState.Ready &&
                 (settings.parkedBike == null || settings.parkedBike == settings.deviceAddress)
             AnimatedVisibility(showParked, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
-                if (pLat != null && pLng != null) ParkedCard(pLat, pLng, settings.parkedAt)
+                if (pLat != null && pLng != null) ParkedCard(pLat, pLng, settings.parkedAt, preciseOk) { askBluetooth.launch(preciseLocationPermissions) }
             }
+            if (paired) CareCard(onOpenCare, care)
             val showWeather = (weather != null && settings.showWeather) || (place != null && settings.showLocation)
             AnimatedVisibility(showWeather, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
                 WeatherCard(weather?.takeIf { settings.showWeather }, place?.takeIf { settings.showLocation })

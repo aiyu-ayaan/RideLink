@@ -94,6 +94,9 @@ import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.IconButton
 import com.aiyu.ridelink.ui.smsPermissions
+import com.aiyu.ridelink.ui.checkInPermissions
+import com.aiyu.ridelink.ui.granted
+import android.provider.ContactsContract
 import com.aiyu.ridelink.ui.theme.Dimens
 
 private val ClusterModel.label
@@ -139,6 +142,7 @@ fun SettingsScreen(
         onDispose { lifecycle.removeObserver(obs) }
     }
     val smsOk = remember(refresh) { context.hasSms() }
+    val checkInOk = remember(refresh) { checkInPermissions.all { context.granted(it) } }
     val overlayOk = remember(refresh) { AndroidSettings.canDrawOverlays(context) }
     val askSms = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { refresh++ }
     val linkReady = link is LinkState.Ready
@@ -254,18 +258,6 @@ fun SettingsScreen(
                         vm.setRejectSms(on)
                     }
                 }
-                if (s.rejectSms) {
-                    item {
-                        OutlinedTextField(
-                            value = smsText,
-                            onValueChange = { smsText = it.take(RejectMessage.MAX); vm.setRejectSmsText(smsText) },
-                            label = { Text(stringResource(R.string.settings_reject_sms_text)) },
-                            placeholder = { Text(RejectMessage.DEFAULT) },
-                            supportingText = { if (!smsOk) Text(stringResource(R.string.settings_reject_sms_perm), color = MaterialTheme.colorScheme.error) },
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = Dimens.gutter),
-                        )
-                    }
-                }
             }
             item { SwitchRow(R.string.settings_voice_button, R.string.settings_voice_button_hint, s.voiceButton, vm::setVoiceButton) }
             if (s.voiceButton && !overlayOk) {
@@ -283,6 +275,31 @@ fun SettingsScreen(
                 }
             }
             item { SwitchRow(R.string.settings_missed_calls, R.string.settings_missed_calls_hint, s.missedCalls, vm::setMissedCalls) }
+            item { Section(R.string.settings_messages) }
+            item { SwitchRow(R.string.settings_chat_reply, R.string.settings_chat_reply_hint, s.chatAutoReply, vm::setChatAutoReply) }
+            item {
+                SwitchRow(R.string.settings_check_in, R.string.settings_check_in_hint, s.checkIn) { on ->
+                    if (on && !checkInOk) askSms.launch(checkInPermissions)
+                    vm.setCheckIn(on)
+                }
+            }
+            if (s.checkIn) item { CheckInContact(s.checkInNumber, s.checkInName, checkInOk, vm::setCheckInContact) }
+            // One message for every automatic reply.
+            if (s.rejectSms || s.autoReply || s.chatAutoReply) {
+                item {
+                    OutlinedTextField(
+                        value = smsText,
+                        onValueChange = { smsText = it.take(RejectMessage.MAX); vm.setRejectSmsText(smsText) },
+                        label = { Text(stringResource(R.string.settings_riding_message)) },
+                        placeholder = { Text(RejectMessage.DEFAULT) },
+                        supportingText = {
+                            if ((s.rejectSms || s.autoReply) && !smsOk) Text(stringResource(R.string.settings_reject_sms_perm), color = MaterialTheme.colorScheme.error)
+                            else Text(stringResource(R.string.settings_riding_message_hint))
+                        },
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = Dimens.gutter),
+                    )
+                }
+            }
                 }
                 SettingsSection.IN_APP -> {
             item { SwitchRow(R.string.settings_ride_data, R.string.settings_ride_data_hint, s.showRideData, vm::setShowRideData) }
@@ -382,6 +399,45 @@ fun SettingsScreen(
     }
 
     if (pairing) PairSheet(vm) { pairing = false }
+}
+
+/**
+ * Who gets the check-in texts: typed, or picked from Contacts. The phone-number picker grants a one-time read of
+ * the picked row, so no contacts permission is needed.
+ */
+@Composable
+private fun CheckInContact(number: String, name: String, permsOk: Boolean, onChange: (String, String) -> Unit) {
+    val context = LocalContext.current
+    var typed by remember(number) { mutableStateOf(number) }
+    val pick = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        val uri = result.data?.data ?: return@rememberLauncherForActivityResult
+        runCatching {
+            context.contentResolver.query(
+                uri,
+                arrayOf(ContactsContract.CommonDataKinds.Phone.NUMBER, ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME),
+                null, null, null,
+            )?.use { c -> if (c.moveToFirst()) onChange(c.getString(0).orEmpty(), c.getString(1).orEmpty()) }
+        }
+    }
+    Column(Modifier.padding(horizontal = Dimens.gutter)) {
+        OutlinedTextField(
+            value = typed,
+            onValueChange = { v -> typed = v.filter { it.isDigit() || it in "+ -" }.take(20); onChange(typed, "") },
+            label = { Text(stringResource(R.string.settings_check_in_number)) },
+            supportingText = {
+                if (!permsOk) Text(stringResource(R.string.settings_check_in_perm), color = MaterialTheme.colorScheme.error)
+                else if (name.isNotBlank()) Text(name)
+            },
+            singleLine = true,
+            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Phone),
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+            TextButton(onClick = {
+                runCatching { pick.launch(Intent(Intent.ACTION_PICK, ContactsContract.CommonDataKinds.Phone.CONTENT_URI)) }
+            }) { Text(stringResource(R.string.settings_check_in_pick)) }
+        }
+    }
 }
 
 /** 17 characters max, the display's text frame width; the counter shows what is left. */

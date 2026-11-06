@@ -45,6 +45,7 @@ import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import com.aiyu.ridelink.core.protocol.ClusterFamily
 import com.aiyu.ridelink.core.protocol.ClusterProtocol
 import com.aiyu.ridelink.core.protocol.DisplayTelemetry
 import com.aiyu.ridelink.core.protocol.WeatherKind
@@ -158,9 +159,13 @@ internal fun MusicCard(music: ClusterProtocol.Music) {
 internal val DisplayTelemetry.hasRideData
     get() = listOf(odometerTenths, tripTenths, fuelLevel, rangeKm, averageSpeedKmh, topSpeedKmh, averageEconomy).any { it != null }
 
-/** Odometer, trip, fuel, range, average/top speed and mileage as the display reports them (raw values). */
+/**
+ * Odometer, trip, fuel, range, average/top speed and mileage as the display reports them. Displays that never
+ * send `5A 19` (the 2026 Race XP LCD sends only 5A 10/11/16/18; stock reads mileage from 5A 19 [8] only for the
+ * U566 / U445B themes) get the fuel-log mileage [logKmpl] instead, and no range tile.
+ */
 @Composable
-internal fun RideDataCard(t: DisplayTelemetry) {
+internal fun RideDataCard(t: DisplayTelemetry, family: ClusterFamily, logKmpl: Double?) {
     val content = MaterialTheme.colorScheme.onSurface
     fun v(x: Int?) = x?.toString() ?: "--"
     fun km(x: Double?) = x?.let { "%.1f".format(it) } ?: "--"
@@ -176,13 +181,20 @@ internal fun RideDataCard(t: DisplayTelemetry) {
                 Tile(stringResource(R.string.ride_trip), km(t.tripKm), stringResource(R.string.unit_km), content, Modifier.weight(1f))
             }
             Row(horizontalArrangement = Arrangement.spacedBy(Dimens.sm)) {
-                Tile(stringResource(R.string.ride_fuel), v(t.fuelLevel), "", content, Modifier.weight(1f))
-                Tile(stringResource(R.string.ride_range), v(t.rangeKm), stringResource(R.string.unit_km), content, Modifier.weight(1f))
+                Tile(stringResource(R.string.ride_fuel), v(t.fuelBars(family)), stringResource(R.string.detail_fuel_unit), content, Modifier.weight(1f))
+                if (t.rangeKm != null) Tile(stringResource(R.string.ride_range), v(t.rangeKm), stringResource(R.string.unit_km), content, Modifier.weight(1f))
             }
             Row(horizontalArrangement = Arrangement.spacedBy(Dimens.sm)) {
                 Tile(stringResource(R.string.ride_avg_speed), v(t.averageSpeedKmh), stringResource(R.string.dash_kmh), content, Modifier.weight(1f))
                 Tile(stringResource(R.string.ride_top_speed), v(t.topSpeedKmh), stringResource(R.string.dash_kmh), content, Modifier.weight(1f))
-                Tile(stringResource(R.string.ride_mileage), v(t.averageEconomy), stringResource(R.string.unit_kmpl), content, Modifier.weight(1f))
+                val display = t.averageEconomy?.takeIf { it > 0 }
+                Tile(
+                    stringResource(if (display == null && logKmpl != null) R.string.ride_mileage_log else R.string.ride_mileage),
+                    display?.toString() ?: logKmpl?.let { "%.1f".format(it) } ?: "--",
+                    stringResource(R.string.unit_kmpl),
+                    content,
+                    Modifier.weight(1f),
+                )
             }
         }
     }
@@ -256,7 +268,7 @@ internal fun RaceStatsCard(t: DisplayTelemetry) {
 
 /** Where the phone was when the scooter last disconnected; opens the spot in a maps app. */
 @Composable
-internal fun ParkedCard(lat: Double, lng: Double, at: Long) {
+internal fun ParkedCard(lat: Double, lng: Double, at: Long, precise: Boolean, onAskPrecise: () -> Unit) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val content = MaterialTheme.colorScheme.onSurface
     val time = java.time.Instant.ofEpochMilli(at).atZone(java.time.ZoneId.systemDefault())
@@ -268,11 +280,15 @@ internal fun ParkedCard(lat: Double, lng: Double, at: Long) {
     ) {
         Column(Modifier.padding(Dimens.xl), verticalArrangement = Arrangement.spacedBy(Dimens.sm)) {
             Text(stringResource(R.string.parked_title), style = MaterialTheme.typography.titleMediumEmphasized, color = content)
-            Text(stringResource(R.string.parked_when, time), color = MaterialTheme.colorScheme.onSurfaceVariant)
-            androidx.compose.material3.FilledTonalButton(onClick = {
-                val uri = android.net.Uri.parse("geo:$lat,$lng?q=$lat,$lng")
-                runCatching { context.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, uri)) }
-            }) { Text(stringResource(R.string.parked_open)) }
+            // Without precise location the spot is the ~2 km coarse fix.
+            Text(stringResource(if (precise) R.string.parked_when_precise else R.string.parked_when, time), color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Row(horizontalArrangement = Arrangement.spacedBy(Dimens.sm)) {
+                androidx.compose.material3.FilledTonalButton(onClick = {
+                    val uri = android.net.Uri.parse("geo:$lat,$lng?q=$lat,$lng")
+                    runCatching { context.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, uri)) }
+                }) { Text(stringResource(R.string.parked_open)) }
+                if (!precise) androidx.compose.material3.TextButton(onClick = onAskPrecise) { Text(stringResource(R.string.parked_precise)) }
+            }
         }
     }
 }
