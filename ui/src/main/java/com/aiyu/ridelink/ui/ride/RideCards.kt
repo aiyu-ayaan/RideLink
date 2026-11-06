@@ -63,6 +63,20 @@ private fun WeatherKind.icon(): ImageVector = when (this) {
     WeatherKind.HAIL -> Icons.Rounded.Grain
 }
 
+/**
+ * Row colours for a ListItem placed on a coloured Card: transparent container, text and icons in the card's own
+ * on-colour. ListItem's default text colour is onSurface, which fades into a tinted card (tertiary or secondary
+ * container) in dark or dynamic themes.
+ */
+@Composable
+internal fun cardItemColors(content: Color) = ListItemDefaults.colors(
+    containerColor = Color.Transparent,
+    headlineColor = content,
+    supportingColor = content.copy(alpha = 0.85f),
+    leadingIconColor = content,
+    trailingIconColor = content,
+)
+
 /** Small labelled value tile used on the dashboard cards. [content] is the card's on-color. */
 @Composable
 internal fun Tile(label: String, value: String, unit: String, content: Color, modifier: Modifier = Modifier) {
@@ -151,7 +165,7 @@ internal fun MusicCard(music: ClusterProtocol.Music) {
                 }
             },
             trailingContent = { Icon(state.first, contentDescription = stringResource(state.second)) },
-            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+            colors = cardItemColors(MaterialTheme.colorScheme.onSurface),
         )
     }
 }

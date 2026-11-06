@@ -383,7 +383,7 @@ private fun InfoCard(icon: ImageVector, title: String, body: String, emphasized:
             headlineContent = { Text(title, style = if (emphasized) MaterialTheme.typography.headlineMediumEmphasized else MaterialTheme.typography.titleMedium) },
             supportingContent = { Text(body) },
             leadingContent = { Icon(icon, contentDescription = null, modifier = Modifier.size(if (emphasized) 40.dp else 24.dp)) },
-            colors = androidx.compose.material3.ListItemDefaults.colors(containerColor = androidx.compose.ui.graphics.Color.Transparent),
+            colors = cardItemColors(if (emphasized) MaterialTheme.colorScheme.onTertiaryContainer else MaterialTheme.colorScheme.onSecondaryContainer),
         )
     }
 }

@@ -62,6 +62,7 @@ import com.aiyu.ridelink.core.settings.Settings
 import com.aiyu.ridelink.ui.R
 import com.aiyu.ridelink.ui.nav.appBarColors
 import com.aiyu.ridelink.ui.ride.Tile
+import com.aiyu.ridelink.ui.ride.cardItemColors
 import com.aiyu.ridelink.ui.theme.Dimens
 import com.aiyu.ridelink.ui.update.BackButton
 import java.text.NumberFormat
@@ -120,7 +121,7 @@ fun CareScreen(onBack: () -> Unit, vm: CareViewModel = hiltViewModel()) {
                         ListItem(
                             headlineContent = { Text(stringResource(R.string.care_card_refuel, km(f.odometerTenths))) },
                             leadingContent = { Icon(Icons.Rounded.LocalGasStation, contentDescription = null) },
-                            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                            colors = cardItemColors(MaterialTheme.colorScheme.onTertiaryContainer),
                         )
                     }
                 }
@@ -196,7 +197,7 @@ fun CareCard(onOpen: () -> Unit, vm: CareViewModel = hiltViewModel()) {
             headlineContent = { Text(stringResource(R.string.care_title)) },
             supportingContent = { Text(text) },
             leadingContent = { Icon(Icons.Rounded.LocalGasStation, contentDescription = null) },
-            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+            colors = cardItemColors(if (attention) MaterialTheme.colorScheme.onTertiaryContainer else MaterialTheme.colorScheme.onSurface),
         )
     }
 }
