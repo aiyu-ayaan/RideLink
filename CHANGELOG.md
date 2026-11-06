@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.2.1-alpha.7](https://github.com/aiyu-ayaan/RideLink/compare/v0.2.1-alpha.6...v0.2.1-alpha.7) (2026-11-06)
+
+### Other changes
+
+* Fix(Theme) : Text on tinted cards uses the card's own on-colour so it stays readable in dark and dynamic themes
+
 ## [0.2.1-alpha.6](https://github.com/aiyu-ayaan/RideLink/compare/v0.2.1-alpha.5...v0.2.1-alpha.6) (2026-11-06)
 
 ### Other changes
