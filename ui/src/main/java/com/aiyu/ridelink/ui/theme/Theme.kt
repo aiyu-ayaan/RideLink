@@ -12,12 +12,16 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import android.view.ViewTreeObserver
+import androidx.compose.runtime.DisposableEffect
 
 /** 8dp spacing grid with a 4dp half step. */
 object Dimens {
@@ -88,13 +92,28 @@ fun RideLinkTheme(
         else -> LightScheme
     }
 
-    // enableEdgeToEdge() follows the system theme; keep bar icon colors in sync with ours.
-    val window = (LocalView.current.context as? Activity)?.window
+    // enableEdgeToEdge() follows the system theme; keep bar icon colors in sync with ours. The system can reset them
+    // (notification shade, quick settings, another window taking focus), so they are applied again on every resume
+    // and every focus change, not only when the theme changes.
+    val view = LocalView.current
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    val window = (view.context as? Activity)?.window
     if (window != null) {
-        SideEffect {
-            WindowCompat.getInsetsController(window, window.decorView).apply {
-                isAppearanceLightStatusBars = !darkTheme
-                isAppearanceLightNavigationBars = !darkTheme
+        DisposableEffect(window, lifecycle, darkTheme) {
+            fun apply() {
+                WindowCompat.getInsetsController(window, window.decorView).apply {
+                    isAppearanceLightStatusBars = !darkTheme
+                    isAppearanceLightNavigationBars = !darkTheme
+                }
+            }
+            apply()
+            val onResume = LifecycleEventObserver { _, e -> if (e == Lifecycle.Event.ON_RESUME) apply() }
+            val onFocus = ViewTreeObserver.OnWindowFocusChangeListener { if (it) apply() }
+            lifecycle.addObserver(onResume)
+            window.decorView.viewTreeObserver.addOnWindowFocusChangeListener(onFocus)
+            onDispose {
+                lifecycle.removeObserver(onResume)
+                window.decorView.viewTreeObserver.removeOnWindowFocusChangeListener(onFocus)
             }
         }
     }
