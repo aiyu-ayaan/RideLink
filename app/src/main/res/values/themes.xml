@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Window theme only; all UI colors come from the Compose MaterialExpressiveTheme. -->
-    <style name="Theme.RideLink" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="Theme.RideLink" parent="android:Theme.Material.Light.NoActionBar">
+        <!-- Light parent would flash white behind sliding pages and the predictive-back gesture in dark mode. -->
+        <item name="android:windowBackground">@color/splash_background</item>
+        <item name="android:colorBackground">@color/splash_background</item>
+    </style>
 
     <!-- Launch theme: splash on the app surface colour (splash_background) with the primary-coloured mark with the animated "Closed loop" mark, then Theme.RideLink.
          The icon animation is 1000 ms; MainActivity waits for it, then plays the exit. -->
