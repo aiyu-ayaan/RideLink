@@ -14,6 +14,7 @@ import com.aiyu.ridelink.core.ble.ClusterLink
 import com.aiyu.ridelink.core.ble.LinkState
 import com.aiyu.ridelink.core.analytics.RideMath
 import com.aiyu.ridelink.core.display.DisplayTemplate
+import com.aiyu.ridelink.core.notify.MessageAlert
 import com.aiyu.ridelink.core.notify.SocialNotificationParser.App as SocialApp
 import com.aiyu.ridelink.core.protocol.ClusterFamily
 import com.aiyu.ridelink.core.protocol.ClusterModel
@@ -36,6 +37,8 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -276,11 +279,39 @@ class ClusterController @Inject constructor(
         }
     }
 
-    /** A new message from [sender] in [app]: app and sender on line 1, the message on line 2 (stock sendEcommerceCustomData). */
-    fun onMessage(app: String, sender: String, text: String) = scope.launch {
-        if (!settings.current().messageAlerts) return@launch
-        note("Message: $app / $sender")
-        flashText(ClusterProtocol.plainText("$app $sender"), ClusterProtocol.plainText(text), MESSAGE_FLASH_MS)
+    private val alerts = Channel<MessageAlert>(ALERT_QUEUE, BufferOverflow.DROP_OLDEST)
+    private val alertWorker by lazy { scope.launch { for (a in alerts) showAlert(a) } }
+
+    /** A message, missed call or delivery update for the pop-up. Queued: each one gets its time on the display. */
+    fun onMessage(alert: MessageAlert) {
+        alertWorker
+        alerts.trySend(alert)
+    }
+
+    private suspend fun showAlert(a: MessageAlert) {
+        val s = settings.current()
+        if (!s.messageAlerts || !a.allowed(s.messageMuted, s.messageGroups) || link.state.value !is LinkState.Ready) return
+        val (line1, line2) = a.lines(s.messageText)
+        note("Message: ${a.app} / ${a.sender}")
+        if (_nav.value != null) return flashNavText(line1)
+        flashText(line1, line2, MESSAGE_FLASH_MS)
+        flashJob?.join()
+    }
+
+    @Volatile private var navMessage: String? = null
+
+    /** During a route: [text] replaces the turn text for [NAV_MESSAGE_MS]; the arrow and distance stay up. */
+    private suspend fun flashNavText(text: String) {
+        navMessage = text
+        resendNav()
+        delay(NAV_MESSAGE_MS)
+        navMessage = null
+        resendNav()
+    }
+
+    private suspend fun resendNav() {
+        val step = _nav.value ?: return
+        navLock.withLock { if (_nav.value === step) sendNav(settings.current(), step) }
     }
 
     /** Called by the foreground service. Connects to the saved cluster and keeps the session alive. */
@@ -463,9 +494,10 @@ class ClusterController @Inject constructor(
             send(ClusterProtocol.screen(ClusterProtocol.Screen.DEFAULT))
         }
         val m = model(s)
+        val message = navMessage
         ClusterProtocol.navigation(m, step).forEachIndexed { i, f ->
             if (i > 0) delay(ClusterProtocol.navGapMs(m))
-            send(f)
+            send(if (message != null && f[1] == ClusterProtocol.DID_NAV_TEXT.toByte()) ClusterProtocol.text(ClusterProtocol.DID_NAV_TEXT, message) else f)
         }
         navSentAt = System.currentTimeMillis()
     }
@@ -590,10 +622,14 @@ class ClusterController @Inject constructor(
         send(ClusterProtocol.socialCounts(m, _social.value, delivery, if (s.carbon) lastRideCarbonKg() else 0))
     }
 
-    /** Experimental: a food-delivery app posted; the display gets alert code [Settings.deliveryCode] for 5 s. */
-    fun onDelivery() = scope.launch {
+    /**
+     * A delivery or shopping app posted: "Food" or "Order" over "Notification" in the pop-up, as stock
+     * sendEcommerceCustomData does. Food apps also get the experimental alert code [Settings.deliveryCode] for 5 s.
+     */
+    fun onDelivery(food: Boolean) = scope.launch {
+        onMessage(MessageAlert(MessageAlert.Source.DELIVERY, if (food) "Food" else "Order", "", "Notification"))
         val s = settings.current()
-        if (!s.deliveryAlerts) return@launch
+        if (!food || !s.deliveryAlerts) return@launch
         smartXonnectAlert(s.deliveryCode)
         delay(5_000)
         smartXonnectAlert(0)
@@ -672,6 +708,8 @@ class ClusterController @Inject constructor(
                 val ok = calls.smsMissedCaller(RejectMessage.text(s.rejectSmsText), rang - 5_000)
                 if (ok) note("Auto-reply sent to the missed caller")
             }
+            // shortcut: only phone calls (the call log); a missed WhatsApp call gets no pop-up.
+            calls.missedCallerSince(rang - 5_000)?.let { onMessage(MessageAlert(MessageAlert.Source.CALL, "Missed call", it, "")) }
         }
         _caller.value = null
         callState = CallState.ENDED
@@ -996,6 +1034,8 @@ class ClusterController @Inject constructor(
         const val RIDING_GAP_MS = 5 * 60_000L
         const val FLASH_MS = 10_000L
         const val MESSAGE_FLASH_MS = 6_000L
+        const val NAV_MESSAGE_MS = 3_000L
+        const val ALERT_QUEUE = 5
         const val CELL_REFRESH_MS = 10_000L
     }
 }

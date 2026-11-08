@@ -105,6 +105,9 @@ class MainViewModel @Inject constructor(
     fun setDisplayBrightness(level: Int) = viewModelScope.launch { repo.setDisplayBrightness(level); controller.applyDisplaySettings() }
     fun setSmsAlerts(on: Boolean) = viewModelScope.launch { repo.setSmsAlerts(on) }
     fun setMessageAlerts(on: Boolean) = viewModelScope.launch { repo.setMessageAlerts(on) }
+    fun setMessageText(on: Boolean) = viewModelScope.launch { repo.setMessageText(on) }
+    fun setMessageGroups(on: Boolean) = viewModelScope.launch { repo.setMessageGroups(on) }
+    fun setMessageSource(key: String, on: Boolean) = viewModelScope.launch { repo.setMessageSource(key, on) }
     fun setLedClear(on: Boolean) = viewModelScope.launch { repo.setLedClear(on) }
     fun setDeliveryAlerts(on: Boolean) = viewModelScope.launch { repo.setDeliveryAlerts(on) }
     fun setDeliveryCode(code: Int) = viewModelScope.launch { repo.setDeliveryCode(code) }

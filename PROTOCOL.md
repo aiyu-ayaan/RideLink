@@ -214,7 +214,12 @@ Stock shows short notices ("Food / NOTIFICATION" for Swiggy and Zomato, voice-as
 line 2 `5B 63`: on SmartXonnect themes other than U445B/U566 the pair 5 times, 300 ms after line 1 and 100 ms after
 line 2 (`sendCustomData`). RideLink uses the same pair for any chat message (WhatsApp, Telegram, SMS, any
 `CATEGORY_MESSAGE` / MessagingStyle notification): line 1 app + sender, line 2 the message, punctuation turned into
-spaces, held 6 s, then the rider's own lines come back. Not sent during a route (the lines share the turn text).
+spaces, held 6 s, then the rider's own lines come back. Pop-ups queue (up to 5, oldest dropped) and show one after
+another. The same pop-up carries "Missed call / name" (newest call-log entry marked missed, `READ_CALL_LOG`) and
+"Food" or "Order" over "Notification" for Swiggy, Zomato, Blinkit, Zepto, Dunzo, Amazon and Flipkart (stock
+`N251HelperService.sendSocialmediaNotification`; stock only shows it on U445B/U566).
+During a route the custom lines share the turn text, so line 1 replaces the nav text (`5B 4F` / DID `0x4F`) in the
+resent nav pair for 3 s instead; the arrow and distance stay up.
 
 ### Screen switch, DID `0x4C` with a leading `00` (`BluetoothUtil.createTrafficSequenceCustomFrame`, `TrafficSequence`)
 `5B 4C 00 <id> <15 x 00> FF`. id: default `0x00`, weather `0x78`, cricket `0x79`, football `0x80`.

@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.aiyu.ridelink.core.protocol.ClusterModel
 import com.aiyu.ridelink.core.update.UpdateChannel
@@ -71,6 +72,12 @@ data class Settings(
     val smsAlerts: Boolean = true,
     /** Any chat app or SMS: app, sender and message on the custom lines for a few seconds. */
     val messageAlerts: Boolean = true,
+    /** Pop-up shows the message text; off = app and sender only. */
+    val messageText: Boolean = true,
+    /** Pop-up for group chats too. */
+    val messageGroups: Boolean = true,
+    /** [com.aiyu.ridelink.core.notify.MessageAlert.Source] keys the pop-up skips. */
+    val messageMuted: Set<String> = emptySet(),
     /** While connected, text a missed caller [rejectSmsText] (stock "auto reply SMS" / DND). */
     val autoReply: Boolean = false,
     /** ISO dates (yyyy-MM-dd) the SmartXonnect greets on (`5A 7E`); blank = not sent. */
@@ -148,6 +155,9 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
         val brightness = intPreferencesKey("display_brightness")
         val smsAlerts = booleanPreferencesKey("sms_alerts")
         val messageAlerts = booleanPreferencesKey("message_alerts")
+        val messageText = booleanPreferencesKey("message_text")
+        val messageGroups = booleanPreferencesKey("message_groups")
+        val messageMuted = stringSetPreferencesKey("message_muted")
         val autoReply = booleanPreferencesKey("auto_reply")
         val birthday = stringPreferencesKey("birthday")
         val purchase = stringPreferencesKey("purchase_date")
@@ -203,6 +213,9 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
             displayBrightness = p[K.brightness] ?: 4,
             smsAlerts = p[K.smsAlerts] ?: true,
             messageAlerts = p[K.messageAlerts] ?: true,
+            messageText = p[K.messageText] ?: true,
+            messageGroups = p[K.messageGroups] ?: true,
+            messageMuted = p[K.messageMuted] ?: emptySet(),
             autoReply = p[K.autoReply] ?: false,
             birthday = p[K.birthday] ?: "",
             purchaseDate = p[K.purchase] ?: "",
@@ -268,6 +281,11 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
     suspend fun setDisplayBrightness(level: Int) { context.store.edit { it[K.brightness] = level.coerceIn(Settings.BRIGHTNESS_RANGE) } }
     suspend fun setSmsAlerts(on: Boolean) { context.store.edit { it[K.smsAlerts] = on } }
     suspend fun setMessageAlerts(on: Boolean) { context.store.edit { it[K.messageAlerts] = on } }
+    suspend fun setMessageText(on: Boolean) { context.store.edit { it[K.messageText] = on } }
+    suspend fun setMessageGroups(on: Boolean) { context.store.edit { it[K.messageGroups] = on } }
+    suspend fun setMessageSource(key: String, on: Boolean) {
+        context.store.edit { it[K.messageMuted] = (it[K.messageMuted] ?: emptySet()).let { m -> if (on) m - key else m + key } }
+    }
     suspend fun setAutoReply(on: Boolean) { context.store.edit { it[K.autoReply] = on } }
     suspend fun setBirthday(iso: String) { context.store.edit { it[K.birthday] = iso } }
     suspend fun setPurchaseDate(iso: String) { context.store.edit { it[K.purchase] = iso } }

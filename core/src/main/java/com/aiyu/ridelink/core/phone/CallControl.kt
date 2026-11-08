@@ -79,15 +79,33 @@ class CallControl @Inject constructor(@ApplicationContext private val context: C
         runCatching { sms().sendTextMessage(number, null, message, null, null) }.isSuccess
     }
 
-    private fun lastMissedSince(since: Long): String? = runCatching {
+    /**
+     * Name (or number) of the caller if the newest call since [since] was missed, for the display's pop-up.
+     * Needs READ_CALL_LOG; retries while the dialer writes the entry.
+     */
+    suspend fun missedCallerSince(since: Long): String? = withContext(Dispatchers.IO) {
+        if (!granted(Manifest.permission.READ_CALL_LOG)) return@withContext null
+        repeat(5) {
+            if (it > 0) delay(1_000)
+            lastMissed(since)?.let { (number, name) -> return@withContext name ?: number }
+        }
+        null
+    }
+
+    private fun lastMissedSince(since: Long): String? = lastMissed(since)?.first
+
+    /** Number and cached contact name of the newest call since [since], if it was missed. */
+    private fun lastMissed(since: Long): Pair<String, String?>? = runCatching {
         context.contentResolver.query(
             CallLog.Calls.CONTENT_URI,
-            arrayOf(CallLog.Calls.NUMBER, CallLog.Calls.TYPE),
+            arrayOf(CallLog.Calls.NUMBER, CallLog.Calls.TYPE, CallLog.Calls.CACHED_NAME),
             "${CallLog.Calls.DATE} >= ?",
             arrayOf(since.toString()),
             "${CallLog.Calls.DATE} DESC",
         )?.use { c ->
-            if (c.moveToFirst() && c.getInt(1) == CallLog.Calls.MISSED_TYPE) c.getString(0)?.takeIf { it.isNotBlank() } else null
+            if (c.moveToFirst() && c.getInt(1) == CallLog.Calls.MISSED_TYPE) {
+                c.getString(0)?.takeIf { it.isNotBlank() }?.let { it to c.getString(2)?.takeIf(String::isNotBlank) }
+            } else null
         }
     }.getOrNull()
 

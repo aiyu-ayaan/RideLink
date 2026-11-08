@@ -14,6 +14,7 @@ import android.service.notification.StatusBarNotification
 import com.aiyu.ridelink.core.ClusterController
 import com.aiyu.ridelink.core.nav.MapsNotificationParser
 import com.aiyu.ridelink.core.nav.MapsTurnIcons
+import com.aiyu.ridelink.core.notify.MessageAlert
 import com.aiyu.ridelink.core.notify.SocialNotificationParser
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
@@ -63,16 +64,16 @@ class RideNotificationListener : NotificationListenerService() {
                 if (isNewMessage(sbn)) {
                     noteOnce("Chat: ${sbn.packageName} title=$title")
                     controller.onChatPosted(app, chatsInShade(app))
-                    showMessage(sbn)
+                    showMessage(sbn, MessageAlert.source(app))
                 }
                 if (app == SocialNotificationParser.App.WHATSAPP) offerChatReply(sbn)
             }
-            // Experimental delivery alert, once per order update.
+            // Delivery / shopping pop-up, once per order update.
             sbn.packageName in DELIVERY_APPS && (n.flags and Notification.FLAG_GROUP_SUMMARY) == 0 -> {
                 val id = "${sbn.key}|${n.`when`}"
                 if (id != lastDelivery) {
                     lastDelivery = id
-                    controller.onDelivery()
+                    controller.onDelivery(food = sbn.packageName in FOOD_APPS)
                 }
             }
             // SMS sender on the SmartXonnect display; each message once (the SMS app reposts and groups).
@@ -81,11 +82,11 @@ class RideNotificationListener : NotificationListenerService() {
                 if (id != lastSms) {
                     lastSms = id
                     controller.onSms(title)
-                    showMessage(sbn)
+                    showMessage(sbn, MessageAlert.Source.SMS)
                 }
             }
             // Any other chat app (Telegram, Signal, Messenger Lite, Google Chat...): the message on the display.
-            sbn.packageName != packageName && isChat(n) && isNewMessage(sbn) -> showMessage(sbn)
+            sbn.packageName != packageName && isChat(n) && isNewMessage(sbn) -> showMessage(sbn, MessageAlert.Source.OTHER)
         }
     }
 
@@ -190,12 +191,13 @@ class RideNotificationListener : NotificationListenerService() {
         n.category == Notification.CATEGORY_MESSAGE || n.extras.containsKey(Notification.EXTRA_MESSAGES)
 
     /** App, sender and text of a message notification, for the display's custom lines. */
-    private fun showMessage(sbn: StatusBarNotification) {
+    private fun showMessage(sbn: StatusBarNotification, source: MessageAlert.Source) {
         val extras = sbn.notification.extras
         val sender = (extras.getCharSequence(Notification.EXTRA_TITLE) ?: extras.getCharSequence(Notification.EXTRA_CONVERSATION_TITLE))
             ?.toString().orEmpty()
         val text = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString() ?: return
-        controller.onMessage(appName(sbn), sender, text)
+        val group = extras.getBoolean(Notification.EXTRA_IS_GROUP_CONVERSATION)
+        controller.onMessage(MessageAlert(source, appName(sbn), sender, text, group))
     }
 
     /**
@@ -228,6 +230,8 @@ class RideNotificationListener : NotificationListenerService() {
 
     private companion object {
         /** Swiggy, Zomato, Blinkit, Zepto, Swiggy Instamart (same app), Dunzo. */
-        val DELIVERY_APPS = setOf("in.swiggy.android", "com.application.zomato", "com.grofers.customerapp", "com.zeptoconsumerapp", "com.dunzo.user")
+        val FOOD_APPS = setOf("in.swiggy.android", "com.application.zomato", "com.grofers.customerapp", "com.zeptoconsumerapp", "com.dunzo.user")
+        /** Food apps plus Amazon and Flipkart ("Order", as stock N251HelperService.sendSocialmediaNotification). */
+        val DELIVERY_APPS = FOOD_APPS + setOf("in.amazon.mShop.android.shopping", "com.flipkart.android")
     }
 }

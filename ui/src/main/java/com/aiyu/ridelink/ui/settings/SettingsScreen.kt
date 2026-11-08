@@ -87,6 +87,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material3.Icon
+import com.aiyu.ridelink.core.notify.MessageAlert
 import com.aiyu.ridelink.core.protocol.ClusterFamily
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
@@ -225,6 +226,15 @@ fun SettingsScreen(
             }
             item { SwitchRow(R.string.settings_social, R.string.settings_social_hint, s.showSocial, vm::setShowSocial) }
             item { SwitchRow(R.string.settings_message_alerts, R.string.settings_message_alerts_hint, s.messageAlerts, vm::setMessageAlerts) }
+            if (s.messageAlerts) {
+                item { SwitchRow(R.string.settings_message_text, R.string.settings_message_text_hint, s.messageText, vm::setMessageText) }
+                item { SwitchRow(R.string.settings_message_groups, null, s.messageGroups, vm::setMessageGroups) }
+                messageSources.forEach { (source, label) ->
+                    item(key = "msg_${source.key}") {
+                        SwitchRow(label, null, source.key !in s.messageMuted) { vm.setMessageSource(source.key, it) }
+                    }
+                }
+            }
             item { SwitchRow(R.string.settings_weather, R.string.settings_weather_hint, s.showWeather, vm::setShowWeather) }
             item { SwitchRow(R.string.settings_location, R.string.settings_location_hint, s.showLocation, vm::setShowLocation) }
             item { SwitchRow(R.string.settings_music, R.string.settings_music_hint, s.showMusic, vm::setShowMusic) }
@@ -589,6 +599,17 @@ private fun Section(title: Int) {
         modifier = Modifier.padding(start = Dimens.gutter, top = Dimens.xl, bottom = Dimens.sm),
     )
 }
+
+/** Pop-up filters, one switch per source. */
+private val messageSources = listOf(
+    MessageAlert.Source.WHATSAPP to R.string.settings_message_whatsapp,
+    MessageAlert.Source.INSTAGRAM to R.string.settings_message_instagram,
+    MessageAlert.Source.FACEBOOK to R.string.settings_message_facebook,
+    MessageAlert.Source.SMS to R.string.settings_message_sms,
+    MessageAlert.Source.OTHER to R.string.settings_message_other,
+    MessageAlert.Source.CALL to R.string.settings_message_missed_calls,
+    MessageAlert.Source.DELIVERY to R.string.settings_message_delivery,
+)
 
 @Composable
 private fun SwitchRow(title: Int, hint: Int?, checked: Boolean, onChange: (Boolean) -> Unit) {
