@@ -36,9 +36,12 @@ internal val phonePermissions = arrayOf(
     Manifest.permission.ACCESS_COARSE_LOCATION,
     Manifest.permission.ANSWER_PHONE_CALLS,
     Manifest.permission.READ_CALL_LOG,
+    // Fresh signal bars with the screen off (TelephonyManager.requestCellInfoUpdate). Optional: the rider may pick
+    // "approximate", so the card does not wait for it.
+    Manifest.permission.ACCESS_FINE_LOCATION,
 )
 
-internal fun Context.hasPhoneState() = phonePermissions.all { granted(it) }
+internal fun Context.hasPhoneState() = phonePermissions.filter { it != Manifest.permission.ACCESS_FINE_LOCATION }.all { granted(it) }
 
 /** "Reject with SMS": send the text, and find the caller's number in the call log. Asked from Settings. */
 internal val smsPermissions = arrayOf(Manifest.permission.SEND_SMS, Manifest.permission.READ_CALL_LOG)

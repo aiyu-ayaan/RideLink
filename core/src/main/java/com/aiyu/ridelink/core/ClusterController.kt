@@ -941,9 +941,38 @@ class ClusterController @Inject constructor(
         return if (sub != SubscriptionManager.INVALID_SUBSCRIPTION_ID) runCatching { base.createForSubscriptionId(sub) }.getOrDefault(base) else base
     }
 
-    /** 0..4 bars: SignalStrength.getLevel, else the best cell in it (some phones report level 0 with valid cells). */
+    @Volatile private var cellLevel = -1
+    @Volatile private var cellLevelAt = 0L
+    @Volatile private var cellAskedAt = 0L
+
+    /**
+     * With the screen off Android stops the modem's signal reports, so getSignalStrength keeps the value from when
+     * the phone was last unlocked. requestCellInfoUpdate makes the modem measure now; it needs fine location
+     * (API 30+ for CellInfo.getCellSignalStrength). Asked at most every [CELL_REFRESH_MS].
+     */
+    @SuppressLint("MissingPermission")
+    private fun refreshCellLevel(tm: TelephonyManager) {
+        val now = System.currentTimeMillis()
+        if (Build.VERSION.SDK_INT < 30 || now - cellAskedAt < CELL_REFRESH_MS || !granted(Manifest.permission.ACCESS_FINE_LOCATION)) return
+        cellAskedAt = now
+        runCatching {
+            tm.requestCellInfoUpdate(Runnable::run, object : TelephonyManager.CellInfoCallback() {
+                override fun onCellInfo(cells: MutableList<android.telephony.CellInfo>) {
+                    cellLevel = cells.filter { it.isRegistered }.maxOfOrNull { it.cellSignalStrength.level } ?: -1
+                    cellLevelAt = System.currentTimeMillis()
+                }
+            })
+        }
+    }
+
+    /**
+     * 0..4 bars: a fresh modem reading when there is one (see [refreshCellLevel]), else SignalStrength.getLevel or
+     * the best cell in it (some phones report level 0 with valid cells).
+     */
     private fun signalLevel(tm: TelephonyManager?): Int {
         if (tm == null || Build.VERSION.SDK_INT < 28) return 0
+        refreshCellLevel(tm)
+        if (cellLevel >= 0 && System.currentTimeMillis() - cellLevelAt < CELL_REFRESH_MS * 3) return cellLevel.coerceIn(0, 4)
         val strength = runCatching { tm.signalStrength }.getOrNull() ?: return 0
         val cells = if (Build.VERSION.SDK_INT >= 29) runCatching { strength.cellSignalStrengths.maxOfOrNull { it.level } }.getOrNull() else null
         return maxOf(strength.level, cells ?: 0).coerceIn(0, 4)
@@ -967,5 +996,6 @@ class ClusterController @Inject constructor(
         const val RIDING_GAP_MS = 5 * 60_000L
         const val FLASH_MS = 10_000L
         const val MESSAGE_FLASH_MS = 6_000L
+        const val CELL_REFRESH_MS = 10_000L
     }
 }

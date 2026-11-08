@@ -103,6 +103,9 @@ LTE (13) -> 4, NR (20) -> 5, else 0. Signal strength is `SignalStrength.getLevel
 RideLink sends the network type only with `READ_PHONE_STATE`. The signal level is read without any permission
 (the stock app gates `getSignalStrength()` on location; RideLink dropped that gate after the rider saw no bars), from
 the default *data* subscription, taking the best `CellSignalStrength.level` when `getLevel()` reports 0.
+With the screen off Android stops the modem's signal reports and `getSignalStrength()` goes stale (bars only moved
+after unlocking); with fine location RideLink asks `requestCellInfoUpdate` every 10 s and sends the best registered
+cell's level while that reading is under 30 s old.
 Deviation from stock: RideLink also sends the missed-call count in the Jupiter-family frame (stock always sends 0).
 Unconfirmed on the rider's display: whether signal bars, the call icon and the notification badge come from this
 frame at all; check with Console -> Copy log (decoded `STATUS` lines).
