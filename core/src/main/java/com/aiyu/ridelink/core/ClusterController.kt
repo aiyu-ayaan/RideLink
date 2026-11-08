@@ -148,50 +148,6 @@ class ClusterController @Inject constructor(
     private fun model(s: Settings) =
         _detected.value?.takeIf { it.family == ClusterFamily.SMARTXONNECT } ?: s.model ?: _detected.value ?: ClusterModel.DEFAULT
 
-    init {
-        // Last parked location: where the phone was when the scooter went away.
-        scope.launch {
-            var wasReady = false
-            link.state.collect { st ->
-                val ready = st is LinkState.Ready
-                // A drop while the wheels still turn is a lost signal, not parking.
-                if (wasReady && !ready && (_telemetry.value.speedKmh ?: 0) == 0) {
-                    weatherRepo.location(precise = true)?.let { settings.setParked(it.latitude, it.longitude, System.currentTimeMillis(), settings.current().deviceAddress) }
-                }
-                if (!ready) repliedChats.clear()
-                wasReady = ready
-            }
-        }
-        scope.launch {
-            link.incoming.collect { frame ->
-                log(frame, ok = true, rx = true)
-                ClusterModel.detect(frame)?.let { found ->
-                    if (_detected.value != found) {
-                        _detected.value = found
-                        note("Display detected: ${found.name} (from ${"%02x %02x".format(frame[0], frame[1])})")
-                        // Saved for this scooter, so the next connect uses the right format from its first frame.
-                        if (found.family == ClusterFamily.SMARTXONNECT) {
-                            sendSmartXonnectSetup()
-                            val s = settings.current()
-                            if (s.model != found) {
-                                settings.setModel(found)
-                                s.deviceAddress?.let { garage.setModel(it, found) }
-                            }
-                        }
-                    }
-                }
-                val before = _telemetry.value
-                val after = before.merge(frame)
-                if (after !== before) {
-                    _telemetry.value = after
-                    after.speedKmh?.let { _speed.value = it }
-                    if ((after.speedKmh ?: 0) >= RideMath.MOVING_KMH) lastMovingAt = System.currentTimeMillis()
-                    onSwitchStatus(before.switchStatus, after.switchStatus)
-                }
-            }
-        }
-    }
-
     @Volatile private var lastMovingAt = 0L
 
     /** Connected and the scooter moved in the last [RIDING_GAP_MS] (a red light still counts as riding). */
@@ -1017,6 +973,52 @@ class ClusterController @Inject constructor(
     }
 
     private fun granted(permission: String) = ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
+
+    // Last in the class on purpose: these coroutines start on another thread at once, so every field above must
+    // already be initialised (an init block above repliedChats crashed the app on a fresh process start).
+    init {
+        // Last parked location: where the phone was when the scooter went away.
+        scope.launch {
+            var wasReady = false
+            link.state.collect { st ->
+                val ready = st is LinkState.Ready
+                // A drop while the wheels still turn is a lost signal, not parking.
+                if (wasReady && !ready && (_telemetry.value.speedKmh ?: 0) == 0) {
+                    weatherRepo.location(precise = true)?.let { settings.setParked(it.latitude, it.longitude, System.currentTimeMillis(), settings.current().deviceAddress) }
+                }
+                if (!ready) repliedChats.clear()
+                wasReady = ready
+            }
+        }
+        scope.launch {
+            link.incoming.collect { frame ->
+                log(frame, ok = true, rx = true)
+                ClusterModel.detect(frame)?.let { found ->
+                    if (_detected.value != found) {
+                        _detected.value = found
+                        note("Display detected: ${found.name} (from ${"%02x %02x".format(frame[0], frame[1])})")
+                        // Saved for this scooter, so the next connect uses the right format from its first frame.
+                        if (found.family == ClusterFamily.SMARTXONNECT) {
+                            sendSmartXonnectSetup()
+                            val s = settings.current()
+                            if (s.model != found) {
+                                settings.setModel(found)
+                                s.deviceAddress?.let { garage.setModel(it, found) }
+                            }
+                        }
+                    }
+                }
+                val before = _telemetry.value
+                val after = before.merge(frame)
+                if (after !== before) {
+                    _telemetry.value = after
+                    after.speedKmh?.let { _speed.value = it }
+                    if ((after.speedKmh ?: 0) >= RideMath.MOVING_KMH) lastMovingAt = System.currentTimeMillis()
+                    onSwitchStatus(before.switchStatus, after.switchStatus)
+                }
+            }
+        }
+    }
 
     private companion object {
         const val LOG_SIZE = 300
