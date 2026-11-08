@@ -57,6 +57,12 @@ object ClusterProtocol {
     fun displayText(value: String): String =
         value.map { c -> if (c.isLetterOrDigit() && c.code < 128 || c == ' ') c else 'X' }.joinToString("").take(TEXT_MAX).trim()
 
+    /** Free text for the display: punctuation and emoji become spaces (not `X`), runs of spaces collapse. */
+    fun plainText(value: String): String = value.replace(NOT_DISPLAYABLE, " ").replace(SPACES, " ").trim()
+
+    private val NOT_DISPLAYABLE = Regex("[^A-Za-z0-9 ]")
+    private val SPACES = Regex(" {2,}")
+
     fun riderName(name: String) = text(DID_RIDER_NAME, name)
 
     /** Custom text line 1 (DID 0x4C), as the stock app's "custom text" setting writes it. */

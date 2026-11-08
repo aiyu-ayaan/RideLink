@@ -71,6 +71,8 @@
     <string name="perm_open_settings">Open settings</string>
     <string name="settings_sx_title">SmartXonnect display (Race XP)</string>
     <string name="settings_brightness">Display brightness: %1$d of %2$d</string>
+    <string name="settings_message_alerts">Messages on the display</string>
+    <string name="settings_message_alerts_hint">WhatsApp, Telegram, SMS and other chats show the app, sender and message for a few seconds. Not during navigation.</string>
     <string name="settings_sms_alerts">SMS sender on the display</string>
     <string name="settings_sms_alerts_hint">Shows who sent a new text message, like the TVS app.</string>
     <string name="settings_birthday">Your birthday</string>

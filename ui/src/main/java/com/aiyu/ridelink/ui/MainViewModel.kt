@@ -104,6 +104,7 @@ class MainViewModel @Inject constructor(
     fun setForwardNavigation(on: Boolean) = viewModelScope.launch { repo.setForwardNavigation(on) }
     fun setDisplayBrightness(level: Int) = viewModelScope.launch { repo.setDisplayBrightness(level); controller.applyDisplaySettings() }
     fun setSmsAlerts(on: Boolean) = viewModelScope.launch { repo.setSmsAlerts(on) }
+    fun setMessageAlerts(on: Boolean) = viewModelScope.launch { repo.setMessageAlerts(on) }
     fun setLedClear(on: Boolean) = viewModelScope.launch { repo.setLedClear(on) }
     fun setDeliveryAlerts(on: Boolean) = viewModelScope.launch { repo.setDeliveryAlerts(on) }
     fun setDeliveryCode(code: Int) = viewModelScope.launch { repo.setDeliveryCode(code) }

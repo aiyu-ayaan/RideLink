@@ -237,21 +237,50 @@ class ClusterController @Inject constructor(
 
     @Volatile private var textHeldUntil = 0L
 
+    private var flashJob: Job? = null
+
     /**
-     * Shows [text] on custom line 1 for [ms], then puts the rider's own line back (or blanks it). Skipped during a
-     * route: on the SmartXonnect LCD the line shares the turn text area.
+     * Shows [text] on custom line 1 (and [line2] on line 2) for [ms], then puts the rider's own lines back (or blanks
+     * them). A newer flash replaces the one showing. Skipped during a route: on the SmartXonnect LCD the lines share
+     * the turn text area. SmartXonnect gets the pair 5 times, 300 / 100 ms apart, as stock sendCustomData writes it.
      */
-    fun flashText(text: String, ms: Long = FLASH_MS) = scope.launch {
-        if (link.state.value !is LinkState.Ready || _nav.value != null) return@launch
-        textHeldUntil = System.currentTimeMillis() + ms
-        send(ClusterProtocol.customLine1(text))
-        delay(ms)
-        textHeldUntil = 0
-        sentLine1 = null
-        val s = settings.current()
-        if (link.state.value !is LinkState.Ready) return@launch
-        // An empty text frame blanks the line.
-        if (s.displayLine1.isBlank()) send(ClusterProtocol.customLine1("")) else sendDisplayText(s, force = true)
+    fun flashText(text: String, line2: String? = null, ms: Long = FLASH_MS) {
+        flashJob?.cancel()
+        flashJob = scope.launch {
+            if (link.state.value !is LinkState.Ready || _nav.value != null) return@launch
+            val until = System.currentTimeMillis() + ms + 2_000
+            textHeldUntil = until
+            val times = if (model(settings.current()).family == ClusterFamily.SMARTXONNECT && line2 != null) 5 else 1
+            try {
+                repeat(times) {
+                    send(ClusterProtocol.customLine1(text))
+                    if (line2 != null) {
+                        delay(300)
+                        send(ClusterProtocol.customLine2(line2))
+                        delay(100)
+                    }
+                }
+                delay(ms)
+            } finally {
+                // A newer flash may have taken the hold already.
+                if (textHeldUntil == until) textHeldUntil = 0
+            }
+            sentLine1 = null
+            sentLine2 = null
+            val s = settings.current()
+            if (link.state.value !is LinkState.Ready) return@launch
+            // An empty text frame blanks the line.
+            if (s.displayLine1.isBlank()) send(ClusterProtocol.customLine1(""))
+            if (line2 != null && s.displayLine2.isBlank()) send(ClusterProtocol.customLine2(""))
+            sendDisplayText(s, force = true)
+        }
+    }
+
+    /** A new message from [sender] in [app]: app and sender on line 1, the message on line 2 (stock sendEcommerceCustomData). */
+    fun onMessage(app: String, sender: String, text: String) = scope.launch {
+        if (!settings.current().messageAlerts) return@launch
+        note("Message: $app / $sender")
+        flashText(ClusterProtocol.plainText("$app $sender"), ClusterProtocol.plainText(text), MESSAGE_FLASH_MS)
     }
 
     /** Called by the foreground service. Connects to the saved cluster and keeps the session alive. */
@@ -774,7 +803,7 @@ class ClusterController @Inject constructor(
             val line = renderLine(s.displayLine1, s)
             if (force || line != sentLine1) { send(ClusterProtocol.customLine1(line)); sentLine1 = line }
         }
-        if (s.displayLine2.isNotBlank()) {
+        if (s.displayLine2.isNotBlank() && System.currentTimeMillis() >= textHeldUntil) {
             val line = renderLine(s.displayLine2, s)
             if (force || line != sentLine2) { send(ClusterProtocol.customLine2(line)); sentLine2 = line }
         }
@@ -937,5 +966,6 @@ class ClusterController @Inject constructor(
         const val WEATHER_INTERVAL_MS = 15 * 60_000L
         const val RIDING_GAP_MS = 5 * 60_000L
         const val FLASH_MS = 10_000L
+        const val MESSAGE_FLASH_MS = 6_000L
     }
 }

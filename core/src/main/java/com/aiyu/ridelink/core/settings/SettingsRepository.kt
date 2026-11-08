@@ -69,6 +69,8 @@ data class Settings(
     val displayBrightness: Int = 4,
     /** SmartXonnect: show who sent an SMS (`5B 53`). */
     val smsAlerts: Boolean = true,
+    /** Any chat app or SMS: app, sender and message on the custom lines for a few seconds. */
+    val messageAlerts: Boolean = true,
     /** While connected, text a missed caller [rejectSmsText] (stock "auto reply SMS" / DND). */
     val autoReply: Boolean = false,
     /** ISO dates (yyyy-MM-dd) the SmartXonnect greets on (`5A 7E`); blank = not sent. */
@@ -145,6 +147,7 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
         val saveLogs = booleanPreferencesKey("save_logs")
         val brightness = intPreferencesKey("display_brightness")
         val smsAlerts = booleanPreferencesKey("sms_alerts")
+        val messageAlerts = booleanPreferencesKey("message_alerts")
         val autoReply = booleanPreferencesKey("auto_reply")
         val birthday = stringPreferencesKey("birthday")
         val purchase = stringPreferencesKey("purchase_date")
@@ -199,6 +202,7 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
             saveLogs = p[K.saveLogs] ?: false,
             displayBrightness = p[K.brightness] ?: 4,
             smsAlerts = p[K.smsAlerts] ?: true,
+            messageAlerts = p[K.messageAlerts] ?: true,
             autoReply = p[K.autoReply] ?: false,
             birthday = p[K.birthday] ?: "",
             purchaseDate = p[K.purchase] ?: "",
@@ -263,6 +267,7 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
     suspend fun setSaveLogs(on: Boolean) { context.store.edit { it[K.saveLogs] = on } }
     suspend fun setDisplayBrightness(level: Int) { context.store.edit { it[K.brightness] = level.coerceIn(Settings.BRIGHTNESS_RANGE) } }
     suspend fun setSmsAlerts(on: Boolean) { context.store.edit { it[K.smsAlerts] = on } }
+    suspend fun setMessageAlerts(on: Boolean) { context.store.edit { it[K.messageAlerts] = on } }
     suspend fun setAutoReply(on: Boolean) { context.store.edit { it[K.autoReply] = on } }
     suspend fun setBirthday(iso: String) { context.store.edit { it[K.birthday] = iso } }
     suspend fun setPurchaseDate(iso: String) { context.store.edit { it[K.purchase] = iso } }

@@ -206,6 +206,13 @@ RideLink does the same (key + `when` + text, group summaries and ongoing notices
 once none of its notifications are left in the shade. An earlier RideLink rebuilt the counts from the shade; a
 chat's count then stayed at 1 per chat, so a second message never changed the frame and the badge never popped.
 
+### Message pop-up on the custom lines (`N109U347N251DataSenderToCluster.sendCustomData` / `sendEcommerceCustomData`)
+Stock shows short notices ("Food / NOTIFICATION" for Swiggy and Zomato, voice-assist feedback) as line 1 `5B 4C` then
+line 2 `5B 63`: on SmartXonnect themes other than U445B/U566 the pair 5 times, 300 ms after line 1 and 100 ms after
+line 2 (`sendCustomData`). RideLink uses the same pair for any chat message (WhatsApp, Telegram, SMS, any
+`CATEGORY_MESSAGE` / MessagingStyle notification): line 1 app + sender, line 2 the message, punctuation turned into
+spaces, held 6 s, then the rider's own lines come back. Not sent during a route (the lines share the turn text).
+
 ### Screen switch, DID `0x4C` with a leading `00` (`BluetoothUtil.createTrafficSequenceCustomFrame`, `TrafficSequence`)
 `5B 4C 00 <id> <15 x 00> FF`. id: default `0x00`, weather `0x78`, cricket `0x79`, football `0x80`.
 Same DID as text line 1; the leading `00` byte tells them apart.

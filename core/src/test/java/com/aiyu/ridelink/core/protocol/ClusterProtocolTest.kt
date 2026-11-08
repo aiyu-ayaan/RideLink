@@ -21,6 +21,11 @@ class ClusterProtocolTest {
         assertEquals("HiX this is way t", String(f, 2, 17))
     }
 
+    @Test fun plainTextTurnsPunctuationIntoSpaces() {
+        assertEquals("WhatsApp Mom", ClusterProtocol.plainText("WhatsApp: Mom"))
+        assertEquals("Hi where are you", ClusterProtocol.plainText("Hi, where are you?? 😀"))
+    }
+
     @Test fun callerStripsCountryCode() {
         assertEquals("9876543210", String(ClusterProtocol.caller("+919876543210"), 2, 10))
     }

@@ -4,6 +4,7 @@ import android.app.Notification
 import android.app.Person
 import android.app.RemoteInput
 import android.content.Intent
+import android.content.pm.ApplicationInfo
 import android.os.Bundle
 import android.content.ComponentName
 import android.os.Build
@@ -62,6 +63,7 @@ class RideNotificationListener : NotificationListenerService() {
                 if (isNewMessage(sbn)) {
                     noteOnce("Chat: ${sbn.packageName} title=$title")
                     controller.onChatPosted(app, chatsInShade(app))
+                    showMessage(sbn)
                 }
                 if (app == SocialNotificationParser.App.WHATSAPP) offerChatReply(sbn)
             }
@@ -79,8 +81,11 @@ class RideNotificationListener : NotificationListenerService() {
                 if (id != lastSms) {
                     lastSms = id
                     controller.onSms(title)
+                    showMessage(sbn)
                 }
             }
+            // Any other chat app (Telegram, Signal, Messenger Lite, Google Chat...): the message on the display.
+            sbn.packageName != packageName && isChat(n) && isNewMessage(sbn) -> showMessage(sbn)
         }
     }
 
@@ -132,6 +137,7 @@ class RideNotificationListener : NotificationListenerService() {
     }
 
     override fun onNotificationRemoved(sbn: StatusBarNotification) {
+        seenMessages.remove(sbn.key)
         when {
             sbn.key == lastNavKey -> {
                 lastNavKey = null
@@ -141,7 +147,6 @@ class RideNotificationListener : NotificationListenerService() {
             sbn.packageName == smsPackage -> controller.onSmsRead()
             SocialNotificationParser.app(sbn.packageName) != null -> {
                 val app = SocialNotificationParser.app(sbn.packageName)!!
-                seenMessages.remove(sbn.key)
                 if (chatsInShade(app) == 0) controller.onChatCleared(app)
             }
         }
@@ -180,6 +185,29 @@ class RideNotificationListener : NotificationListenerService() {
         val id = "${n.`when`}|$text"
         return seenMessages.put(sbn.key, id) != id
     }
+
+    private fun isChat(n: Notification) =
+        n.category == Notification.CATEGORY_MESSAGE || n.extras.containsKey(Notification.EXTRA_MESSAGES)
+
+    /** App, sender and text of a message notification, for the display's custom lines. */
+    private fun showMessage(sbn: StatusBarNotification) {
+        val extras = sbn.notification.extras
+        val sender = (extras.getCharSequence(Notification.EXTRA_TITLE) ?: extras.getCharSequence(Notification.EXTRA_CONVERSATION_TITLE))
+            ?.toString().orEmpty()
+        val text = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString() ?: return
+        controller.onMessage(appName(sbn), sender, text)
+    }
+
+    /**
+     * The posting app's name. The builder stores its ApplicationInfo in the extras ("android.appInfo"), which avoids
+     * the package-visibility rules a PackageManager lookup runs into on Android 11+.
+     */
+    private fun appName(sbn: StatusBarNotification): String = runCatching {
+        @Suppress("DEPRECATION")
+        val info = sbn.notification.extras.getParcelable<ApplicationInfo>("android.appInfo")
+            ?: packageManager.getApplicationInfo(sbn.packageName, 0)
+        info.loadLabel(packageManager).toString()
+    }.getOrNull()?.takeIf { it.isNotBlank() } ?: sbn.packageName.substringAfterLast('.')
 
     /** Chat notifications of [app] still in the shade (summaries left out). */
     private fun chatsInShade(app: SocialNotificationParser.App): Int =
