@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.2.1-alpha.8](https://github.com/aiyu-ayaan/RideLink/compare/v0.2.1-alpha.7...v0.2.1-alpha.8) (2026-11-08)
+
+### Other changes
+
+* Cut next alpha build
+* Fix(Startup) : Start the controller's background jobs only after all its fields exist, so a fresh process no longer crashes and the app opens after process death
+* Feat(Messages) : Queue pop-ups, add missed-call and delivery pop-ups, per-app and text filters, and a short sender flash during navigation
+* Fix(Signal) : Ask the modem for fresh signal bars every 10 s so the display updates while the phone is locked
+* Feat(Messages) : Show the app, sender and text of every new chat or SMS on the display for a few seconds
+* Fix(Chats) : Count each new WhatsApp, Facebook and Instagram message like the TVS app so the display badge pops every time
+
 ## [0.2.1-alpha.7](https://github.com/aiyu-ayaan/RideLink/compare/v0.2.1-alpha.6...v0.2.1-alpha.7) (2026-11-06)
 
 ### Other changes
