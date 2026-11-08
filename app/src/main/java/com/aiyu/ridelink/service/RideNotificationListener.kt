@@ -14,7 +14,6 @@ import com.aiyu.ridelink.core.ClusterController
 import com.aiyu.ridelink.core.nav.MapsNotificationParser
 import com.aiyu.ridelink.core.nav.MapsTurnIcons
 import com.aiyu.ridelink.core.notify.SocialNotificationParser
-import com.aiyu.ridelink.core.protocol.ClusterProtocol
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -59,8 +58,12 @@ class RideNotificationListener : NotificationListenerService() {
                 }
             }
             SocialNotificationParser.app(sbn.packageName) != null -> {
-                recountSocial()
-                if (SocialNotificationParser.app(sbn.packageName) == SocialNotificationParser.App.WHATSAPP) offerChatReply(sbn)
+                val app = SocialNotificationParser.app(sbn.packageName)!!
+                if (isNewMessage(sbn)) {
+                    noteOnce("Chat: ${sbn.packageName} title=$title")
+                    controller.onChatPosted(app, chatsInShade(app))
+                }
+                if (app == SocialNotificationParser.App.WHATSAPP) offerChatReply(sbn)
             }
             // Experimental delivery alert, once per order update.
             sbn.packageName in DELIVERY_APPS && (n.flags and Notification.FLAG_GROUP_SUMMARY) == 0 -> {
@@ -136,7 +139,11 @@ class RideNotificationListener : NotificationListenerService() {
             }
             sbn.notification.category == Notification.CATEGORY_CALL -> controller.onCallEnded()
             sbn.packageName == smsPackage -> controller.onSmsRead()
-            SocialNotificationParser.app(sbn.packageName) != null -> recountSocial()
+            SocialNotificationParser.app(sbn.packageName) != null -> {
+                val app = SocialNotificationParser.app(sbn.packageName)!!
+                seenMessages.remove(sbn.key)
+                if (chatsInShade(app) == 0) controller.onChatCleared(app)
+            }
         }
     }
 
@@ -147,7 +154,10 @@ class RideNotificationListener : NotificationListenerService() {
         runCatching { activeNotifications }.getOrNull()
             ?.filter { it.packageName == MapsNotificationParser.MAPS_PACKAGE }
             ?.forEach(::onNotificationPosted)
-        recountSocial()
+        // Chats already in the shade are not new; only messages from now on raise the badge (stock clears on start).
+        runCatching { activeNotifications }.getOrNull()
+            ?.filter { SocialNotificationParser.app(it.packageName) != null }
+            ?.forEach(::isNewMessage)
         music = MusicWatcher(this, ComponentName(this, RideNotificationListener::class.java), controller).also { it.start() }
     }
 
@@ -156,37 +166,27 @@ class RideNotificationListener : NotificationListenerService() {
         music = null
     }
 
+    /** Last `when` + text per notification key: chat apps repost every chat on each message, only a change is new. */
+    private val seenMessages = HashMap<String, String>()
+
     /**
-     * Rebuilds unread counts from what is still in the shade, so reading a chat clears its count.
-     * WhatsApp follows the stock parser (summary "N messages from M chats"); Facebook and Instagram count
-     * their visible notifications. shortcut: the stock FB/IG counting rule was not recovered.
+     * A real new message: not a group summary or an ongoing notice (WhatsApp Web, backup), and not a silent repost.
+     * Stock does the same per key + text (NotificationReceiverService.previousKey).
      */
-    private fun recountSocial() {
-        val active = runCatching { activeNotifications }.getOrNull() ?: return
-        var waSummary: SocialNotificationParser.Count? = null
-        var waMsgs = 0
-        var waChats = 0
-        var fb = 0
-        var ig = 0
-        for (sbn in active) {
-            val app = SocialNotificationParser.app(sbn.packageName) ?: continue
-            val extras = sbn.notification.extras
-            val isSummary = (sbn.notification.flags and Notification.FLAG_GROUP_SUMMARY) != 0
-            when (app) {
-                SocialNotificationParser.App.WHATSAPP -> {
-                    val title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString()
-                    val text = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString()
-                    val count = SocialNotificationParser.whatsapp(title, text, sbn.tag == null) ?: continue
-                    if (title == "WhatsApp") waSummary = count else if (!isSummary) { waMsgs += count.messages; waChats++ }
-                }
-                SocialNotificationParser.App.FACEBOOK -> if (!isSummary) fb++
-                SocialNotificationParser.App.INSTAGRAM -> if (!isSummary) ig++
-            }
-        }
-        val wa = waSummary ?: SocialNotificationParser.Count(waMsgs, waChats)
-        noteOnce("Chats: WhatsApp ${wa.messages} messages in ${wa.chats} chats, Facebook $fb, Instagram $ig")
-        controller.onSocialCounts(ClusterProtocol.SocialCounts(wa.messages, wa.chats, fb, ig))
+    private fun isNewMessage(sbn: StatusBarNotification): Boolean {
+        val n = sbn.notification
+        if ((n.flags and (Notification.FLAG_GROUP_SUMMARY or Notification.FLAG_ONGOING_EVENT)) != 0) return false
+        val text = n.extras.getCharSequence(Notification.EXTRA_TEXT)?.toString() ?: return false
+        val id = "${n.`when`}|$text"
+        return seenMessages.put(sbn.key, id) != id
     }
+
+    /** Chat notifications of [app] still in the shade (summaries left out). */
+    private fun chatsInShade(app: SocialNotificationParser.App): Int =
+        (runCatching { activeNotifications }.getOrNull() ?: return 0).count {
+            SocialNotificationParser.app(it.packageName) == app &&
+                (it.notification.flags and (Notification.FLAG_GROUP_SUMMARY or Notification.FLAG_ONGOING_EVENT)) == 0
+        }
 
     /**
      * Ringing calls carry CallStyle type INCOMING (API 31+). Dialers without CallStyle: a full-screen intent,

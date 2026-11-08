@@ -14,6 +14,7 @@ import com.aiyu.ridelink.core.ble.ClusterLink
 import com.aiyu.ridelink.core.ble.LinkState
 import com.aiyu.ridelink.core.analytics.RideMath
 import com.aiyu.ridelink.core.display.DisplayTemplate
+import com.aiyu.ridelink.core.notify.SocialNotificationParser.App as SocialApp
 import com.aiyu.ridelink.core.protocol.ClusterFamily
 import com.aiyu.ridelink.core.protocol.ClusterModel
 import com.aiyu.ridelink.core.protocol.ClusterProtocol
@@ -672,6 +673,32 @@ class ClusterController @Inject constructor(
         _social.value = counts
         scope.launch { sendSocial() }
     }
+
+    /**
+     * A new chat message: +1 for that app and the frame is written at once, so the display's badge pops on every
+     * message (stock SocialMediaCountHelper.insert*Record, then sendWhatsappData / sendFBData / sendInstaData).
+     * [chats] is how many WhatsApp chats are in the shade (only the older Ntorq frame shows it).
+     */
+    fun onChatPosted(app: SocialApp, chats: Int = 0) {
+        val c = _social.value
+        _social.value = when (app) {
+            SocialApp.WHATSAPP -> c.copy(whatsappMessages = c.whatsappMessages + 1, whatsappChats = chats)
+            SocialApp.FACEBOOK -> c.copy(facebookMessages = c.facebookMessages + 1)
+            SocialApp.INSTAGRAM -> c.copy(instagram = c.instagram + 1)
+        }
+        scope.launch { sendSocial() }
+    }
+
+    /** Every notification of [app] is gone (read or dismissed): its count goes back to 0. */
+    fun onChatCleared(app: SocialApp) = onSocialCounts(
+        _social.value.let { c ->
+            when (app) {
+                SocialApp.WHATSAPP -> c.copy(whatsappMessages = 0, whatsappChats = 0)
+                SocialApp.FACEBOOK -> c.copy(facebookMessages = 0)
+                SocialApp.INSTAGRAM -> c.copy(instagram = 0)
+            }
+        },
+    )
 
     private suspend fun sendSocial() {
         val s = settings.current()

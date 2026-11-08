@@ -200,8 +200,11 @@ IG   count (0..255)
 DID is `SampleGattAttributes.DATA_ID_MESSAGE5 = -100`. Telegram is counted by the stock app but never sent.
 WhatsApp counts (`NotificationListenerService`, only when `sbn.tag == null`): summary title `WhatsApp` with
 text `N messages from M chats`; else `^(\d+) new messages$` = N messages in 1 chat; else 1/1.
-RideLink rebuilds the counts from the active notifications on every post/remove (reading a chat clears it);
-Facebook (`com.facebook.katana`, `com.facebook.orca`) and Instagram count visible non-summary notifications.
+Stock counting (`SocialMediaCountHelper.insertWhatsappRecord` / `insertFBRecord` / `insertInstaRecord`): +1 per new
+notification (deduplicated on key + text), the frame written at once, all counts cleared when the service starts.
+RideLink does the same (key + `when` + text, group summaries and ongoing notices skipped) and resets an app to 0
+once none of its notifications are left in the shade. An earlier RideLink rebuilt the counts from the shade; a
+chat's count then stayed at 1 per chat, so a second message never changed the frame and the badge never popped.
 
 ### Screen switch, DID `0x4C` with a leading `00` (`BluetoothUtil.createTrafficSequenceCustomFrame`, `TrafficSequence`)
 `5B 4C 00 <id> <15 x 00> FF`. id: default `0x00`, weather `0x78`, cricket `0x79`, football `0x80`.
