@@ -331,7 +331,9 @@ class ClusterController @Inject constructor(
         statusJob = scope.launch {
             while (isActive) {
                 val now = settings.current()
-                send(ClusterProtocol.status(model(now), phoneStatus(now)))
+                navLock.withLock {
+                    send(ClusterProtocol.status(model(now), phoneStatus(now)))
+                }
                 // Stock writes no custom lines during a route; on the Race XP LCD they share the text area with
                 // the turn, so live lines (speed, time) would keep replacing it. They come back when the route ends.
                 if (_nav.value == null) sendDisplayText(now, force = false)
@@ -804,11 +806,17 @@ class ClusterController @Inject constructor(
      * written only when its text changed, or always with [force].
      */
     private suspend fun sendDisplayText(s: Settings, force: Boolean) {
+        var sentFirst = false
         if (s.displayLine1.isNotBlank() && System.currentTimeMillis() >= textHeldUntil) {
             val line = renderLine(s.displayLine1, s)
-            if (force || line != sentLine1) { send(ClusterProtocol.customLine1(line)); sentLine1 = line }
+            if (force || line != sentLine1) {
+                send(ClusterProtocol.customLine1(line))
+                sentLine1 = line
+                sentFirst = true
+            }
         }
         if (s.displayLine2.isNotBlank() && System.currentTimeMillis() >= textHeldUntil) {
+            if (sentFirst) kotlinx.coroutines.delay(300)
             val line = renderLine(s.displayLine2, s)
             if (force || line != sentLine2) { send(ClusterProtocol.customLine2(line)); sentLine2 = line }
         }
