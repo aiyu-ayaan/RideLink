@@ -16,6 +16,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.Writer
 import java.time.Instant
+import java.time.LocalDate
 import java.time.ZoneId
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -41,12 +42,14 @@ class RideStore @Inject constructor(@ApplicationContext context: Context) {
         demo: Boolean,
         turns: List<RideTurn> = emptyList(),
         bike: String? = null,
+        fromPlace: String? = null,
+        toPlace: String? = null,
     ): Long = withContext(Dispatchers.IO) {
         val w = db.writableDatabase
         var id = -1L
         w.beginTransaction()
         try {
-            id = w.insert(T_RIDES, null, summary.toValues(demo).apply { put("bike", bike) })
+            id = w.insert(T_RIDES, null, summary.toValues(demo).apply { put("bike", bike); put("from_place", fromPlace); put("to_place", toPlace) })
             samples.forEach { w.insert(T_SAMPLES, null, it.toValues(id)) }
             turns.forEach { w.insert(T_TURNS, null, it.toValues(id)) }
             w.setTransactionSuccessful()
@@ -76,6 +79,29 @@ class RideStore @Inject constructor(@ApplicationContext context: Context) {
                 )
             }
         }
+    }
+
+    /**
+     * One page of the ride history: [limit] rides from [offset] matching [filter], in its sort order. The full
+     * [rides] list stays for the Analytics stats; the history screen pages through SQLite instead.
+     */
+    suspend fun page(filter: RideFilter, offset: Int, limit: Int, today: LocalDate, zone: ZoneId): List<RideRecord> =
+        withContext(Dispatchers.IO) {
+            val (where, args) = filter.where(today, zone)
+            db.readableDatabase.query(T_RIDES, null, where, args, null, null, filter.sort.sql, "$offset,$limit").use { c ->
+                buildList { while (c.moveToNext()) add(c.ride()) }
+            }
+        }
+
+    /** The rider's title for a ride; blank goes back to the automatic "From A to B" one. */
+    suspend fun rename(rideId: Long, name: String?) = withContext(Dispatchers.IO) {
+        db.writableDatabase.update(T_RIDES, ContentValues().apply { put("name", name?.trim()?.takeIf { it.isNotEmpty() }) }, "id = ?", arrayOf(rideId.toString()))
+        reload()
+    }
+
+    suspend fun setStarred(rideId: Long, starred: Boolean) = withContext(Dispatchers.IO) {
+        db.writableDatabase.update(T_RIDES, ContentValues().apply { put("starred", if (starred) 1 else 0) }, "id = ?", arrayOf(rideId.toString()))
+        reload()
     }
 
     suspend fun delete(rideId: Long) = withContext(Dispatchers.IO) {
@@ -155,12 +181,17 @@ class RideStore @Inject constructor(@ApplicationContext context: Context) {
     private fun Cursor.int(col: String) = getColumnIndexOrThrow(col).let { if (isNull(it)) null else getInt(it) }
     private fun Cursor.dbl(col: String) = getColumnIndexOrThrow(col).let { if (isNull(it)) null else getDouble(it) }
     private fun Cursor.long(col: String) = getLong(getColumnIndexOrThrow(col))
+    private fun Cursor.str(col: String): String? = getColumnIndexOrThrow(col).let { if (isNull(it)) null else getString(it) }
     private fun Cursor.ints(col: String) = getString(getColumnIndexOrThrow(col)).orEmpty().split(',').mapNotNull { it.toIntOrNull() }
 
     private fun Cursor.ride() = RideRecord(
         id = long("id"),
         demo = int("demo") == 1,
-        bike = getString(getColumnIndexOrThrow("bike")),
+        bike = str("bike"),
+        name = str("name"),
+        starred = int("starred") == 1,
+        fromPlace = str("from_place"),
+        toPlace = str("to_place"),
         summary = RideSummary(
             start = long("start"), end = long("end_t"), distanceM = int("distance_m") ?: 0, durationS = int("duration_s") ?: 0,
             movingS = int("moving_s") ?: 0, maxSpeedKmh = int("max_speed") ?: 0, avgMovingSpeedKmh = dbl("avg_speed") ?: 0.0,
@@ -176,7 +207,7 @@ class RideStore @Inject constructor(@ApplicationContext context: Context) {
         navLeftM = int("nav_left"),
     )
 
-    private class Helper(context: Context) : SQLiteOpenHelper(context, "rides.db", null, 3) {
+    private class Helper(context: Context) : SQLiteOpenHelper(context, "rides.db", null, 4) {
         override fun onCreate(db: SQLiteDatabase) {
             db.execSQL(
                 """CREATE TABLE $T_RIDES (id INTEGER PRIMARY KEY AUTOINCREMENT, start INTEGER NOT NULL, end_t INTEGER NOT NULL,
@@ -190,11 +221,20 @@ class RideStore @Inject constructor(@ApplicationContext context: Context) {
             db.execSQL("CREATE INDEX samples_ride ON $T_SAMPLES (ride, t)")
             upgradeTo2(db)
             upgradeTo3(db)
+            upgradeTo4(db)
         }
 
         override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
             if (oldVersion < 2) upgradeTo2(db)
             if (oldVersion < 3) upgradeTo3(db)
+            if (oldVersion < 4) upgradeTo4(db)
+        }
+
+        /** v4: the rider's ride name, a star, and where the ride started and ended (ride history). */
+        private fun upgradeTo4(db: SQLiteDatabase) {
+            listOf("name TEXT", "starred INTEGER NOT NULL DEFAULT 0", "from_place TEXT", "to_place TEXT")
+                .forEach { db.execSQL("ALTER TABLE $T_RIDES ADD COLUMN $it") }
+            db.execSQL("CREATE INDEX rides_start ON $T_RIDES (start)")
         }
 
         /** v3: the scooter a ride belongs to, so Analytics shows one bike at a time. Old rows are adopted later. */

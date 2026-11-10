@@ -75,7 +75,20 @@ data class RideSummary(
 
 /** A stored ride: id, whether it is a demo/sample ride, and its summary. */
 /** [bike] is the scooter's Bluetooth address (GarageStore); null for rides recorded with no scooter paired. */
-data class RideRecord(val id: Long, val demo: Boolean, val summary: RideSummary, val bike: String? = null)
+/**
+ * [name] is the rider's own title (null = the UI builds one from [fromPlace] / [toPlace], else the date);
+ * the places are the neighbourhood where the ride started and ended, from the Geocoder.
+ */
+data class RideRecord(
+    val id: Long,
+    val demo: Boolean,
+    val summary: RideSummary,
+    val bike: String? = null,
+    val name: String? = null,
+    val starred: Boolean = false,
+    val fromPlace: String? = null,
+    val toPlace: String? = null,
+)
 
 enum class Period(val days: Int?) { WEEK(7), MONTH(30), YEAR(365), ALL(null) }
 

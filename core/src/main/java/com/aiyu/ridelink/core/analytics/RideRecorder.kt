@@ -4,6 +4,9 @@ import com.aiyu.ridelink.core.ClusterController
 import com.aiyu.ridelink.core.ble.LinkState
 import com.aiyu.ridelink.core.protocol.DisplayTelemetry
 import com.aiyu.ridelink.core.settings.SettingsRepository
+import com.aiyu.ridelink.core.weather.WeatherRepository
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.async
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -28,6 +31,7 @@ class RideRecorder @Inject constructor(
     private val controller: ClusterController,
     private val store: RideStore,
     private val settings: SettingsRepository,
+    private val places: WeatherRepository,
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private var started = false
@@ -37,6 +41,8 @@ class RideRecorder @Inject constructor(
     private val turns = mutableListOf<RideTurn>()
     private var currentIsDemo = false
     private var currentBike: String? = null
+    /** Where the current ride started; looked up in the background when it starts. */
+    private var fromPlace: Deferred<String?>? = null
     private var lastMovingAt = 0L
 
     private val _recording = MutableStateFlow(false)
@@ -74,6 +80,7 @@ class RideRecorder @Inject constructor(
                 noteTurn(now)
                 currentIsDemo = demo
                 currentBike = settings.current().deviceAddress
+                fromPlace = if (demo) null else scope.async { placeHere() }
                 lastMovingAt = now
                 _recording.value = true
             }
@@ -111,8 +118,22 @@ class RideRecorder @Inject constructor(
         val summary = RideMath.summarize(trimmed, ZoneId.systemDefault()) ?: return
         val kept = turns.filter { it.t <= lastMovingAt + RideMath.SAMPLE_MS }
         turns.clear()
-        if (RideMath.worthKeeping(summary)) store.save(summary, trimmed, currentIsDemo, kept, currentBike)
+        val from = fromPlace
+        fromPlace = null
+        if (!RideMath.worthKeeping(summary)) return
+        val demo = currentIsDemo
+        val bike = currentBike
+        // The place lookup can take a while (fresh fix + Geocoder); the tick loop must not wait for it.
+        scope.launch {
+            val to = if (demo) null else placeHere()
+            store.save(summary, trimmed, demo, kept, bike, from?.await(), to)
+        }
     }
+
+    /** Neighbourhood name of where the phone is, or null without location access, a fix or Geocoder. */
+    private suspend fun placeHere(): String? = runCatching {
+        places.location(precise = places.hasPrecise())?.let { places.placeName(it) }
+    }.getOrNull()
 
     /** Fills Analytics with labelled sample rides (demo = true) so it can be previewed without riding. */
     fun addSampleRides() = scope.launch {
