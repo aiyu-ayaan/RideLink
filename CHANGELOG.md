@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.1-alpha.9](https://github.com/aiyu-ayaan/RideLink/compare/v0.2.1-alpha.8...v0.2.1-alpha.9) (2026-11-10)
+
+### Other changes
+
+* Cut next alpha build
+* Test(Rides) : Extra ride filter tests
+* Docs(Rides) : Ride history and display hold notes
+* Ui(Rides) : Ride history page with search, filter chips, filter sheet and paging; rename and star rides; recent 5 on Analytics
+* Core(Rides) : Ride names, stars, start and end places, and a filtered paged history query
+* Fix(Ride) : Hide tiles for values the display never sends instead of showing rows of dashes
+* Fix(Display) : Hold turn frames while a message pop-up shows or a call rings, so both stay visible during a route
+
 ## [0.2.1-alpha.8](https://github.com/aiyu-ayaan/RideLink/compare/v0.2.1-alpha.7...v0.2.1-alpha.8) (2026-11-08)
 
 ### Other changes
