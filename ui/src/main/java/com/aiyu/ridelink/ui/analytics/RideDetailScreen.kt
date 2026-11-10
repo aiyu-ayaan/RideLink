@@ -13,6 +13,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.DeleteOutline
+import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Map
 import com.aiyu.ridelink.ui.nav.appBarColors
 import androidx.compose.material3.AlertDialog
@@ -66,6 +67,7 @@ fun RideDetailScreen(rideId: Long, onBack: () -> Unit, vm: AnalyticsViewModel = 
     val samples by produceState<List<RideSample>?>(null, rideId) { value = vm.samples(rideId) }
     val turns by produceState<List<RideTurn>>(emptyList(), rideId) { value = vm.turns(rideId) }
     var confirmDelete by rememberSaveable { mutableStateOf(false) }
+    var renaming by rememberSaveable { mutableStateOf(false) }
     val scroll = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
     Scaffold(
@@ -73,17 +75,26 @@ fun RideDetailScreen(rideId: Long, onBack: () -> Unit, vm: AnalyticsViewModel = 
         topBar = {
             LargeFlexibleTopAppBar(
                 colors = appBarColors(),
-                title = { Text(ride?.let { Fmt.dateTime(it.summary.start) } ?: stringResource(R.string.detail_title)) },
+                title = { Text(ride?.let { rideTitle(it) } ?: stringResource(R.string.detail_title), maxLines = 2) },
                 subtitle = {
                     ride?.let { r ->
+                        // The date moves here when the title is a name or the places.
+                        val date = Fmt.dateTime(r.summary.start)
                         Text(
-                            stringResource(R.string.detail_span, Fmt.time(r.summary.start), Fmt.time(r.summary.end)) +
+                            (if (rideTitle(r) != date) Fmt.day(java.time.Instant.ofEpochMilli(r.summary.start).atZone(java.time.ZoneId.systemDefault()).toLocalDate()) + " · " else "") +
+                                stringResource(R.string.detail_span, Fmt.time(r.summary.start), Fmt.time(r.summary.end)) +
                                 if (r.demo) " · " + stringResource(R.string.analytics_sample) else "",
                         )
                     }
                 },
                 navigationIcon = { BackButton(onBack) },
                 actions = {
+                    if (ride != null) {
+                        StarToggle(ride.starred) { vm.setStarred(ride.id, it) }
+                        IconButton(onClick = { renaming = true }) {
+                            Icon(Icons.Rounded.Edit, contentDescription = stringResource(R.string.ride_rename))
+                        }
+                    }
                     if (ride != null) IconButton(onClick = { confirmDelete = true }) {
                         Icon(Icons.Rounded.DeleteOutline, contentDescription = stringResource(R.string.detail_delete))
                     }
@@ -111,6 +122,10 @@ fun RideDetailScreen(rideId: Long, onBack: () -> Unit, vm: AnalyticsViewModel = 
                 else -> Charts(ride, list)
             }
         }
+    }
+
+    if (renaming && ride != null) {
+        RenameDialog(ride.name, onSave = { vm.rename(ride.id, it); renaming = false }, onDismiss = { renaming = false })
     }
 
     if (confirmDelete && ride != null) {

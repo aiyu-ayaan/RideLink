@@ -98,8 +98,9 @@ private val Period.span
     }
 
 @Composable
-fun AnalyticsScreen(onOpenRide: (Long) -> Unit, vm: AnalyticsViewModel = hiltViewModel()) {
+fun AnalyticsScreen(onOpenRide: (Long) -> Unit, onOpenHistory: () -> Unit, vm: AnalyticsViewModel = hiltViewModel()) {
     val state by vm.state.collectAsStateWithLifecycle()
+    val recent by vm.recent.collectAsStateWithLifecycle()
     val recording by vm.recording.collectAsStateWithLifecycle()
     val telemetry by vm.telemetry.collectAsStateWithLifecycle()
     val bikes by vm.bikes.collectAsStateWithLifecycle()
@@ -197,12 +198,17 @@ fun AnalyticsScreen(onOpenRide: (Long) -> Unit, vm: AnalyticsViewModel = hiltVie
             item { Records(s, onOpenRide) }
             item {
                 Text(
-                    stringResource(R.string.analytics_history, state.rides.size),
+                    stringResource(R.string.recent_rides),
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.padding(horizontal = Dimens.gutter, vertical = Dimens.sm),
                 )
             }
-            items(state.rides, key = { it.id }) { r -> RideRow(r) { onOpenRide(r.id) } }
+            items(recent, key = { it.id }) { r -> RideRow(r, onStar = { vm.setStarred(r.id, it) }) { onOpenRide(r.id) } }
+            item {
+                FilledTonalButton(onClick = onOpenHistory, modifier = Modifier.padding(horizontal = Dimens.gutter).fillMaxWidth()) {
+                    Text(stringResource(R.string.see_all_rides))
+                }
+            }
             item { Spacer(Modifier.height(Dimens.xl)) }
             item { BottomBarSpacer() }
         }
@@ -419,37 +425,5 @@ private fun RecordRow(icon: ImageVector, title: String, value: String, detail: S
         trailingContent = { Text(value, style = MaterialTheme.typography.titleMedium) },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
         modifier = if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier,
-    )
-}
-
-@Composable
-private fun RideRow(r: RideRecord, onClick: () -> Unit) {
-    val s = r.summary
-    ListItem(
-        headlineContent = { Text(Fmt.dateTime(s.start)) },
-        supportingContent = {
-            Text(
-                stringResource(
-                    R.string.ride_row,
-                    Fmt.km(s.distanceKm),
-                    Fmt.duration(s.movingS.toLong()),
-                    Fmt.whole(s.avgMovingSpeedKmh),
-                    s.maxSpeedKmh,
-                ),
-            )
-        },
-        leadingContent = { Icon(Icons.Rounded.TwoWheeler, contentDescription = null) },
-        trailingContent = {
-            if (r.demo) {
-                Surface(color = MaterialTheme.colorScheme.secondaryContainer, shape = MaterialTheme.shapes.small) {
-                    Text(
-                        stringResource(R.string.analytics_sample),
-                        style = MaterialTheme.typography.labelSmall,
-                        modifier = Modifier.padding(horizontal = Dimens.sm, vertical = Dimens.xs),
-                    )
-                }
-            }
-        },
-        modifier = Modifier.clickable(onClick = onClick),
     )
 }

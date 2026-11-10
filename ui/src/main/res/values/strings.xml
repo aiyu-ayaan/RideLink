@@ -197,7 +197,6 @@
     <string name="analytics_recording">Recording this ride</string>
     <string name="analytics_empty_title">No rides yet</string>
     <string name="analytics_empty_body">Rides are recorded on their own while the scooter is connected: distance from the odometer, speed, mileage and fuel every 5 seconds. Everything stays on this phone. Load sample rides to preview this screen; they are labelled and can be removed in one tap.</string>
-    <string name="analytics_history">Rides (%1$d)</string>
     <string name="period_week">Week</string>
     <string name="period_month">Month</string>
     <string name="period_year">Year</string>
@@ -470,4 +469,37 @@
     <string name="settings_check_in_perm">Needs SMS and precise location access. Turn the switch off and on to ask again.</string>
     <string name="settings_riding_message">Riding message</string>
     <string name="settings_riding_message_hint">Used for reject with SMS, missed-call replies and WhatsApp replies</string>
+    <!-- Ride history -->
+    <string name="history_title">Ride history</string>
+    <string name="recent_rides">Recent rides</string>
+    <string name="see_all_rides">See all rides</string>
+    <string name="ride_from_to">From %1$s to %2$s</string>
+    <string name="ride_around">Around %1$s</string>
+    <string name="ride_from">From %1$s</string>
+    <string name="ride_star">Star ride</string>
+    <string name="ride_unstar">Remove star</string>
+    <string name="ride_rename">Rename ride</string>
+    <string name="ride_name">Name</string>
+    <string name="ride_name_hint">Leave empty to name it after where it started and ended.</string>
+    <string name="save">Save</string>
+    <string name="history_search">Search name or place</string>
+    <string name="history_clear_search">Clear search</string>
+    <string name="filter_more">Filters</string>
+    <string name="filter_starred">Starred</string>
+    <string name="filter_route">With route</string>
+    <string name="filter_distance">Distance</string>
+    <string name="filter_distance_value">%1$s to %2$s km</string>
+    <string name="filter_top_speed">Top speed at least</string>
+    <string name="filter_any">Any</string>
+    <string name="filter_samples">Show sample rides</string>
+    <string name="filter_sort">Sort by</string>
+    <string name="sort_newest">Newest</string>
+    <string name="sort_oldest">Oldest</string>
+    <string name="sort_longest">Longest</string>
+    <string name="sort_fastest">Fastest</string>
+    <string name="sort_longest_time">Most time</string>
+    <string name="filter_reset">Reset</string>
+    <string name="filter_apply">Show rides</string>
+    <string name="history_empty">No rides match these filters.</string>
+    <string name="history_clear_filters">Clear filters</string>
 </resources>

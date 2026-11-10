@@ -59,6 +59,7 @@ import com.aiyu.ridelink.ui.about.AboutScreen
 import com.aiyu.ridelink.ui.about.AcknowledgementsScreen
 import com.aiyu.ridelink.ui.analytics.AnalyticsScreen
 import com.aiyu.ridelink.ui.analytics.RideDetailScreen
+import com.aiyu.ridelink.ui.analytics.RideHistoryScreen
 import com.aiyu.ridelink.ui.care.CareScreen
 import com.aiyu.ridelink.ui.console.ConsoleScreen
 import com.aiyu.ridelink.ui.nav.FloatingNavBar
@@ -77,7 +78,7 @@ private val tabs = listOf(
 )
 
 /** Screens opened on top of the tabs. Console is a developer option (Settings → Developer options). */
-private enum class Page { Console, Updates, About, Acknowledgements, Care }
+private enum class Page { Console, Updates, About, Acknowledgements, Care, History }
 
 /** Stack entry prefix for a Settings section page, e.g. "settings:SCOOTER". */
 private const val SETTINGS = "settings:"
@@ -154,7 +155,7 @@ fun RideLinkRoot(onConnect: () -> Unit, onDisconnect: () -> Unit) {
                     holder.SaveableStateProvider("tab:$current") {
                         when (current) {
                             0 -> RideScreen(vm, connect, disconnect, onOpenCare = { push(Page.Care.name) })
-                            1 -> AnalyticsScreen(onOpenRide = { push(RIDE + it) })
+                            1 -> AnalyticsScreen(onOpenRide = { push(RIDE + it) }, onOpenHistory = { push(Page.History.name) })
                             else -> settings(null)
                         }
                     }
@@ -169,6 +170,7 @@ fun RideLinkRoot(onConnect: () -> Unit, onDisconnect: () -> Unit) {
                             Page.About -> AboutScreen(onBack = pop, onOpenUpdates = { push(Page.Updates.name) }, onOpenAcknowledgements = { push(Page.Acknowledgements.name) })
                             Page.Acknowledgements -> AcknowledgementsScreen(onBack = pop)
                             Page.Care -> CareScreen(onBack = pop)
+                            Page.History -> RideHistoryScreen(onBack = pop, onOpenRide = { push(RIDE + it) })
                         }
                     }
                 }

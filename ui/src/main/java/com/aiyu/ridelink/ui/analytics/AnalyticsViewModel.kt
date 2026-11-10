@@ -85,11 +85,21 @@ class AnalyticsViewModel @Inject constructor(
     fun addSampleRides() = recorder.addSampleRides()
     fun deleteSampleRides() = viewModelScope.launch { store.deleteDemo() }
     fun delete(id: Long) = viewModelScope.launch { store.delete(id) }
+    fun rename(id: Long, name: String?) = viewModelScope.launch { store.rename(id, name) }
+    fun setStarred(id: Long, starred: Boolean) = viewModelScope.launch { store.setStarred(id, starred) }
+
+    /** The newest rides of the shown scooter, for the "Recent rides" list under the stats. */
+    val recent: StateFlow<List<RideRecord>> = combine(store.rides, bike) { all, b -> all.filter { it.shown(b) }.take(RECENT) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
     suspend fun samples(id: Long): List<RideSample> = store.samples(id)
     suspend fun turns(id: Long): List<RideTurn> = store.turns(id)
 
     /** Every stored ride, unfiltered by period: a ride opened from the records may be older than the period. */
     val allRides = store.rides
+
+    private companion object {
+        const val RECENT = 5
+    }
 
     fun exportCsv(uri: Uri, resolver: ContentResolver) = viewModelScope.launch {
         withContext(Dispatchers.IO) {
