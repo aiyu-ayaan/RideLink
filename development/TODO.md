@@ -35,7 +35,11 @@
 - [x] Parked spot only when stopped, precise location; WhatsApp auto-reply while riding; ride check-in SMS
 - [x] Console -> Feature tests (refuel, low fuel, service due, park here, check-in SMS, pretend riding)
 
+- [x] Ride history page: names, stars, From A to B titles, filters, pagination
+- [x] Turn frames held while a pop-up or call shows; tiles hide values the display never sends
+
 ## Needs the real scooter
+- [ ] During a Maps route: caller name and message pop-ups stay on the display (turn frames held)
 - [ ] Refuel detection: check the bar jump at a real pump (ignition off and on) and that a slosh does not log a stop
 - [ ] Service flash on custom line 1: does the Race XP / XT show it on connect
 - [ ] WhatsApp auto-reply with a real chat while riding (or Pretend riding)

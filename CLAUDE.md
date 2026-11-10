@@ -66,8 +66,10 @@ Modules:
   It hides on scroll; tab screens end with `BottomBarSpacer()`. No drawer. Pages (Settings sections, ride detail,
   Console, Updates, About) open on the stack in `RideLinkRoot` with predictive back.
 - Analytics: period picker, one hero number (distance + change), stat tiles, Canvas charts in `ui/analytics/Charts.kt`
-  (single series, primary marks, tertiary selection, tap/drag readout, no dual axis), records, ride list,
-  ride detail page (`RideDetailScreen`: distance source, all stats, charts, speed bands, Maps turn timeline).
+  (single series, primary marks, tertiary selection, tap/drag readout, no dual axis), records, last 5 rides + "See all rides",
+  ride detail page (`RideDetailScreen`: star, rename, distance source, all stats, charts, speed bands, Maps turn timeline).
+  `RideHistoryScreen`: search, filter chips (period, starred, with route), Filters sheet (distance, top speed, samples,
+  sort), 20-ride pages from `RideStore.page(RideFilter)`. Untitled rides read "From A to B" (Geocoder places at start/end).
 - Ride screen: hero status card (cookie shape, `LoadingIndicator` while searching), turn-arrow
   dashboard (big arrow, distance, ETA, left, speed), ride data card, vehicle card, weather card, music card, call card,
   one primary button (Connect / Disconnect). New cards live in `ui/ride/RideCards.kt`.
