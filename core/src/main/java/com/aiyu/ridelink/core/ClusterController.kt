@@ -134,6 +134,7 @@ class ClusterController @Inject constructor(
         callJob?.cancel()
         _caller.value = null
         callState = CallState.ACCEPTED
+        scope.launch { resendNav() }
     }
 
     /** Demo ride: fake speed, turns and a call, for screenshots and testing without a scooter. */
@@ -200,13 +201,14 @@ class ClusterController @Inject constructor(
 
     /**
      * Shows [text] on custom line 1 (and [line2] on line 2) for [ms], then puts the rider's own lines back (or blanks
-     * them). A newer flash replaces the one showing. Skipped during a route: on the SmartXonnect LCD the lines share
-     * the turn text area. SmartXonnect gets the pair 5 times, 300 / 100 ms apart, as stock sendCustomData writes it.
+     * them). A newer flash replaces the one showing. Skipped during a route unless [overNav]: on the SmartXonnect LCD
+     * the lines share the turn text area. SmartXonnect gets the pair 5 times, 300 / 100 ms apart, as stock
+     * sendCustomData writes it.
      */
-    fun flashText(text: String, line2: String? = null, ms: Long = FLASH_MS) {
+    fun flashText(text: String, line2: String? = null, ms: Long = FLASH_MS, overNav: Boolean = false) {
         flashJob?.cancel()
         flashJob = scope.launch {
-            if (link.state.value !is LinkState.Ready || _nav.value != null) return@launch
+            if (link.state.value !is LinkState.Ready || (_nav.value != null && !overNav)) return@launch
             val until = System.currentTimeMillis() + ms + 2_000
             textHeldUntil = until
             val times = if (model(settings.current()).family == ClusterFamily.SMARTXONNECT && line2 != null) 5 else 1
@@ -227,7 +229,8 @@ class ClusterController @Inject constructor(
             sentLine1 = null
             sentLine2 = null
             val s = settings.current()
-            if (link.state.value !is LinkState.Ready) return@launch
+            // During a route the turn takes the text area back (showAlert resends it); no custom lines.
+            if (link.state.value !is LinkState.Ready || _nav.value != null) return@launch
             // An empty text frame blanks the line.
             if (s.displayLine1.isBlank()) send(ClusterProtocol.customLine1(""))
             if (line2 != null && s.displayLine2.isBlank()) send(ClusterProtocol.customLine2(""))
@@ -249,25 +252,33 @@ class ClusterController @Inject constructor(
         if (!s.messageAlerts || !a.allowed(s.messageMuted, s.messageGroups) || link.state.value !is LinkState.Ready) return
         val (line1, line2) = a.lines(s.messageText)
         note("Message: ${a.app} / ${a.sender}")
-        if (_nav.value != null) return flashNavText(line1)
-        flashText(line1, line2, MESSAGE_FLASH_MS)
-        flashJob?.join()
+        // During a route the turn resends (every 800 ms on SmartXonnect) would cover the pop-up at once: hold them
+        // for the pop-up's time, then put the turn back.
+        val overNav = _nav.value != null
+        if (overNav) navPaused = true
+        try {
+            flashText(line1, line2, MESSAGE_FLASH_MS, overNav)
+            flashJob?.join()
+        } finally {
+            if (overNav) {
+                navPaused = false
+                resendNav()
+            }
+        }
     }
 
-    @Volatile private var navMessage: String? = null
+    /** Set while a message pop-up shows over a route. */
+    @Volatile private var navPaused = false
 
-    /** During a route: [text] replaces the turn text for [NAV_MESSAGE_MS]; the arrow and distance stay up. */
-    private suspend fun flashNavText(text: String) {
-        navMessage = text
-        resendNav()
-        delay(NAV_MESSAGE_MS)
-        navMessage = null
-        resendNav()
-    }
+    /**
+     * Turn frames wait while a pop-up or a ringing call is on the display: each resend replaces the text area, so
+     * the caller name and messages vanished during a route. The step itself keeps updating and goes out afterwards.
+     */
+    private fun navHeld() = navPaused || _caller.value != null
 
     private suspend fun resendNav() {
         val step = _nav.value ?: return
-        navLock.withLock { if (_nav.value === step) sendNav(settings.current(), step) }
+        navLock.withLock { if (_nav.value === step && !navHeld()) sendNav(settings.current(), step) }
     }
 
     /** Called by the foreground service. Connects to the saved cluster and keeps the session alive. */
@@ -414,7 +425,7 @@ class ClusterController @Inject constructor(
             if (!(s.forwardNavigation || demo) || seq != navSeq.get()) return@launch
             _nav.value = step
             navLock.withLock {
-                if (seq != navSeq.get()) return@withLock
+                if (seq != navSeq.get() || navHeld()) return@withLock
                 sendNav(s, step)
             }
             keepNavAlive()
@@ -436,7 +447,7 @@ class ClusterController @Inject constructor(
                 val every = ClusterProtocol.navResendMs(model(settings.current()))
                 delay(every)
                 val step = _nav.value ?: break
-                if (link.state.value !is LinkState.Ready || _arrowSweep.value) continue
+                if (link.state.value !is LinkState.Ready || _arrowSweep.value || navHeld()) continue
                 if (System.currentTimeMillis() - navSentAt < every) continue
                 val seq = navSeq.get()
                 navLock.withLock { if (seq == navSeq.get() && _nav.value === step) sendNav(settings.current(), step) }
@@ -450,10 +461,9 @@ class ClusterController @Inject constructor(
             send(ClusterProtocol.screen(ClusterProtocol.Screen.DEFAULT))
         }
         val m = model(s)
-        val message = navMessage
         ClusterProtocol.navigation(m, step).forEachIndexed { i, f ->
             if (i > 0) delay(ClusterProtocol.navGapMs(m))
-            send(if (message != null && f[1] == ClusterProtocol.DID_NAV_TEXT.toByte()) ClusterProtocol.text(ClusterProtocol.DID_NAV_TEXT, message) else f)
+            send(f)
         }
         navSentAt = System.currentTimeMillis()
     }
@@ -642,7 +652,7 @@ class ClusterController @Inject constructor(
             if (!settings.current().forwardCalls) return@launch
             _caller.value = nameOrNumber
             callState = CallState.RINGING
-            sendDisplayText(settings.current(), force = false)
+            if (_nav.value == null) sendDisplayText(settings.current(), force = false)
             val frame = ClusterProtocol.caller(nameOrNumber)
             // Stock app repeats the caller frame every 500 ms while ringing; cap it at 60 s.
             withTimeoutOrNull(60_000) {
@@ -680,7 +690,8 @@ class ClusterController @Inject constructor(
                     send(ClusterProtocol.status(m, phoneStatus(s)))
                 }
                 if (s.ledClear && m.family == ClusterFamily.SMARTXONNECT) send(ClusterProtocol.clearCallLed(java.time.LocalDate.now()))
-                sendDisplayText(s, force = false)
+                // The route was held while ringing; custom lines stay off during a route.
+                if (_nav.value != null) resendNav() else sendDisplayText(s, force = false)
             }
             delay(ClusterProtocol.STATUS_INTERVAL_MS * 2)
             callState = CallState.IDLE
@@ -1036,7 +1047,6 @@ class ClusterController @Inject constructor(
         const val RIDING_GAP_MS = 5 * 60_000L
         const val FLASH_MS = 10_000L
         const val MESSAGE_FLASH_MS = 6_000L
-        const val NAV_MESSAGE_MS = 3_000L
         const val ALERT_QUEUE = 5
         const val CELL_REFRESH_MS = 10_000L
     }

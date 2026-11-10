@@ -218,8 +218,9 @@ spaces, held 6 s, then the rider's own lines come back. Pop-ups queue (up to 5, 
 another. The same pop-up carries "Missed call / name" (newest call-log entry marked missed, `READ_CALL_LOG`) and
 "Food" or "Order" over "Notification" for Swiggy, Zomato, Blinkit, Zepto, Dunzo, Amazon and Flipkart (stock
 `N251HelperService.sendSocialmediaNotification`; stock only shows it on U445B/U566).
-During a route the custom lines share the turn text, so line 1 replaces the nav text (`5B 4F` / DID `0x4F`) in the
-resent nav pair for 3 s instead; the arrow and distance stay up.
+During a route the turn resends (every 800 ms on SmartXonnect, 2 s otherwise) replaced the pop-up and the caller
+name within a second, so RideLink holds the turn frames while a pop-up shows (6 s) or a call rings, then resends the
+current step at once. A RideLink choice, not taken from stock.
 
 ### Screen switch, DID `0x4C` with a leading `00` (`BluetoothUtil.createTrafficSequenceCustomFrame`, `TrafficSequence`)
 `5B 4C 00 <id> <15 x 00> FF`. id: default `0x00`, weather `0x78`, cricket `0x79`, football `0x80`.
