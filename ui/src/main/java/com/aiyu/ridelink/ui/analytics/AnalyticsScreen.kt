@@ -71,6 +71,8 @@ import com.aiyu.ridelink.core.analytics.RideMath
 import com.aiyu.ridelink.core.analytics.RideRecord
 import com.aiyu.ridelink.ui.R
 import com.aiyu.ridelink.ui.ride.Tile
+import com.aiyu.ridelink.ui.ride.TileGrid
+import com.aiyu.ridelink.ui.ride.TileSpec
 import com.aiyu.ridelink.ui.theme.Dimens
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -319,18 +321,17 @@ private fun StatTiles(s: PeriodStats) {
     val km = stringResource(R.string.unit_km)
     val kmh = stringResource(R.string.dash_kmh)
     Column(Modifier.padding(horizontal = Dimens.gutter), verticalArrangement = Arrangement.spacedBy(Dimens.sm)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(Dimens.sm)) {
-            Tile(stringResource(R.string.stat_rides), s.rides.toString(), "", c, Modifier.weight(1f))
-            Tile(stringResource(R.string.stat_time), Fmt.duration(s.movingS), "", c, Modifier.weight(1f))
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(Dimens.sm)) {
-            Tile(stringResource(R.string.stat_avg_speed), Fmt.whole(s.avgSpeedKmh), kmh, c, Modifier.weight(1f))
-            Tile(stringResource(R.string.stat_top_speed), s.topSpeedKmh.toString(), kmh, c, Modifier.weight(1f))
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(Dimens.sm)) {
-            Tile(stringResource(R.string.stat_mileage), s.avgEconomy?.let(Fmt::one) ?: "--", stringResource(R.string.unit_kmpl), c, Modifier.weight(1f))
-            Tile(stringResource(R.string.stat_per_ride), if (s.rides > 0) Fmt.km(s.totalKm / s.rides) else "--", km, c, Modifier.weight(1f))
-        }
+        TileGrid(
+            listOf(
+                TileSpec(stringResource(R.string.stat_rides), s.rides.toString()),
+                TileSpec(stringResource(R.string.stat_time), Fmt.duration(s.movingS)),
+                TileSpec(stringResource(R.string.stat_avg_speed), Fmt.whole(s.avgSpeedKmh), kmh),
+                TileSpec(stringResource(R.string.stat_top_speed), s.topSpeedKmh.toString(), kmh),
+                TileSpec(stringResource(R.string.stat_mileage), s.avgEconomy?.let(Fmt::one), stringResource(R.string.unit_kmpl)),
+                TileSpec(stringResource(R.string.stat_per_ride), if (s.rides > 0) Fmt.km(s.totalKm / s.rides) else null, km),
+            ),
+            c,
+        )
     }
 }
 

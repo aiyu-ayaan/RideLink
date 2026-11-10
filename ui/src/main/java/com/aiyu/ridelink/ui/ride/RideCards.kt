@@ -92,6 +92,22 @@ internal fun Tile(label: String, value: String, unit: String, content: Color, mo
     }
 }
 
+/** One tile for [TileGrid]; a null [value] means the display never sent it, and the tile is left out. */
+internal data class TileSpec(val label: String, val value: String?, val unit: String = "")
+
+/**
+ * Tiles [perRow] to a row, skipping values the display does not send: a model that never reports trip or range
+ * showed rows of "--" before. The last row's tiles stretch to fill it.
+ */
+@Composable
+internal fun TileGrid(tiles: List<TileSpec>, content: Color, perRow: Int = 2) {
+    tiles.filter { it.value != null }.chunked(perRow).forEach { row ->
+        Row(horizontalArrangement = Arrangement.spacedBy(Dimens.sm)) {
+            row.forEach { Tile(it.label, it.value!!, it.unit, content, Modifier.weight(1f)) }
+        }
+    }
+}
+
 /** What the display's weather screen shows: icon, temperature, AQI, rain chance and where you are. */
 @Composable
 internal fun WeatherCard(weather: ClusterProtocol.Weather?, place: String?) {
@@ -181,8 +197,9 @@ internal val DisplayTelemetry.hasRideData
 @Composable
 internal fun RideDataCard(t: DisplayTelemetry, family: ClusterFamily, logKmpl: Double?) {
     val content = MaterialTheme.colorScheme.onSurface
-    fun v(x: Int?) = x?.toString() ?: "--"
-    fun km(x: Double?) = x?.let { "%.1f".format(it) } ?: "--"
+    fun km(x: Double?) = x?.let { "%.1f".format(it) }
+    val kmUnit = stringResource(R.string.unit_km)
+    val kmh = stringResource(R.string.dash_kmh)
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
         shape = MaterialTheme.shapes.extraLarge,
@@ -190,26 +207,23 @@ internal fun RideDataCard(t: DisplayTelemetry, family: ClusterFamily, logKmpl: D
     ) {
         Column(Modifier.padding(Dimens.xl), verticalArrangement = Arrangement.spacedBy(Dimens.sm)) {
             Text(stringResource(R.string.ride_data), style = MaterialTheme.typography.titleMediumEmphasized, color = content)
-            Row(horizontalArrangement = Arrangement.spacedBy(Dimens.sm)) {
-                Tile(stringResource(R.string.ride_odometer), km(t.odometerKm), stringResource(R.string.unit_km), content, Modifier.weight(1f))
-                Tile(stringResource(R.string.ride_trip), km(t.tripKm), stringResource(R.string.unit_km), content, Modifier.weight(1f))
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(Dimens.sm)) {
-                Tile(stringResource(R.string.ride_fuel), v(t.fuelBars(family)), stringResource(R.string.detail_fuel_unit), content, Modifier.weight(1f))
-                if (t.rangeKm != null) Tile(stringResource(R.string.ride_range), v(t.rangeKm), stringResource(R.string.unit_km), content, Modifier.weight(1f))
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(Dimens.sm)) {
-                Tile(stringResource(R.string.ride_avg_speed), v(t.averageSpeedKmh), stringResource(R.string.dash_kmh), content, Modifier.weight(1f))
-                Tile(stringResource(R.string.ride_top_speed), v(t.topSpeedKmh), stringResource(R.string.dash_kmh), content, Modifier.weight(1f))
-                val display = t.averageEconomy?.takeIf { it > 0 }
-                Tile(
-                    stringResource(if (display == null && logKmpl != null) R.string.ride_mileage_log else R.string.ride_mileage),
-                    display?.toString() ?: logKmpl?.let { "%.1f".format(it) } ?: "--",
-                    stringResource(R.string.unit_kmpl),
-                    content,
-                    Modifier.weight(1f),
-                )
-            }
+            val display = t.averageEconomy?.takeIf { it > 0 }
+            TileGrid(
+                listOf(
+                    TileSpec(stringResource(R.string.ride_odometer), km(t.odometerKm), kmUnit),
+                    TileSpec(stringResource(R.string.ride_trip), km(t.tripKm), kmUnit),
+                    TileSpec(stringResource(R.string.ride_fuel), t.fuelBars(family)?.toString(), stringResource(R.string.detail_fuel_unit)),
+                    TileSpec(stringResource(R.string.ride_range), t.rangeKm?.toString(), kmUnit),
+                    TileSpec(stringResource(R.string.ride_avg_speed), t.averageSpeedKmh?.toString(), kmh),
+                    TileSpec(stringResource(R.string.ride_top_speed), t.topSpeedKmh?.toString(), kmh),
+                    TileSpec(
+                        stringResource(if (display == null && logKmpl != null) R.string.ride_mileage_log else R.string.ride_mileage),
+                        display?.toString() ?: logKmpl?.let { "%.1f".format(it) },
+                        stringResource(R.string.unit_kmpl),
+                    ),
+                ),
+                content,
+            )
         }
     }
 }
@@ -221,7 +235,6 @@ internal fun RideDataCard(t: DisplayTelemetry, family: ClusterFamily, logKmpl: D
 @Composable
 internal fun VehicleCard(t: DisplayTelemetry) {
     val content = MaterialTheme.colorScheme.onSurface
-    fun v(x: Int?) = x?.toString() ?: "--"
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
         shape = MaterialTheme.shapes.extraLarge,
@@ -243,15 +256,16 @@ internal fun VehicleCard(t: DisplayTelemetry) {
                     )
                 }
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(Dimens.sm)) {
-                Tile(stringResource(R.string.vehicle_rpm), v(t.rpm), "", content, Modifier.weight(1f))
-                Tile(stringResource(R.string.vehicle_instant), v(t.instantEconomy), stringResource(R.string.unit_kmpl), content, Modifier.weight(1f))
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(Dimens.sm)) {
-                Tile(stringResource(R.string.vehicle_battery), v(t.batteryVoltage), "", content, Modifier.weight(1f))
-                Tile(stringResource(R.string.vehicle_engine_temp), v(t.engineTemp), "", content, Modifier.weight(1f))
-                Tile(stringResource(R.string.vehicle_service), v(t.serviceReminder), "", content, Modifier.weight(1f))
-            }
+            TileGrid(
+                listOf(
+                    TileSpec(stringResource(R.string.vehicle_rpm), t.rpm?.toString()),
+                    TileSpec(stringResource(R.string.vehicle_instant), t.instantEconomy?.toString(), stringResource(R.string.unit_kmpl)),
+                    TileSpec(stringResource(R.string.vehicle_battery), t.batteryVoltage?.toString()),
+                    TileSpec(stringResource(R.string.vehicle_engine_temp), t.engineTemp?.toString()),
+                    TileSpec(stringResource(R.string.vehicle_service), t.serviceReminder?.toString()),
+                ),
+                content,
+            )
         }
     }
 }
@@ -260,7 +274,7 @@ internal fun VehicleCard(t: DisplayTelemetry) {
 @Composable
 internal fun RaceStatsCard(t: DisplayTelemetry) {
     val content = MaterialTheme.colorScheme.onSurface
-    val lap = t.raceBestLapCs?.let { "%d:%02d.%02d".format(it / 6000, it / 100 % 60, it % 100) } ?: "--"
+    val lap = t.raceBestLapCs?.let { "%d:%02d.%02d".format(it / 6000, it / 100 % 60, it % 100) }
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
         shape = MaterialTheme.shapes.extraLarge,
@@ -268,14 +282,15 @@ internal fun RaceStatsCard(t: DisplayTelemetry) {
     ) {
         Column(Modifier.padding(Dimens.xl), verticalArrangement = Arrangement.spacedBy(Dimens.sm)) {
             Text(stringResource(R.string.race_title), style = MaterialTheme.typography.titleMediumEmphasized, color = content)
-            Row(horizontalArrangement = Arrangement.spacedBy(Dimens.sm)) {
-                Tile(stringResource(R.string.race_best_lap), lap, "", content, Modifier.weight(1f))
-                Tile(stringResource(R.string.race_zero_60), t.raceZeroTo60Tenths?.let { "%.1f".format(it / 10.0) } ?: "--", stringResource(R.string.unit_s), content, Modifier.weight(1f))
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(Dimens.sm)) {
-                Tile(stringResource(R.string.race_top), t.raceTopSpeedKmh?.toString() ?: "--", stringResource(R.string.dash_kmh), content, Modifier.weight(1f))
-                Tile(stringResource(R.string.race_avg), t.raceAverageKmh?.toString() ?: "--", stringResource(R.string.dash_kmh), content, Modifier.weight(1f))
-            }
+            TileGrid(
+                listOf(
+                    TileSpec(stringResource(R.string.race_best_lap), lap),
+                    TileSpec(stringResource(R.string.race_zero_60), t.raceZeroTo60Tenths?.let { "%.1f".format(it / 10.0) }, stringResource(R.string.unit_s)),
+                    TileSpec(stringResource(R.string.race_top), t.raceTopSpeedKmh?.toString(), stringResource(R.string.dash_kmh)),
+                    TileSpec(stringResource(R.string.race_avg), t.raceAverageKmh?.toString(), stringResource(R.string.dash_kmh)),
+                ),
+                content,
+            )
         }
     }
 }

@@ -178,7 +178,7 @@ private fun Facts(ride: RideRecord, samples: List<RideSample>?) {
         add(Triple(stringResource(R.string.stat_avg_speed), Fmt.whole(s.avgMovingSpeedKmh), kmh))
         add(Triple(stringResource(R.string.stat_top_speed), s.maxSpeedKmh.toString(), kmh))
         add(Triple(stringResource(R.string.detail_stopped), Fmt.duration((s.durationS - s.movingS).toLong().coerceAtLeast(0)), ""))
-        add(Triple(stringResource(R.string.stat_mileage), s.avgEconomy?.let(Fmt::one) ?: "--", stringResource(R.string.unit_kmpl)))
+        s.avgEconomy?.let { add(Triple(stringResource(R.string.stat_mileage), Fmt.one(it), stringResource(R.string.unit_kmpl))) }
         s.fuelUsed?.let { add(Triple(stringResource(R.string.detail_fuel_used), it.toString(), stringResource(R.string.detail_fuel_unit))) }
         if (rpm.isNotEmpty()) {
             add(Triple(stringResource(R.string.detail_avg_rpm), Fmt.whole(rpm.average()), ""))

@@ -347,10 +347,13 @@ private fun RideDashboard(step: NavStep?, speed: Int?) {
                 }
             }
             Spacer(Modifier.height(Dimens.lg))
+            // Only what is known: no route means no ETA or distance left, no display speed means no speed tile.
             Row(horizontalArrangement = Arrangement.spacedBy(Dimens.sm)) {
-                Stat(stringResource(R.string.dash_speed), speed?.toString() ?: "--", stringResource(R.string.dash_kmh), Modifier.weight(1f))
-                Stat(stringResource(R.string.dash_eta), step?.let { (it.etaSeconds / 60).toString() } ?: "--", stringResource(R.string.dash_min), Modifier.weight(1f))
-                Stat(stringResource(R.string.dash_left), step?.let { meters(it.distanceLeftM) } ?: "--", "", Modifier.weight(1f))
+                if (speed != null) Stat(stringResource(R.string.dash_speed), speed.toString(), stringResource(R.string.dash_kmh), Modifier.weight(1f))
+                if (step != null) {
+                    Stat(stringResource(R.string.dash_eta), (step.etaSeconds / 60).toString(), stringResource(R.string.dash_min), Modifier.weight(1f))
+                    Stat(stringResource(R.string.dash_left), meters(step.distanceLeftM), "", Modifier.weight(1f))
+                }
             }
         }
     }

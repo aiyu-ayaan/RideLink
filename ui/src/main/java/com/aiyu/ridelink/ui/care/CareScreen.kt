@@ -62,6 +62,8 @@ import com.aiyu.ridelink.core.settings.Settings
 import com.aiyu.ridelink.ui.R
 import com.aiyu.ridelink.ui.nav.appBarColors
 import com.aiyu.ridelink.ui.ride.Tile
+import com.aiyu.ridelink.ui.ride.TileGrid
+import com.aiyu.ridelink.ui.ride.TileSpec
 import com.aiyu.ridelink.ui.ride.cardItemColors
 import com.aiyu.ridelink.ui.theme.Dimens
 import com.aiyu.ridelink.ui.update.BackButton
@@ -236,11 +238,15 @@ private fun MileageCard(ui: CareUi) {
                 Text(stringResource(R.string.care_mileage_none), style = MaterialTheme.typography.titleMedium, color = content)
             }
             Text(stringResource(R.string.care_mileage_hint), style = MaterialTheme.typography.bodySmall, color = content)
-            Row(horizontalArrangement = Arrangement.spacedBy(Dimens.sm)) {
-                Tile(stringResource(R.string.care_last_fill), ui.lastKmpl?.let { one(it) } ?: "--", stringResource(R.string.unit_kmpl), content, Modifier.weight(1f))
-                Tile(stringResource(R.string.care_cost_per_km), ui.costPerKm?.let { money(it) } ?: "--", "", content, Modifier.weight(1f))
-                Tile(stringResource(R.string.care_odometer), ui.odometerTenths?.let { (it / 10).toString() } ?: "--", stringResource(R.string.unit_km), content, Modifier.weight(1f))
-            }
+            TileGrid(
+                listOf(
+                    TileSpec(stringResource(R.string.care_last_fill), ui.lastKmpl?.let { one(it) }, stringResource(R.string.unit_kmpl)),
+                    TileSpec(stringResource(R.string.care_cost_per_km), ui.costPerKm?.let { money(it) }),
+                    TileSpec(stringResource(R.string.care_odometer), ui.odometerTenths?.let { (it / 10).toString() }, stringResource(R.string.unit_km)),
+                ),
+                content,
+                perRow = 3,
+            )
         }
     }
 }
