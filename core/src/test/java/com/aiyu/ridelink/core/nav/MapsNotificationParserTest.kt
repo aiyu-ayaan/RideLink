@@ -51,6 +51,17 @@ class MapsNotificationParserTest {
         assertEquals(7_800, step.distanceLeftM)
     }
 
+    @Test fun departureWithoutExplicitDistanceIsParsed() {
+        val step = MapsNotificationParser.parse("Head north on 2nd Cross Rd", null, "Arrive 10:17 PM")!!
+        assertEquals(0, step.distanceToTurnM)
+        assertEquals("Head north on 2nd Cross Rd", step.instruction)
+        assertEquals(Maneuver.STRAIGHT, step.maneuver)
+
+        val stepWest = MapsNotificationParser.parse("Head west", null, "Arrive 10:15 PM")!!
+        assertEquals(0, stepWest.distanceToTurnM)
+        assertEquals(Maneuver.STRAIGHT, stepWest.maneuver)
+    }
+
     @Test fun nonNavigationNotificationIsIgnored() {
         assertNull(MapsNotificationParser.parse("Location sharing", "You are sharing", null))
     }

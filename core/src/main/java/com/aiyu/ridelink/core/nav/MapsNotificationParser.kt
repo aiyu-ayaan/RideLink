@@ -29,21 +29,45 @@ object MapsNotificationParser {
     fun parse(title: String?, text: String?, subText: String?, iconManeuver: Maneuver? = null): NavStep? {
         val sub = subText?.replace(oddSpaces, " ")
         val parts = listOfNotNull(title, text).map { it.replace(oddSpaces, " ").trim() }.filter(String::isNotEmpty)
-        val distPart = parts.firstOrNull { distance.containsMatchIn(it) } ?: return null
-        val distMatch = distance.find(distPart)!!
-        val distRest = distPart.removeRange(distMatch.range).replace(separators, "")
-        val instruction = (parts - distPart).firstOrNull() ?: distRest.ifEmpty { return null }
+        if (parts.isEmpty()) return null
+
+        val distPart = parts.firstOrNull { distance.containsMatchIn(it) }
+        val etaSec = sub?.let(minutes::find)?.let { m ->
+            ((m.groupValues[1].toLongOrNull() ?: 0) * 60 + m.groupValues[2].toLong()) * 60
+        } ?: 0
+        val distLeft = sub?.let(km::find)?.let(::toMeters) ?: 0
+
+        if (distPart != null) {
+            val distMatch = distance.find(distPart)!!
+            val distRest = distPart.removeRange(distMatch.range).replace(separators, "")
+            val instruction = (parts - distPart).firstOrNull() ?: distRest.ifEmpty { return null }
+            return NavStep(
+                distanceToTurnM = toMeters(distMatch),
+                etaSeconds = etaSec,
+                distanceLeftM = distLeft,
+                maneuver = iconManeuver ?: maneuverOf(instruction).let { m ->
+                    // Maps sometimes puts only the street in one field and the direction next to the distance.
+                    if (m != Maneuver.STRAIGHT || explicitStraight.containsMatchIn(instruction)) m
+                    else maneuverOf("$instruction $distRest")
+                },
+                instruction = instruction,
+            )
+        }
+
+        // When starting navigation or departing, Maps often shows "Head west" or "Head north on ..." without
+        // an explicit turn distance yet. If subText contains an ETA/arrival time or icon is active, treat as straight step.
+        val hasNavContext = sub?.let { "arrive" in it.lowercase() || "min" in it.lowercase() || "eta" in it.lowercase() } == true
+                || iconManeuver != null
+                || parts.any { explicitStraight.containsMatchIn(it) }
+
+        if (!hasNavContext) return null
+
+        val instruction = parts.first()
         return NavStep(
-            distanceToTurnM = toMeters(distMatch),
-            etaSeconds = sub?.let(minutes::find)?.let { m ->
-                ((m.groupValues[1].toLongOrNull() ?: 0) * 60 + m.groupValues[2].toLong()) * 60
-            } ?: 0,
-            distanceLeftM = sub?.let(km::find)?.let(::toMeters) ?: 0,
-            maneuver = iconManeuver ?: maneuverOf(instruction).let { m ->
-                // Maps sometimes puts only the street in one field and the direction next to the distance.
-                if (m != Maneuver.STRAIGHT || explicitStraight.containsMatchIn(instruction)) m
-                else maneuverOf("$instruction $distRest")
-            },
+            distanceToTurnM = 0,
+            etaSeconds = etaSec,
+            distanceLeftM = distLeft,
+            maneuver = iconManeuver ?: maneuverOf(instruction),
             instruction = instruction,
         )
     }

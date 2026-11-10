@@ -251,7 +251,15 @@ object ClusterProtocol {
     fun smartXonnectNavigation(step: NavStep): List<ByteArray> {
         val arrived = step.stopped
         if (arrived && step.maneuver != Maneuver.DESTINATION) return emptyList()
-        val d = if (arrived) 0 else smartXonnectDistance(step.distanceToTurnM.coerceAtLeast(0))
+        // When staying on road or departing (distanceToTurnM is 0), show total remaining distance (distanceLeftM)
+        // or a nominal 50m so the cluster LCD does not display "----" (unassigned 0 distance).
+        val effectiveDist = when {
+            arrived -> 0
+            step.distanceToTurnM > 0 -> step.distanceToTurnM
+            step.distanceLeftM > 0 -> step.distanceLeftM
+            else -> 50
+        }
+        val d = if (arrived) 0 else smartXonnectDistance(effectiveDist).coerceAtLeast(10)
         val straight = ClusterModel.NTORQ_SMARTXONNECT.pictogram(Maneuver.STRAIGHT)
         var code = ClusterModel.NTORQ_SMARTXONNECT.pictogram(step.maneuver)
         var text = directionText(step.maneuver)
