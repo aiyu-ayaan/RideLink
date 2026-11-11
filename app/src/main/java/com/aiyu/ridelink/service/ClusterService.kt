@@ -26,6 +26,7 @@ import com.aiyu.ridelink.ui.R
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -37,6 +38,7 @@ class ClusterService : LifecycleService() {
     @Inject lateinit var controller: ClusterController
     @Inject lateinit var settings: SettingsRepository
     private var watchJob: Job? = null
+    private var idleJob: Job? = null
     private var calls: CallStateWatcher? = null
 
     /**
@@ -53,14 +55,10 @@ class ClusterService : LifecycleService() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         super.onStartCommand(intent, flags, startId)
         if (intent?.action == ACTION_STOP) {
-            calls?.stop()
-            calls = null
             // The rider ended the session: stay off until they press Connect, even if the scooter is nearby.
             watchJob?.cancel()
             NearbyReceiver.watch(this, null)
-            controller.stop()
-            releaseWakeLock()
-            stopSelf()
+            shutDown()
             return START_NOT_STICKY
         }
         startForegroundTyped(notification(getString(R.string.status_connecting)))
@@ -69,6 +67,15 @@ class ClusterService : LifecycleService() {
         // Armed while the session runs, so the scooter wakes RideLink again if Android kills it.
         if (watchJob == null) watchJob = lifecycleScope.launch {
             settings.settings.map { it.deviceAddress }.distinctUntilChanged().collect { NearbyReceiver.watch(this@ClusterService, it) }
+        }
+        // Scooter off or out of range: end the session (and its "Waiting for scooter" notification);
+        // the nearby scan above starts it again at the next ignition on.
+        if (idleJob == null) idleJob = lifecycleScope.launch {
+            controller.linkState.collectLatest { state ->
+                if (state is LinkState.Ready) return@collectLatest
+                delay(IDLE_STOP_MS)
+                shutDown()
+            }
         }
         if (calls == null) calls = CallStateWatcher(this, controller).takeIf { it.start() }
         // Android can leave the listener unbound after an app update; without it no Maps or call events arrive.
@@ -99,6 +106,14 @@ class ClusterService : LifecycleService() {
             ServiceCompat.startForeground(this, NOTIFICATION_ID, n, device or ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION)
         }.isSuccess
         if (!withLocation) ServiceCompat.startForeground(this, NOTIFICATION_ID, n, device)
+    }
+
+    private fun shutDown() {
+        calls?.stop()
+        calls = null
+        controller.stop()
+        releaseWakeLock()
+        stopSelf()
     }
 
     private fun hasLocation() = listOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
@@ -148,6 +163,8 @@ class ClusterService : LifecycleService() {
         private const val NOTIFICATION_ID = 1
         private const val ACTION_STOP = "stop"
         private const val WAKE_LOCK_MS = 30 * 60_000L
+        /** Rides out short drops (tunnel, restart) before ending the session. */
+        private const val IDLE_STOP_MS = 60_000L
 
         /** True while this process runs the session; a killed process reads false again. */
         @Volatile var running = false

@@ -43,7 +43,8 @@ Modules:
    While the session runs, `NearbyReceiver.watch` arms a low-power PendingIntent BLE scan for the scooter's
    address; if Android kills the app, ignition-on wakes `NearbyReceiver`, which restarts the service
    (Android 12+: needs battery optimisation off, else it posts a "Scooter nearby" tap-to-connect notification).
-   Disconnect disarms it.
+   Disconnect disarms it. With no link for 60 s (scooter off) the service ends itself and its notification;
+   the armed scan brings it back at the next ignition on.
 3. `ClusterLink` connects, requests MTU 512, enables notify on `5354`, then writes on `5352`
    with response, one frame at a time. On drop it reconnects with `autoConnect = true`.
 4. On ready: rider name, social counts and music frames, then the `5B 4A` status frame every 2 s
