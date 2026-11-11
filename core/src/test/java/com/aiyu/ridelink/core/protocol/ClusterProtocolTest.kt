@@ -246,7 +246,7 @@ class ClusterProtocolTest {
         assertEquals("5a 4e 01 2c 00 0a 00 0c e4 00 01 01 00 00 01 00 00 00 00 ff", hex(frames[0]))
         assertEquals("5b 4f 54 75 72 6e 20 6c 65 66 74 00 00 00 00 00 00 00 00 ff", hex(frames[1]))
         assertEquals(100L, ClusterProtocol.navGapMs(ClusterModel.NTORQ_SMARTXONNECT))
-        assertEquals(800L, ClusterProtocol.navResendMs(ClusterModel.NTORQ_SMARTXONNECT))
+        assertEquals(2_200L, ClusterProtocol.navResendMs(ClusterModel.NTORQ_SMARTXONNECT))
     }
 
     @Test fun smartXonnectStageFollowsDistance() {
@@ -257,9 +257,12 @@ class ClusterProtocolTest {
         fun code(f: List<ByteArray>) = f[0][9].toInt() and 0xFF
         fun text(f: List<ByteArray>) = String(f[1], 2, 17, Charsets.UTF_8).trimEnd('\u0000')
 
-        assertEquals(3, stage(nav(Maneuver.SHARP_LEFT, 50)))
+        // Chevron stages only at the junction (distance 0); with a distance in the frame the LCD flickered (issue #5).
+        assertEquals(1, stage(nav(Maneuver.SHARP_LEFT, 50)))
         assertEquals(1, code(nav(Maneuver.SHARP_LEFT, 50)))
-        assertEquals(4, stage(nav(Maneuver.RIGHT, 40)))
+        assertEquals(1, stage(nav(Maneuver.RIGHT, 40)))
+        assertEquals(3, stage(nav(Maneuver.SHARP_LEFT, 0)))
+        assertEquals(4, stage(nav(Maneuver.RIGHT, 0)))
         assertEquals(1, stage(nav(Maneuver.U_TURN, 30)))
         assertEquals(19, code(nav(Maneuver.U_TURN, 30)))
         // Right family uses the 2025+ arrow ids: the raw 3 / 4 / 5 drew nothing on the rider's Race XP.

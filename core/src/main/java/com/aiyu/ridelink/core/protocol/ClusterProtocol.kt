@@ -20,8 +20,12 @@ object ClusterProtocol {
     /** Stock resends the current turn this often for the whole route (NavigationRepoImpl.startTimer). */
     const val NAV_RESEND_MS = 2_000L
 
-    /** SmartXonnect LCD: TVSMMapActivity resends every 800 ms and writes the text 100 ms after the control frame. */
-    const val SMARTXONNECT_NAV_RESEND_MS = 800L
+    /**
+     * SmartXonnect LCD: TVSMMapActivity writes the text 100 ms after the control frame and resends every 800 ms. Road tests
+     * (issue #5, Race XP) showed that restarts the marquee; the LCD's watchdog drops navigation after 3.5-4 s, so 2.2 s is
+     * used: longer than the 1.8 s marquee, safely under the watchdog.
+     */
+    const val SMARTXONNECT_NAV_RESEND_MS = 2_200L
     const val SMARTXONNECT_NAV_GAP_MS = 100L
 
     fun navResendMs(model: ClusterModel) = if (model.family == ClusterFamily.SMARTXONNECT) SMARTXONNECT_NAV_RESEND_MS else NAV_RESEND_MS
@@ -261,7 +265,8 @@ object ClusterProtocol {
             arrived -> { stage = 8; text = ARRIVED }
             step.maneuver == Maneuver.STRAIGHT -> { stage = 5; code = straight; text = STAY_ON_ROAD }
             // Stock leaves U-turn / roundabout / destination at stage 0 (text only) here; 1 keeps their arrow up.
-            d < 65 -> stage = when { "left" in text -> 3; "right" in text -> 4; else -> 1 }
+            // Chevrons only at the junction: with a distance in the frame, stage 3 / 4 made the LCD flip between "50m" and `<-<-<-`.
+            d == 0 -> stage = when { "left" in text -> 3; "right" in text -> 4; else -> 1 }
             d <= 1000 -> stage = 1
             else -> { stage = 5; code = straight; text = STAY_ON_ROAD }
         }

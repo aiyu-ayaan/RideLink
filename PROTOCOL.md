@@ -218,7 +218,7 @@ spaces, held 6 s, then the rider's own lines come back. Pop-ups queue (up to 5, 
 another. The same pop-up carries "Missed call / name" (newest call-log entry marked missed, `READ_CALL_LOG`) and
 "Food" or "Order" over "Notification" for Swiggy, Zomato, Blinkit, Zepto, Dunzo, Amazon and Flipkart (stock
 `N251HelperService.sendSocialmediaNotification`; stock only shows it on U445B/U566).
-During a route the turn resends (every 800 ms on SmartXonnect, 2 s otherwise) replaced the pop-up and the caller
+During a route the turn resends (every 2.2 s on SmartXonnect, 2 s otherwise) replaced the pop-up and the caller
 name within a second, so RideLink holds the turn frames while a pop-up shows (6 s) or a call rings, then resends the
 current step at once. A RideLink choice, not taken from stock.
 
@@ -317,7 +317,7 @@ Display frames: `5A 10`, `5A 11`, `5A 18` like the other families, plus two only
 - `5B 42` the display's Bluetooth MAC in `[8..13]` (stock checks it against the account: the "MAC ID" error).
 RideLink detects this family from either frame and saves it as the scooter's model.
 
-Navigation, every **800 ms** (`TVSMMapActivity.sendNavigationData`, `N251N109U347sendNavigationData`):
+Navigation, every **800 ms** in stock (`TVSMMapActivity.sendNavigationData`, `N251N109U347sendNavigationData`); RideLink resends every **2.2 s** and skips identical repeats inside that time. Road tests (issue #5, Race XP): 800 ms restarted the marquee and blinked the location icon every second, and the LCD drops navigation when frames are over about 3.5-4 s apart:
 ```
 5A 4E dist(2) etaMin(2) left(3) code lines 01 00 flag stage 00 alertType alertDist(2) FF
 ```
@@ -334,8 +334,8 @@ then **100 ms** later `5B 4F <text up to 17> FF`. Raw bytes, no checksum.
   (Mappls 65..71, the angle travelled round in 45 degree steps; 68 = straight across = 48).
 - `lines` = 2 when the text is over 17 characters, else 1. Byte 11 = 1 while navigating.
 - `flag` = 1 with the "Mobile Data" (stage 7) and "GPS" (stage 6) messages, else 0.
-- `stage`: 1 = turn 65..1000 m ahead; 3 / 4 = text contains "left" / "right" and under 65 m (stock: else the
-  default, 0 for a turn; RideLink sends 1 so the U-turn / roundabout / destination arrow stays up). Under stage 4 the
+- `stage`: 1 = turn 65..1000 m ahead; 3 / 4 = text contains "left" / "right" and distance 0 (stock uses under 65 m, but then the LCD alternated
+  "50m" with the chevrons, so RideLink sends 1 while a distance shows; stock default is 0 for a turn, RideLink sends 1 so the U-turn / roundabout / destination arrow stays up). Under stage 4 the
   rider saw `->->->` in the text lines: the display's own "turn now" chevrons; 5 = straight, or any turn over 1 km (straight arrow, text "STAY SAME RD"); 8 = arrived (dist 0,
   "You Arrived"); 0 with code 72 = "Rerouting"; 0 = "Take U-Turn" hint.
 - Alert block zero (traffic camera / road works only on U445B).

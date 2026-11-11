@@ -426,6 +426,12 @@ class ClusterController @Inject constructor(
             _nav.value = step
             navLock.withLock {
                 if (seq != navSeq.get() || navHeld()) return@withLock
+                // Maps reposts about every second; an identical SmartXonnect turn resent that fast restarts the LCD's
+                // marquee and blinks its location icon. Real changes go out at once, repeats wait for the resend period.
+                val m = model(s)
+                val key = navKey(m, step)
+                if (m.family == ClusterFamily.SMARTXONNECT && key == lastNavKey &&
+                    System.currentTimeMillis() - navSentAt < ClusterProtocol.navResendMs(m)) return@withLock
                 sendNav(s, step)
             }
             keepNavAlive()
@@ -433,6 +439,10 @@ class ClusterController @Inject constructor(
     }
 
     @Volatile private var navSentAt = 0L
+    private var lastNavKey: List<Any>? = null
+
+    private fun navKey(m: ClusterModel, step: NavStep): List<Any> =
+        listOf(step.maneuver, ClusterProtocol.smartXonnectDistance(step.distanceToTurnM.coerceAtLeast(0)), step.instruction, step.stopped)
     private var navKeepAlive: Job? = null
 
     /**
@@ -465,6 +475,7 @@ class ClusterController @Inject constructor(
             if (i > 0) delay(ClusterProtocol.navGapMs(m))
             send(f)
         }
+        lastNavKey = navKey(m, step)
         navSentAt = System.currentTimeMillis()
     }
 
