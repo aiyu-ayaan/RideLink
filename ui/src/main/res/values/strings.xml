@@ -445,6 +445,9 @@
     <string name="care_reminders">Service reminders</string>
     <string name="care_reminders_hint">On connect, shows what is due on the display; a notification at most once a day.</string>
     <string name="channel_care">Fuel and service</string>
+    <string name="channel_nearby">Scooter nearby</string>
+    <string name="notify_nearby_title">Scooter nearby</string>
+    <string name="notify_nearby_body">Tap to connect. Turn off battery optimisation for RideLink to connect on its own.</string>
     <string name="notify_refuel_title">Fuel stop added</string>
     <string name="notify_refuel_body">At %1$.1f km. Add the litres and price to track real mileage.</string>
     <string name="notify_low_fuel_title">Fuel is low</string>

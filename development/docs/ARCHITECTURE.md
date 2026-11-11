@@ -4,7 +4,7 @@
 
 ```mermaid
 graph LR
-    app[":app<br/>MainActivity, ClusterService,<br/>RideNotificationListener, BootReceiver"]
+    app[":app<br/>MainActivity, ClusterService,<br/>RideNotificationListener, BootReceiver, NearbyReceiver"]
     ui[":ui<br/>Compose screens, theme, strings,<br/>MainViewModel"]
     core[":core<br/>protocol, ble, ClusterController,<br/>nav + social parsers, weather, phone, settings,<br/>care (fuel log, service), check-in"]
     app --> ui

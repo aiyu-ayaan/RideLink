@@ -21,10 +21,13 @@ import androidx.lifecycle.lifecycleScope
 import com.aiyu.ridelink.MainActivity
 import com.aiyu.ridelink.core.ClusterController
 import com.aiyu.ridelink.core.ble.LinkState
+import com.aiyu.ridelink.core.settings.SettingsRepository
 import com.aiyu.ridelink.ui.R
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -32,6 +35,8 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class ClusterService : LifecycleService() {
     @Inject lateinit var controller: ClusterController
+    @Inject lateinit var settings: SettingsRepository
+    private var watchJob: Job? = null
     private var calls: CallStateWatcher? = null
 
     /**
@@ -50,13 +55,21 @@ class ClusterService : LifecycleService() {
         if (intent?.action == ACTION_STOP) {
             calls?.stop()
             calls = null
+            // The rider ended the session: stay off until they press Connect, even if the scooter is nearby.
+            watchJob?.cancel()
+            NearbyReceiver.watch(this, null)
             controller.stop()
             releaseWakeLock()
             stopSelf()
             return START_NOT_STICKY
         }
         startForegroundTyped(notification(getString(R.string.status_connecting)))
+        running = true
         controller.start()
+        // Armed while the session runs, so the scooter wakes RideLink again if Android kills it.
+        if (watchJob == null) watchJob = lifecycleScope.launch {
+            settings.settings.map { it.deviceAddress }.distinctUntilChanged().collect { NearbyReceiver.watch(this@ClusterService, it) }
+        }
         if (calls == null) calls = CallStateWatcher(this, controller).takeIf { it.start() }
         // Android can leave the listener unbound after an app update; without it no Maps or call events arrive.
         runCatching { NotificationListenerService.requestRebind(ComponentName(this, RideNotificationListener::class.java)) }
@@ -109,6 +122,7 @@ class ClusterService : LifecycleService() {
     }
 
     override fun onDestroy() {
+        running = false
         calls?.stop()
         releaseWakeLock()
         super.onDestroy()
@@ -134,6 +148,10 @@ class ClusterService : LifecycleService() {
         private const val NOTIFICATION_ID = 1
         private const val ACTION_STOP = "stop"
         private const val WAKE_LOCK_MS = 30 * 60_000L
+
+        /** True while this process runs the session; a killed process reads false again. */
+        @Volatile var running = false
+            private set
 
         fun start(context: Context) = ContextCompat.startForegroundService(context, Intent(context, ClusterService::class.java))
         fun stop(context: Context) = context.startService(Intent(context, ClusterService::class.java).setAction(ACTION_STOP))

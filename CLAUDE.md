@@ -40,6 +40,10 @@ Modules:
 2. Auto-connect: once a scooter is paired and Bluetooth is granted, `RideLinkRoot` starts
    `ClusterService` (foreground, `connectedDevice`) on app start, after pairing, and `BootReceiver` on boot.
    The service calls `ClusterController.start()`. The Ride button is Disconnect / Connect.
+   While the session runs, `NearbyReceiver.watch` arms a low-power PendingIntent BLE scan for the scooter's
+   address; if Android kills the app, ignition-on wakes `NearbyReceiver`, which restarts the service
+   (Android 12+: needs battery optimisation off, else it posts a "Scooter nearby" tap-to-connect notification).
+   Disconnect disarms it.
 3. `ClusterLink` connects, requests MTU 512, enables notify on `5354`, then writes on `5352`
    with response, one frame at a time. On drop it reconnects with `autoConnect = true`.
 4. On ready: rider name, social counts and music frames, then the `5B 4A` status frame every 2 s

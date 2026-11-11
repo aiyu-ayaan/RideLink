@@ -89,6 +89,11 @@
             android:name=".service.UpdateInstallReceiver"
             android:exported="false" />
 
+        <!-- Scan hits for the paired scooter (PendingIntent BLE scan), so ignition-on wakes RideLink. -->
+        <receiver
+            android:name=".service.NearbyReceiver"
+            android:exported="false" />
+
         <receiver
             android:name=".service.BootReceiver"
             android:exported="false">
