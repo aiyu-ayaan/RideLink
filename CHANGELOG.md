@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.2.1-alpha.10](https://github.com/aiyu-ayaan/RideLink/compare/v0.2.1-alpha.9...v0.2.1-alpha.10) (2026-11-11)
+
+### Other changes
+
+* Fix(Nav) : SmartXonnect skips identical turn repeats, resends every 2.2 s, and shows chevrons only at the junction (#5)
+* Cut next alpha build
+* App(Service) : End ride session after 60 s without the scooter; nearby scan restarts it
+* App(Service) : Wake ride session when the paired scooter advertises nearby
+
 ## [0.2.1-alpha.9](https://github.com/aiyu-ayaan/RideLink/compare/v0.2.1-alpha.8...v0.2.1-alpha.9) (2026-11-10)
 
 ### Other changes
