@@ -338,6 +338,7 @@ then **100 ms** later `5B 4F <text up to 17> FF`. Raw bytes, no checksum.
   "50m" with the chevrons, so RideLink sends 1 while a distance shows; stock default is 0 for a turn, RideLink sends 1 so the U-turn / roundabout / destination arrow stays up). Under stage 4 the
   rider saw `->->->` in the text lines: the display's own "turn now" chevrons; 5 = straight, or any turn over 1 km (straight arrow, text "STAY SAME RD"); 8 = arrived (dist 0,
   "You Arrived"); 0 with code 72 = "Rerouting"; 0 = "Take U-Turn" hint.
+- A straight step with 0 m to the turn (route start, "Head north on ..." before Maps has a distance) sends the route left as `dist`: 0 left the LCD distance blank (issue #4). The status frame (`5B 4A`) is never written between the two nav frames.
 - Alert block zero (traffic camera / road works only on U445B).
 - Stock sends nothing when a route is cancelled (timer cancelled); RideLink does the same, and sends the
   "You Arrived" frame when the route ended at the destination.

@@ -255,7 +255,10 @@ object ClusterProtocol {
     fun smartXonnectNavigation(step: NavStep): List<ByteArray> {
         val arrived = step.stopped
         if (arrived && step.maneuver != Maneuver.DESTINATION) return emptyList()
-        val d = if (arrived) 0 else smartXonnectDistance(step.distanceToTurnM.coerceAtLeast(0))
+        // A 0 m straight step (route start, cruising) left the distance blank on the LCD (issue #4): show the route left.
+        val toTurn = step.distanceToTurnM.coerceAtLeast(0)
+        val shown = if (toTurn == 0 && step.maneuver == Maneuver.STRAIGHT) step.distanceLeftM.coerceAtLeast(50) else toTurn
+        val d = if (arrived) 0 else smartXonnectDistance(shown)
         val straight = ClusterModel.NTORQ_SMARTXONNECT.pictogram(Maneuver.STRAIGHT)
         var code = ClusterModel.NTORQ_SMARTXONNECT.pictogram(step.maneuver)
         var text = directionText(step.maneuver)

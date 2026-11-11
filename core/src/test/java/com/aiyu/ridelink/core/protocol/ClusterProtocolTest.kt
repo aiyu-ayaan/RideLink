@@ -284,6 +284,8 @@ class ClusterProtocolTest {
             assertEquals(8, stage(it)); assertEquals(0, it[0][2].toInt()); assertEquals(0, it[0][3].toInt()); assertEquals("You Arrived", text(it))
         }
         assertTrue(nav(Maneuver.LEFT, 200, stopped = true).isEmpty())
+        // A 0 m straight step shows the route left, not a blank distance (2000 m here).
+        nav(Maneuver.STRAIGHT, 0).let { assertEquals(2_000, ((it[0][2].toInt() and 0xFF) shl 8) or (it[0][3].toInt() and 0xFF)) }
     }
 
     @Test fun smartXonnectDistanceIsRoundedLikeStock() {

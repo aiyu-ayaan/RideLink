@@ -84,4 +84,13 @@ class MapsNotificationParserTest {
         assertEquals(Maneuver.SLIGHT_RIGHT, MapsNotificationParser.maneuverOf("Bear right onto NH 48"))
         assertEquals(Maneuver.FORK_LEFT, MapsNotificationParser.maneuverOf("Take the ramp on the left"))
     }
+
+    @Test fun departureHeadingWithoutDistance() {
+        val s = MapsNotificationParser.parse("Head north on 2nd Cross Rd", null, "12 min · 4.5 km · 10:42 ETA")!!
+        assertEquals(Maneuver.STRAIGHT, s.maneuver)
+        assertEquals(0, s.distanceToTurnM)
+        assertEquals(4_500, s.distanceLeftM)
+        assertEquals("Head north on 2nd Cross Rd", s.instruction)
+        assertNull(MapsNotificationParser.parse("Head north on 2nd Cross Rd", null, null))
+    }
 }

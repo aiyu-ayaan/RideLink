@@ -29,16 +29,18 @@ object MapsNotificationParser {
     fun parse(title: String?, text: String?, subText: String?, iconManeuver: Maneuver? = null): NavStep? {
         val sub = subText?.replace(oddSpaces, " ")
         val parts = listOfNotNull(title, text).map { it.replace(oddSpaces, " ").trim() }.filter(String::isNotEmpty)
-        val distPart = parts.firstOrNull { distance.containsMatchIn(it) } ?: return null
+        val etaSeconds = sub?.let(minutes::find)?.let { m ->
+            ((m.groupValues[1].toLongOrNull() ?: 0) * 60 + m.groupValues[2].toLong()) * 60
+        } ?: 0
+        val distanceLeftM = sub?.let(km::find)?.let(::toMeters) ?: 0
+        val distPart = parts.firstOrNull { distance.containsMatchIn(it) } ?: return departure(parts, sub, iconManeuver, etaSeconds, distanceLeftM)
         val distMatch = distance.find(distPart)!!
         val distRest = distPart.removeRange(distMatch.range).replace(separators, "")
         val instruction = (parts - distPart).firstOrNull() ?: distRest.ifEmpty { return null }
         return NavStep(
             distanceToTurnM = toMeters(distMatch),
-            etaSeconds = sub?.let(minutes::find)?.let { m ->
-                ((m.groupValues[1].toLongOrNull() ?: 0) * 60 + m.groupValues[2].toLong()) * 60
-            } ?: 0,
-            distanceLeftM = sub?.let(km::find)?.let(::toMeters) ?: 0,
+            etaSeconds = etaSeconds,
+            distanceLeftM = distanceLeftM,
             maneuver = iconManeuver ?: maneuverOf(instruction).let { m ->
                 // Maps sometimes puts only the street in one field and the direction next to the distance.
                 if (m != Maneuver.STRAIGHT || explicitStraight.containsMatchIn(instruction)) m
@@ -46,6 +48,17 @@ object MapsNotificationParser {
             },
             instruction = instruction,
         )
+    }
+
+    /**
+     * A route just started: Maps posts "Head north on 2nd Cross Rd" with no distance yet (issue #4). Taken as a straight
+     * step of 0 m only when it says head / continue / straight and the notification also has an ETA or a turn icon, so
+     * other Maps notifications ("Location sharing") still return null.
+     */
+    private fun departure(parts: List<String>, sub: String?, icon: Maneuver?, etaSeconds: Long, left: Int): NavStep? {
+        val instruction = parts.firstOrNull { explicitStraight.containsMatchIn(it) } ?: return null
+        if (icon == null && (sub == null || !minutes.containsMatchIn(sub))) return null
+        return NavStep(0, etaSeconds, left, Maneuver.STRAIGHT, instruction)
     }
 
     fun maneuverOf(instruction: String): Maneuver {

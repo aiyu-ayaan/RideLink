@@ -331,7 +331,8 @@ class ClusterController @Inject constructor(
         statusJob = scope.launch {
             while (isActive) {
                 val now = settings.current()
-                send(ClusterProtocol.status(model(now), phoneStatus(now)))
+                // Under navLock so the status frame cannot land between the two frames of a turn (issue #4).
+                navLock.withLock { send(ClusterProtocol.status(model(now), phoneStatus(now))) }
                 // Stock writes no custom lines during a route; on the Race XP LCD they share the text area with
                 // the turn, so live lines (speed, time) would keep replacing it. They come back when the route ends.
                 if (_nav.value == null) sendDisplayText(now, force = false)
