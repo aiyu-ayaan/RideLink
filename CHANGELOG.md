@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1-alpha.12](https://github.com/aiyu-ayaan/RideLink/compare/v0.2.1-alpha.11...v0.2.1-alpha.12) (2026-11-12)
+
+### Other changes
+
+* Fix(Analytics) : Period picker keeps labels on one line and scrolls at large font sizes; About shows the live GitHub profile
+* Core(About) : Fetch the developer's GitHub profile (name, bio, avatar, counts)
+
 ## [0.2.1-alpha.11](https://github.com/aiyu-ayaan/RideLink/compare/v0.2.1-alpha.10...v0.2.1-alpha.11) (2026-11-12)
 
 ### Other changes
