@@ -46,7 +46,9 @@ Modules:
    Disconnect disarms it. With no link for 60 s (scooter off) the service ends itself and its notification;
    the armed scan brings it back at the next ignition on.
 3. `ClusterLink` connects, requests MTU 512, enables notify on `5354`, then writes on `5352`
-   with response, one frame at a time. On drop it reconnects with `autoConnect = true`.
+   with response, one frame at a time. Setup has a 15 s watchdog; a drop, GATT error or failed discovery
+   falls back to a background `autoConnect = true` connect plus a filtered scan for the scooter's address, and the
+   first advert seen dials it directly. While the app is open, AutoConnect restarts a session the service ended.
 4. On ready: rider name, social counts and music frames, then the `5B 4A` status frame every 2 s
    and (TFT models) weather + AQI + place name every 15 min.
 5. `RideNotificationListener` turns Google Maps notifications into `NavStep`s

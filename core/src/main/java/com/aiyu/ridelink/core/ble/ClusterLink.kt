@@ -9,10 +9,13 @@ import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
 import android.bluetooth.le.ScanCallback
+import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
 import android.content.Context
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import com.aiyu.ridelink.core.protocol.ClusterProtocol
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -66,6 +69,24 @@ class ClusterLink @Inject constructor(@ApplicationContext private val context: C
     private val writeLock = Mutex()
     private var pendingWrite: CompletableDeferred<Boolean>? = null
 
+    /** Link setup (connect, MTU, discovery, notify) runs on the main thread; GATT callbacks hop over to it. */
+    private val main = Handler(Looper.getMainLooper())
+
+    /** Connected but never Ready (MTU or discovery hung, or a direct connect that never answered): start over. */
+    private val watchdog = Runnable { if (wanted != null && _state.value !is LinkState.Ready) waitForScooter() }
+
+    /** Finds the scooter's advert while waiting, so the link dials it directly instead of a slow background connect. */
+    private val finder = object : ScanCallback() {
+        override fun onScanResult(callbackType: Int, result: ScanResult) {
+            main.post { if (result.device.address == wanted && finding) dial(result.device) }
+        }
+
+        override fun onScanFailed(errorCode: Int) {
+            Log.w(TAG, "finder scan failed $errorCode")
+        }
+    }
+    private var finding = false
+
     private val scanCallback = object : ScanCallback() {
         override fun onScanResult(callbackType: Int, result: ScanResult) {
             val name = result.scanRecord?.deviceName ?: result.device.name ?: return
@@ -95,20 +116,68 @@ class ClusterLink @Inject constructor(@ApplicationContext private val context: C
     }
 
     fun connect(address: String) {
-        val device = adapter?.getRemoteDevice(address) ?: return fail("Bluetooth is off")
-        wanted = address
+        val a = adapter
+        if (a == null || !a.isEnabled) return fail("Bluetooth is off")
+        main.post {
+            wanted = address
+            dial(a.getRemoteDevice(address))
+        }
+    }
+
+    /** Direct connect: fast when the scooter is in range; the watchdog falls back to [waitForScooter] if it is not. */
+    private fun dial(device: BluetoothDevice) {
+        stopFinder()
+        open(device, background = false)
+        main.removeCallbacks(watchdog)
+        main.postDelayed(watchdog, SETUP_TIMEOUT_MS)
+    }
+
+    /**
+     * Scooter off, out of range, or setup failed: Android's background connect plus a scan for its advert.
+     * The first advert seen dials directly, which is much faster than the background connect alone.
+     */
+    private fun waitForScooter() {
+        val address = wanted ?: return
+        main.removeCallbacks(watchdog)
+        open(adapter?.getRemoteDevice(address) ?: return fail("Bluetooth is off"), background = true)
+        startFinder(address)
+    }
+
+    private fun open(device: BluetoothDevice, background: Boolean) {
         gatt?.close()
-        _state.value = LinkState.Connecting(address)
-        gatt = device.connectGatt(context, false, callback, BluetoothDevice.TRANSPORT_LE)
+        writeChar = null
+        pendingWrite?.complete(false)
+        _state.value = LinkState.Connecting(device.address)
+        gatt = device.connectGatt(context, background, callback, BluetoothDevice.TRANSPORT_LE)
+    }
+
+    private fun startFinder(address: String) {
+        if (finding) return
+        val scanner = adapter?.bluetoothLeScanner ?: return
+        // A filter keeps the scan running with the screen off; unfiltered scans stop there.
+        val filter = ScanFilter.Builder().setDeviceAddress(address).build()
+        val mode = ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_BALANCED).build()
+        finding = runCatching { scanner.startScan(listOf(filter), mode, finder) }.onFailure { Log.w(TAG, "finder", it) }.isSuccess
+    }
+
+    private fun stopFinder() {
+        if (!finding) return
+        finding = false
+        runCatching { adapter?.bluetoothLeScanner?.stopScan(finder) }
     }
 
     fun disconnect() {
-        wanted = null
-        gatt?.disconnect()
-        gatt?.close()
-        gatt = null
-        writeChar = null
-        _state.value = LinkState.Idle
+        main.post {
+            wanted = null
+            main.removeCallbacks(watchdog)
+            stopFinder()
+            gatt?.disconnect()
+            gatt?.close()
+            gatt = null
+            writeChar = null
+            pendingWrite?.complete(false)
+            _state.value = LinkState.Idle
+        }
     }
 
     /** Queued write-with-response (stock write type 2); returns false when not ready or on timeout. */
@@ -135,42 +204,56 @@ class ClusterLink @Inject constructor(@ApplicationContext private val context: C
 
     private val callback = object : BluetoothGattCallback() {
         override fun onConnectionStateChange(g: BluetoothGatt, status: Int, newState: Int) {
-            if (newState == BluetoothProfile.STATE_CONNECTED) {
-                g.requestMtu(ClusterProtocol.MTU)
-                return
+            main.post {
+                if (g !== gatt) return@post
+                if (newState == BluetoothProfile.STATE_CONNECTED) {
+                    stopFinder()
+                    // The watchdog stays armed until Ready, so a hung MTU or discovery step retries.
+                    main.removeCallbacks(watchdog)
+                    main.postDelayed(watchdog, SETUP_TIMEOUT_MS)
+                    // Some stacks refuse the MTU request and never call back; discover at the default MTU then.
+                    if (!g.requestMtu(ClusterProtocol.MTU)) g.discoverServices()
+                    return@post
+                }
+                // Out of range, scooter switched off, or GATT error 133: wait for it to come back.
+                Log.i(TAG, "link down (status $status)")
+                waitForScooter()
             }
-            writeChar = null
-            pendingWrite?.complete(false)
-            val address = wanted ?: return
-            // Out of range or scooter switched off: let Android reconnect in the background.
-            g.close()
-            _state.value = LinkState.Connecting(address)
-            gatt = g.device.connectGatt(context, true, this, BluetoothDevice.TRANSPORT_LE)
         }
 
         override fun onMtuChanged(g: BluetoothGatt, mtu: Int, status: Int) {
-            g.discoverServices()
+            main.post { if (g === gatt) g.discoverServices() }
         }
 
         override fun onServicesDiscovered(g: BluetoothGatt, status: Int) {
-            val service = g.getService(ClusterProtocol.SERVICE) ?: return fail("Not a TVS cluster (service missing)")
-            val notify = service.getCharacteristic(ClusterProtocol.NOTIFY)
-            writeChar = service.getCharacteristic(ClusterProtocol.WRITE) ?: return fail("Write characteristic missing")
-            if (notify == null) return ready(g)
-            g.setCharacteristicNotification(notify, true)
-            val cccd = notify.getDescriptor(ClusterProtocol.CCCD) ?: return ready(g)
-            val enable = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
-            if (Build.VERSION.SDK_INT >= 33) {
-                g.writeDescriptor(cccd, enable)
-            } else {
-                @Suppress("DEPRECATION")
-                cccd.value = enable
-                @Suppress("DEPRECATION")
-                g.writeDescriptor(cccd)
+            main.post {
+                if (g !== gatt) return@post
+                // An empty or failed discovery happens on a fresh link; starting over usually fixes it.
+                val service = g.getService(ClusterProtocol.SERVICE)
+                val write = service?.getCharacteristic(ClusterProtocol.WRITE)
+                if (status != BluetoothGatt.GATT_SUCCESS || write == null) {
+                    Log.w(TAG, "discovery failed (status $status, service ${service != null})")
+                    return@post waitForScooter()
+                }
+                writeChar = write
+                val notify = service.getCharacteristic(ClusterProtocol.NOTIFY) ?: return@post ready(g)
+                g.setCharacteristicNotification(notify, true)
+                val cccd = notify.getDescriptor(ClusterProtocol.CCCD) ?: return@post ready(g)
+                val enable = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
+                if (Build.VERSION.SDK_INT >= 33) {
+                    g.writeDescriptor(cccd, enable)
+                } else {
+                    @Suppress("DEPRECATION")
+                    cccd.value = enable
+                    @Suppress("DEPRECATION")
+                    g.writeDescriptor(cccd)
+                }
             }
         }
 
-        override fun onDescriptorWrite(g: BluetoothGatt, d: BluetoothGattDescriptor, status: Int) = ready(g)
+        override fun onDescriptorWrite(g: BluetoothGatt, d: BluetoothGattDescriptor, status: Int) {
+            main.post { if (g === gatt) ready(g) }
+        }
 
         override fun onCharacteristicWrite(g: BluetoothGatt, c: BluetoothGattCharacteristic, status: Int) {
             pendingWrite?.complete(status == BluetoothGatt.GATT_SUCCESS)
@@ -187,6 +270,7 @@ class ClusterLink @Inject constructor(@ApplicationContext private val context: C
         }
 
         private fun ready(g: BluetoothGatt) {
+            main.removeCallbacks(watchdog)
             _state.value = LinkState.Ready(g.device.address, g.device.name)
         }
     }
@@ -194,5 +278,7 @@ class ClusterLink @Inject constructor(@ApplicationContext private val context: C
     private companion object {
         const val TAG = "ClusterLink"
         const val WRITE_TIMEOUT_MS = 2_000L
+        /** Connect + MTU + discovery + notify normally take 1 to 3 s; a direct connect gives up after about 30 s. */
+        const val SETUP_TIMEOUT_MS = 15_000L
     }
 }

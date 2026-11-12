@@ -8,6 +8,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import com.aiyu.ridelink.ui.settings.SettingsSection
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
@@ -231,9 +232,11 @@ private fun AutoConnect(vm: MainViewModel, onConnect: () -> Unit) {
     val context = LocalContext.current
     val settings by vm.settings.collectAsStateWithLifecycle()
     val resumed by LocalLifecycleOwner.current.lifecycle.currentStateFlow.collectAsStateWithLifecycle()
+    val idle by remember { vm.linkState.map { it is LinkState.Idle } }.collectAsStateWithLifecycle(false)
     val address = settings.deviceAddress
-    // Keyed on resume too, so granting Bluetooth in the permission dialog connects right away.
-    LaunchedEffect(address, resumed.isAtLeast(Lifecycle.State.RESUMED)) {
-        if (address != null && context.hasBluetooth() && vm.linkState.value is LinkState.Idle && !vm.userStopped) onConnect()
+    // Keyed on resume too, so granting Bluetooth in the permission dialog connects right away; and on idle, so a
+    // session the service ended (scooter off for 60 s) starts again while the app is open.
+    LaunchedEffect(address, resumed.isAtLeast(Lifecycle.State.RESUMED), idle) {
+        if (address != null && idle && resumed.isAtLeast(Lifecycle.State.RESUMED) && context.hasBluetooth() && !vm.userStopped) onConnect()
     }
 }

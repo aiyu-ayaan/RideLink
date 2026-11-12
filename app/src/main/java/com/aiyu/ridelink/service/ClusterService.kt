@@ -39,6 +39,7 @@ class ClusterService : LifecycleService() {
     @Inject lateinit var settings: SettingsRepository
     private var watchJob: Job? = null
     private var idleJob: Job? = null
+    private var statusJob: Job? = null
     private var calls: CallStateWatcher? = null
 
     /**
@@ -80,7 +81,7 @@ class ClusterService : LifecycleService() {
         if (calls == null) calls = CallStateWatcher(this, controller).takeIf { it.start() }
         // Android can leave the listener unbound after an app update; without it no Maps or call events arrive.
         runCatching { NotificationListenerService.requestRebind(ComponentName(this, RideNotificationListener::class.java)) }
-        lifecycleScope.launch {
+        if (statusJob == null) statusJob = lifecycleScope.launch {
             controller.linkState.collect { state ->
                 val text = when (state) {
                     is LinkState.Ready -> getString(R.string.status_connected, state.name ?: state.address)
