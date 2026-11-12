@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.1-alpha.11](https://github.com/aiyu-ayaan/RideLink/compare/v0.2.1-alpha.10...v0.2.1-alpha.11) (2026-11-12)
+
+### Other changes
+
+* Cut next alpha build
+* Docs(TODO) : Road-test list for auto-connect, call indicator and notification icons
+* Core(Calls) : Keep the caller on the display for the whole call, phone and app calls, as stock does
+* Ui(Analytics) : Full-width odometer tile on ride detail, hide empty charts on a day with no rides
+* Ui(Analytics) : Today view with live ride card, km by hour, today's rides and yesterday comparison
+* Core(Analytics) : Add Today period, km by hour of day and the live ride summary
+* Fix(BLE) : Retry link setup with a watchdog, dial the scooter on its first advert, reconnect from the open app
+
 ## [0.2.1-alpha.10](https://github.com/aiyu-ayaan/RideLink/compare/v0.2.1-alpha.9...v0.2.1-alpha.10) (2026-11-11)
 
 ### Other changes
