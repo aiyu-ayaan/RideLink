@@ -201,15 +201,18 @@ private fun Facts(ride: RideRecord, samples: List<RideSample>?) {
         }
         if (range.size >= 2) add(Triple(stringResource(R.string.detail_range), "${range.first()} → ${range.last()}", km))
         if (trip.size >= 2) add(Triple(stringResource(R.string.detail_trip), "${Fmt.one(trip.first() / 10.0)} → ${Fmt.one(trip.last() / 10.0)}", km))
-        val odoStart = s.odometerStartTenths
-        val odoEnd = s.odometerEndTenths
-        if (odoStart != null && odoEnd != null) add(Triple(stringResource(R.string.detail_odometer_tile), "${Fmt.one(odoStart / 10.0)} → ${Fmt.one(odoEnd / 10.0)}", km))
     }
     tiles.chunked(2).forEach { row ->
         Row(horizontalArrangement = Arrangement.spacedBy(Dimens.sm)) {
             row.forEach { (label, value, unit) -> Tile(label, value, unit, c, Modifier.weight(1f)) }
             if (row.size == 1) Spacer(Modifier.weight(1f))
         }
+    }
+    // Start → end of a five-digit odometer does not fit a half-width tile (the end value was cut off): full row.
+    val odoStart = s.odometerStartTenths
+    val odoEnd = s.odometerEndTenths
+    if (odoStart != null && odoEnd != null) {
+        Tile(stringResource(R.string.detail_odometer_tile), "${Fmt.one(odoStart / 10.0)} → ${Fmt.one(odoEnd / 10.0)}", km, c, Modifier.fillMaxWidth())
     }
 }
 

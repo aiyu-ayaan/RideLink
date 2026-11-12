@@ -155,6 +155,8 @@ fun AnalyticsScreen(onOpenRide: (Long) -> Unit, onOpenHistory: () -> Unit, vm: A
             }
             item { Hero(s, state.period, telemetry.odometerKm, live?.distanceKm?.takeIf { today && it > 0 }) }
             item { StatTiles(s) }
+            // Nothing ridden yet today: skip the empty charts and records, the list below says so.
+            if (!(today && s.rides == 0)) {
             item {
                 // One day has one bar per day; Today splits it by hour instead.
                 if (today) ChartCard(stringResource(R.string.chart_distance_hours)) {
@@ -212,6 +214,7 @@ fun AnalyticsScreen(onOpenRide: (Long) -> Unit, onOpenHistory: () -> Unit, vm: A
                 }
             }
             item { Records(s, onOpenRide) }
+            }
             item {
                 Text(
                     stringResource(if (today) R.string.todays_rides else R.string.recent_rides),
