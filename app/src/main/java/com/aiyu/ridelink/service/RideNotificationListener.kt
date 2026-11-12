@@ -53,11 +53,10 @@ class RideNotificationListener : NotificationListenerService() {
             n.category == Notification.CATEGORY_CALL -> {
                 val incoming = isIncoming(n)
                 noteOnce("Call ${if (incoming) "ringing" else "not ringing"}: ${sbn.packageName} title=$title | text=$text")
-                when {
-                    incoming -> controller.onIncomingCall(callerName(n) ?: return)
-                    // Answered: the dialer swaps the ringing notification for an ongoing one; stop the caller frames.
-                    controller.caller.value != null -> controller.onCallEnded()
-                }
+                // Any app's call (phone, WhatsApp, Instagram, Messenger, Telegram...): ringing shows the caller,
+                // an answered or dialled call keeps it up so the display's call indicator stays lit.
+                if (incoming) controller.onIncomingCall(callerName(n) ?: return)
+                else controller.onCallActive(callerName(n))
             }
             SocialNotificationParser.app(sbn.packageName) != null -> {
                 val app = SocialNotificationParser.app(sbn.packageName)!!
@@ -144,7 +143,11 @@ class RideNotificationListener : NotificationListenerService() {
                 lastNavKey = null
                 controller.onNavigationEnded()
             }
-            sbn.notification.category == Notification.CATEGORY_CALL -> controller.onCallEnded()
+            // WhatsApp swaps the ringing notification for a separate ongoing one: end only when no call is left.
+            sbn.notification.category == Notification.CATEGORY_CALL ->
+                if (runCatching { activeNotifications }.getOrNull().orEmpty().none { it.key != sbn.key && it.notification.category == Notification.CATEGORY_CALL }) {
+                    controller.onCallEnded()
+                }
             sbn.packageName == smsPackage -> controller.onSmsRead()
             SocialNotificationParser.app(sbn.packageName) != null -> {
                 val app = SocialNotificationParser.app(sbn.packageName)!!

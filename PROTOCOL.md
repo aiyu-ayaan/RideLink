@@ -115,6 +115,11 @@ Missed calls (older Ntorq only): new missed calls from `CallLog` (`READ_CALL_LOG
 ### Incoming call (`TelephonyUtils.writeNtorqCallerInformationToCluster` / `writeJupiterCallerInformationToCluster`)
 Text frame DID `0x43` with the contact name (or number with `+91` removed), no category byte.
 Repeated every 500 ms while ringing (`BleEngine.processingNtorqIncomingCallDataToCluster`).
+During an answered or dialled call RideLink keeps repeating it until the call ends, for phone calls and app calls
+(WhatsApp, Instagram, Messenger: any `CATEGORY_CALL` notification), so the call indicator stays lit. Stock does this
+on the vehicle types in `PhoneStateReceiver.getVehicleTypeIdList` (25, 29, 31, 32, 33, 42): on `OFFHOOK` it skips
+`broadcastDisconnectCall`, so `BaseConnectHelperService`'s 400 ms `callTimer` (`sendCallerName`) runs until `IDLE`.
+The SmartXonnect status frame (`N109U347N251DataSenderToCluster.sendMobileData`) has no call-state byte.
 SMS senders are only sent to iQube/U388 displays, never to Ntorq.
 
 ### Frames from the display (`NtorqFrameIdentifier`, `JupiterFrameIdentifier`)

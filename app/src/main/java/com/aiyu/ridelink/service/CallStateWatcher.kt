@@ -13,7 +13,7 @@ import com.aiyu.ridelink.ui.R
  * Backup for incoming calls, like the stock app's phone-state listener: some dialers post a call notification
  * RideNotificationListener cannot recognise. Ringing sends the caller at once (the number when call-log access is
  * granted, else "Incoming call"); when the dialer's notification arrives with a contact name, that name replaces it.
- * Answered or ended stops the caller frames. Needs READ_PHONE_STATE (the optional phone card on the Ride screen).
+ * Answered or dialled keeps the caller up (call indicator) until the call ends. Needs READ_PHONE_STATE (the optional phone card on the Ride screen).
  *
  * shortcut: PhoneStateListener is deprecated but is the only callback that still hands over the number;
  * move to TelephonyCallback if the number stops mattering.
@@ -22,6 +22,7 @@ import com.aiyu.ridelink.ui.R
 class CallStateWatcher(private val context: Context, private val controller: ClusterController) {
     private val telephony = context.getSystemService(TelephonyManager::class.java)
     private var ringing = false
+    private var inCall = false
 
     private val listener = object : PhoneStateListener() {
         @Deprecated("Deprecated in Java")
@@ -34,8 +35,15 @@ class CallStateWatcher(private val context: Context, private val controller: Clu
                         controller.onIncomingCall(phoneNumber?.takeIf { it.isNotBlank() }?.removePrefix("+91") ?: context.getString(R.string.call_unknown))
                     }
                 }
-                else -> if (ringing) {
+                // Answered or dialled: keep the caller (or "On call") up for the whole call.
+                TelephonyManager.CALL_STATE_OFFHOOK -> {
                     ringing = false
+                    inCall = true
+                    controller.onCallActive(null)
+                }
+                else -> if (ringing || inCall) {
+                    ringing = false
+                    inCall = false
                     if (controller.caller.value != null) controller.onCallEnded()
                 }
             }
