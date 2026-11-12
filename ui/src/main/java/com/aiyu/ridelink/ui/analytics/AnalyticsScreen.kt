@@ -248,8 +248,9 @@ private fun peakHour(minutes: List<Double>): String =
 
 @Composable
 private fun PeriodPicker(current: Period, onPick: (Period) -> Unit) {
+    // Five labels do not fit one screen at large font sizes: never wrap a label, scroll the row instead.
     Row(
-        Modifier.padding(horizontal = Dimens.gutter).fillMaxWidth(),
+        Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = Dimens.gutter),
         horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween),
     ) {
         Period.entries.forEachIndexed { i, p ->
@@ -261,8 +262,7 @@ private fun PeriodPicker(current: Period, onPick: (Period) -> Unit) {
                     Period.entries.lastIndex -> ButtonGroupDefaults.connectedTrailingButtonShapes()
                     else -> ButtonGroupDefaults.connectedMiddleButtonShapes()
                 },
-                modifier = Modifier.weight(1f),
-            ) { Text(stringResource(p.label)) }
+            ) { Text(stringResource(p.label), maxLines = 1, softWrap = false) }
         }
     }
 }

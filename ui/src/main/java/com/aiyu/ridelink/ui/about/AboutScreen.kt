@@ -7,6 +7,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -36,7 +37,15 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.foundation.Image
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import android.graphics.BitmapFactory
+import com.aiyu.ridelink.core.profile.GitHubProfile
+import com.aiyu.ridelink.core.profile.GitHubUser
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -65,6 +74,11 @@ fun AboutScreen(onBack: () -> Unit, onOpenUpdates: () -> Unit, onOpenAcknowledge
     val open = { url: String -> context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
     val info = remember(context) { runCatching { context.packageManager.getPackageInfo(context.packageName, 0) }.getOrNull() }
     val scroll = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    // Live from GitHub; the placeholder below shows while offline or rate limited.
+    val user by produceState<GitHubUser?>(null) { value = GitHubProfile.fetch(DEVELOPER) }
+    val avatar by produceState<androidx.compose.ui.graphics.ImageBitmap?>(null, user?.avatarUrl) {
+        value = user?.avatarUrl?.let { GitHubProfile.avatar(it) }?.let { BitmapFactory.decodeByteArray(it, 0, it.size)?.asImageBitmap() }
+    }
 
     Scaffold(
         modifier = Modifier.nestedScroll(scroll.nestedScrollConnection),
@@ -112,10 +126,28 @@ fun AboutScreen(onBack: () -> Unit, onOpenUpdates: () -> Unit, onOpenAcknowledge
                         Modifier.size(96.dp).clip(MaterialShapes.Cookie9Sided.toShape()).background(MaterialTheme.colorScheme.primary),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Text("A", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary)
+                        val picture = avatar
+                        if (picture != null) {
+                            Image(picture, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+                        } else {
+                            Text("A", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary)
+                        }
                     }
-                    Text(DEVELOPER, style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(top = Dimens.sm))
-                    Text(stringResource(R.string.about_built), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
+                    Text(user?.name ?: DEVELOPER, style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(top = Dimens.sm))
+                    if (user?.name != null) Text("@$DEVELOPER", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                    Text(user?.bio ?: stringResource(R.string.about_built), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
+                    user?.let { u ->
+                        Text(
+                            listOfNotNull(
+                                u.location,
+                                stringResource(R.string.about_followers, u.followers),
+                                stringResource(R.string.about_repos, u.publicRepos),
+                            ).joinToString(" · "),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center,
+                        )
+                    }
                 }
                 LinkRow(Icons.Rounded.Code, stringResource(R.string.about_github), GITHUB_URL.removePrefix("https://"), external = true) { open(GITHUB_URL) }
                 LinkRow(Icons.Rounded.Language, stringResource(R.string.about_portfolio), PORTFOLIO_URL.removePrefix("https://"), external = true) { open(PORTFOLIO_URL) }

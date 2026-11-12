@@ -334,6 +334,8 @@
     <string name="about_disclaimer_desc">RideLink is a personal project and is not affiliated with or endorsed by TVS Motor Company.</string>
     <string name="about_developer">Developer</string>
     <string name="about_built">Built RideLink.</string>
+    <string name="about_followers">%1$d followers</string>
+    <string name="about_repos">%1$d repos</string>
     <string name="about_github">GitHub</string>
     <string name="about_portfolio">Portfolio</string>
     <string name="about_open_source">Open source</string>
