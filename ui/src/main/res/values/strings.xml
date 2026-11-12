@@ -338,7 +338,9 @@
     <string name="about_repos">%1$d repos</string>
     <string name="about_github">GitHub</string>
     <string name="about_portfolio">Portfolio</string>
-    <string name="about_open_source">Open source</string>
+    <string name="about_open_source">Source and licences</string>
+    <string name="about_license">License</string>
+    <string name="about_license_desc">View-only: read the code, no copying or redistribution</string>
     <string name="about_source">Source code</string>
     <string name="about_acknowledgements">Acknowledgements</string>
     <string name="about_acknowledgements_desc">Libraries and data RideLink is built on</string>

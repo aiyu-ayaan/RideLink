@@ -7,7 +7,7 @@ directions on it, forwards incoming calls, and keeps the display's clock, phone 
 signal up to date. No TVS account or server is needed.
 
 The BLE protocol was recovered from TVS Connect 8.13.2. `PROTOCOL.md` is the source of truth
-for every byte the app sends. Personal-use project: never ship TVS code, assets or branding.
+for every byte the app sends. Personal-use project: never ship TVS code, assets or branding. Licensed view-only (`LICENSE`): never describe the project as open source.
 
 ## Stack
 

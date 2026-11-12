@@ -67,6 +67,7 @@ private const val DEVELOPER = "aiyu-ayaan"
 private const val GITHUB_URL = "https://github.com/aiyu-ayaan"
 private const val PORTFOLIO_URL = "https://aiyu.co.in"
 private const val SOURCE_URL = "https://github.com/${Releases.REPOSITORY}"
+private const val LICENSE_URL = "$SOURCE_URL/blob/master/LICENSE"
 
 @Composable
 fun AboutScreen(onBack: () -> Unit, onOpenUpdates: () -> Unit, onOpenAcknowledgements: () -> Unit) {
@@ -156,6 +157,7 @@ fun AboutScreen(onBack: () -> Unit, onOpenUpdates: () -> Unit, onOpenAcknowledge
             SectionTitle(R.string.about_open_source)
             Group {
                 LinkRow(Icons.Rounded.Code, stringResource(R.string.about_source), SOURCE_URL.removePrefix("https://"), external = true) { open(SOURCE_URL) }
+                LinkRow(Icons.Rounded.Description, stringResource(R.string.about_license), stringResource(R.string.about_license_desc), external = true) { open(LICENSE_URL) }
                 LinkRow(Icons.Rounded.Description, stringResource(R.string.about_acknowledgements), stringResource(R.string.about_acknowledgements_desc), onClick = onOpenAcknowledgements)
             }
         }

@@ -186,7 +186,7 @@ The repository includes desktop Python test utilities (requires BlueZ on Linux, 
 ## Privacy & ethics
 
 - **No telematics sent to third parties**: RideLink contains zero analytics SDKs, trackers, or telemetry endpoints.
-- **Personal use project**: RideLink is an independent open-source project and is not affiliated with, endorsed by, or connected to TVS Motor Company. No proprietary TVS code or assets are distributed.
+- **Personal use project**: RideLink is an independent project and is not affiliated with, endorsed by, or connected to TVS Motor Company. No proprietary TVS code or assets are distributed.
 
 ## Related docs
 
@@ -195,3 +195,9 @@ The repository includes desktop Python test utilities (requires BlueZ on Linux, 
 - [`development/docs/DESIGN_SYSTEM.md`](development/docs/DESIGN_SYSTEM.md) — Visual styling, tokens, and motion curves
 - [`development/brand/BRAND.md`](development/brand/BRAND.md) — Brand identity, geometry, and asset guidelines
 - [`CHANGELOG.md`](CHANGELOG.md) — Version history and release notes
+
+## License
+
+RideLink is **source-available, not open source**. The code is public to read and audit; copying, modifying, redistributing
+or building your own version needs written permission. You may install and use the official release APKs for personal use.
+See [LICENSE](LICENSE) for the full terms.

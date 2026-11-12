@@ -1,0 +1,59 @@
+RideLink Source-Available License (view only)
+
+Copyright (c) 2026 Ayaan (GitHub: aiyu-ayaan). All rights reserved.
+
+This is NOT an open-source license. The source code is published so that it
+can be read, studied and audited. Nothing in this repository is licensed for
+copying, modification or redistribution, unless this file says so.
+
+1. What you may do
+   a. Read and study the source code in this repository.
+   b. Download and install the official RideLink release APKs published at
+      https://github.com/aiyu-ayaan/RideLink/releases, and use them for your own
+      personal, non-commercial purposes.
+   c. Report bugs and security problems, and discuss the project in issues.
+   d. Do whatever GitHub's Terms of Service allow on GitHub itself, such as
+      viewing the repository and forking it inside GitHub to propose a change.
+      A fork made this way gives you no rights beyond this license.
+
+2. What you may not do without prior written permission from the copyright holder
+   a. Copy, reproduce, or reuse the source code, or any part of it, in
+      another project, product or service.
+   b. Modify, translate, adapt or create derivative works of it.
+   c. Build, compile, package or distribute your own version of the app, or
+      redistribute the official APKs (including mirrors and repackaging).
+   d. Sell, sublicense, rent, lend or otherwise commercialise the code or the
+      app.
+   e. Remove or change copyright, license or attribution notices.
+   f. Use the RideLink name, logo or brand (the "Closed loop" mark, RideLink
+      Red and Spark Amber palette) for any other project.
+   g. Use the code, documentation or text to train a machine-learning model,
+      or feed it to a code-generation service, for any purpose.
+
+3. Contributions
+   A pull request or patch you send is offered for inclusion in RideLink. By
+   sending it you give the copyright holder a perpetual, worldwide,
+   irrevocable, royalty-free license to use, modify and relicense it as part of
+   RideLink. The holder is not obliged to accept it.
+
+4. Third-party material
+   RideLink depends on third-party libraries and data (see the
+   Acknowledgements screen in the app). Those keep their own licenses, which
+   are not changed by this file. Open-Meteo data is CC BY 4.0.
+   RideLink is an independent project. It is not affiliated with, endorsed by
+   or connected to TVS Motor Company. "TVS", "Ntorq", "SmartXonnect" and
+   related names belong to their owners. No TVS code or assets are included.
+
+5. Termination
+   Any breach of this license ends all permissions granted here
+   automatically. Permission to do more than this license allows can be asked
+   for by opening an issue or by writing to the copyright holder.
+
+6. No warranty
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY
+   ARISING FROM THE USE OF THE SOFTWARE. RideLink sends data to a vehicle
+   display and can distract a rider: use it only where and how the law and
+   common sense allow.
