@@ -69,6 +69,7 @@ import com.aiyu.ridelink.core.analytics.Period
 import com.aiyu.ridelink.core.analytics.PeriodStats
 import com.aiyu.ridelink.core.analytics.RideMath
 import com.aiyu.ridelink.core.analytics.RideRecord
+import com.aiyu.ridelink.core.analytics.RideSummary
 import com.aiyu.ridelink.ui.R
 import com.aiyu.ridelink.ui.ride.Tile
 import com.aiyu.ridelink.ui.ride.TileGrid
@@ -82,6 +83,7 @@ import java.time.format.FormatStyle
 
 private val Period.label
     get() = when (this) {
+        Period.TODAY -> R.string.period_today
         Period.WEEK -> R.string.period_week
         Period.MONTH -> R.string.period_month
         Period.YEAR -> R.string.period_year
@@ -91,6 +93,7 @@ private val Period.label
 /** "in the last 7 days" etc., used under the hero number and in the change line. */
 private val Period.span
     get() = when (this) {
+        Period.TODAY -> R.string.span_today
         Period.WEEK -> R.string.span_week
         Period.MONTH -> R.string.span_month
         Period.YEAR -> R.string.span_year
@@ -103,6 +106,7 @@ fun AnalyticsScreen(onOpenRide: (Long) -> Unit, onOpenHistory: () -> Unit, vm: A
     val recent by vm.recent.collectAsStateWithLifecycle()
     val recording by vm.recording.collectAsStateWithLifecycle()
     val telemetry by vm.telemetry.collectAsStateWithLifecycle()
+    val live by vm.live.collectAsStateWithLifecycle()
     val bikes by vm.bikes.collectAsStateWithLifecycle()
     val bike by vm.bike.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -111,6 +115,7 @@ fun AnalyticsScreen(onOpenRide: (Long) -> Unit, onOpenHistory: () -> Unit, vm: A
         if (uri != null) vm.exportCsv(uri, context.contentResolver)
     }
     val s = state.stats
+    val today = state.period == Period.TODAY
 
     Scaffold(
         topBar = {
@@ -143,14 +148,25 @@ fun AnalyticsScreen(onOpenRide: (Long) -> Unit, onOpenHistory: () -> Unit, vm: A
             if (bikes.size > 1) item { BikePicker(bikes, bike, vm::pickBike) }
             item { PeriodPicker(state.period, vm::setPeriod) }
             if (recording) item { RecordingRow() }
+            live?.let { l -> item { LiveRide(l) } }
             if (!state.hasAnyRide) {
                 item { EmptyState(vm::addSampleRides) }
                 return@LazyColumn
             }
-            item { Hero(s, state.period, telemetry.odometerKm) }
+            item { Hero(s, state.period, telemetry.odometerKm, live?.distanceKm?.takeIf { today && it > 0 }) }
             item { StatTiles(s) }
             item {
-                ChartCard(stringResource(R.string.chart_distance)) {
+                // One day has one bar per day; Today splits it by hour instead.
+                if (today) ChartCard(stringResource(R.string.chart_distance_hours)) {
+                    BarChart(
+                        values = s.hourKm,
+                        xLabels = (0 until 24).map { if (it % 6 == 0) hourLabel(it) else "" },
+                        describe = { h -> stringResource(R.string.readout_distance, hourLabel(h), Fmt.km(s.hourKm[h])) },
+                        idle = stringResource(R.string.readout_tap),
+                        axisFormat = Fmt::tick,
+                        description = stringResource(R.string.chart_distance_desc, Fmt.km(s.totalKm)),
+                    )
+                } else ChartCard(stringResource(R.string.chart_distance)) {
                     DistanceChart(s.buckets, state.period)
                 }
             }
@@ -166,7 +182,7 @@ fun AnalyticsScreen(onOpenRide: (Long) -> Unit, onOpenHistory: () -> Unit, vm: A
                     )
                 }
             }
-            item {
+            if (!today) item {
                 ChartCard(stringResource(R.string.chart_weekdays)) {
                     val days = DayOfWeek.entries
                     val monday = LocalDate.now().with(DayOfWeek.MONDAY)
@@ -198,12 +214,19 @@ fun AnalyticsScreen(onOpenRide: (Long) -> Unit, onOpenHistory: () -> Unit, vm: A
             item { Records(s, onOpenRide) }
             item {
                 Text(
-                    stringResource(R.string.recent_rides),
+                    stringResource(if (today) R.string.todays_rides else R.string.recent_rides),
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.padding(horizontal = Dimens.gutter, vertical = Dimens.sm),
                 )
             }
-            items(recent, key = { it.id }) { r -> RideRow(r, onStar = { vm.setStarred(r.id, it) }) { onOpenRide(r.id) } }
+            if (today && state.rides.isEmpty()) item {
+                Text(
+                    stringResource(R.string.today_none),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = Dimens.gutter),
+                )
+            }
+            items(if (today) state.rides else recent, key = { it.id }) { r -> RideRow(r, onStar = { vm.setStarred(r.id, it) }) { onOpenRide(r.id) } }
             item {
                 FilledTonalButton(onClick = onOpenHistory, modifier = Modifier.padding(horizontal = Dimens.gutter).fillMaxWidth()) {
                     Text(stringResource(R.string.see_all_rides))
@@ -284,7 +307,7 @@ private fun EmptyState(onSamples: () -> Unit) {
 
 /** The one hero number per view: distance in the period, with the change against the period before. */
 @Composable
-private fun Hero(s: PeriodStats, period: Period, odometerKm: Double?) {
+private fun Hero(s: PeriodStats, period: Period, odometerKm: Double?, liveKm: Double?) {
     val on = MaterialTheme.colorScheme.onPrimaryContainer
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
@@ -294,7 +317,7 @@ private fun Hero(s: PeriodStats, period: Period, odometerKm: Double?) {
         Column(Modifier.padding(Dimens.xl)) {
             Text(stringResource(R.string.hero_distance, stringResource(period.span)), style = MaterialTheme.typography.labelLarge, color = on)
             Row(verticalAlignment = Alignment.Bottom) {
-                Text(Fmt.km(s.totalKm), style = MaterialTheme.typography.displayMedium, color = on)
+                Text(Fmt.km(s.totalKm + (liveKm ?: 0.0)), style = MaterialTheme.typography.displayMedium, color = on)
                 Text(" " + stringResource(R.string.unit_km), style = MaterialTheme.typography.titleMedium, color = on, modifier = Modifier.padding(bottom = Dimens.sm))
             }
             s.change?.let { c ->
@@ -307,16 +330,45 @@ private fun Hero(s: PeriodStats, period: Period, odometerKm: Double?) {
                     }
                     Icon(icon, contentDescription = null, tint = on, modifier = Modifier.size(20.dp))
                     Text(
-                        stringResource(R.string.hero_change, Fmt.percent(c), stringResource(period.span)),
+                        if (period == Period.TODAY) stringResource(R.string.hero_change_today, Fmt.percent(c))
+                        else stringResource(R.string.hero_change, Fmt.percent(c), stringResource(period.span)),
                         style = MaterialTheme.typography.bodyMedium,
                         color = on,
                         modifier = Modifier.padding(start = Dimens.xs),
                     )
                 }
             }
+            if (liveKm != null) {
+                Text(stringResource(R.string.hero_live, Fmt.km(liveKm)), style = MaterialTheme.typography.bodyMedium, color = on)
+            }
             if (odometerKm != null) {
                 Text(stringResource(R.string.hero_odometer, Fmt.one(odometerKm)), style = MaterialTheme.typography.bodyMedium, color = on)
             }
+        }
+    }
+}
+
+/** Totals of the ride being recorded, refreshed every sample (5 s). */
+@Composable
+private fun LiveRide(l: RideSummary) {
+    val kmh = stringResource(R.string.dash_kmh)
+    Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer),
+        shape = MaterialTheme.shapes.extraLarge,
+        modifier = Modifier.padding(horizontal = Dimens.gutter).fillMaxWidth(),
+    ) {
+        Column(Modifier.padding(Dimens.lg), verticalArrangement = Arrangement.spacedBy(Dimens.sm)) {
+            Text(stringResource(R.string.live_title), style = MaterialTheme.typography.titleMediumEmphasized, color = MaterialTheme.colorScheme.onTertiaryContainer)
+            Text(stringResource(R.string.live_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onTertiaryContainer)
+            TileGrid(
+                listOf(
+                    TileSpec(stringResource(R.string.chart_distance), Fmt.km(l.distanceKm), stringResource(R.string.unit_km)),
+                    TileSpec(stringResource(R.string.stat_time), Fmt.duration(l.movingS.toLong())),
+                    TileSpec(stringResource(R.string.stat_avg_speed), Fmt.whole(l.avgMovingSpeedKmh), kmh),
+                    TileSpec(stringResource(R.string.stat_top_speed), l.maxSpeedKmh.toString(), kmh),
+                ),
+                MaterialTheme.colorScheme.onTertiaryContainer,
+            )
         }
     }
 }

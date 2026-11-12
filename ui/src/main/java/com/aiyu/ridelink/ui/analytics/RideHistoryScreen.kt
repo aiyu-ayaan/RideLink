@@ -224,9 +224,9 @@ private fun FilterChips(filter: RideFilter, onChange: (RideFilter) -> Unit, onOp
                 trailingIcon = if (n > 0) ({ Badge { Text(n.toString()) } }) else null,
             )
         }
-        items(listOf(Period.WEEK, Period.MONTH, Period.YEAR)) { p ->
+        items(listOf(Period.TODAY, Period.WEEK, Period.MONTH, Period.YEAR)) { p ->
             Chip(
-                stringResource(when (p) { Period.WEEK -> R.string.period_week; Period.MONTH -> R.string.period_month; else -> R.string.period_year }),
+                stringResource(when (p) { Period.TODAY -> R.string.period_today; Period.WEEK -> R.string.period_week; Period.MONTH -> R.string.period_month; else -> R.string.period_year }),
                 filter.period == p,
             ) { onChange(filter.copy(period = if (filter.period == p) Period.ALL else p)) }
         }

@@ -12,6 +12,7 @@ import com.aiyu.ridelink.core.analytics.RideRecord
 import com.aiyu.ridelink.core.analytics.RideRecorder
 import com.aiyu.ridelink.core.analytics.RideSample
 import com.aiyu.ridelink.core.analytics.RideStore
+import com.aiyu.ridelink.core.analytics.RideSummary
 import com.aiyu.ridelink.core.analytics.RideTurn
 import com.aiyu.ridelink.core.settings.GarageStore
 import com.aiyu.ridelink.core.settings.SettingsRepository
@@ -67,6 +68,11 @@ class AnalyticsViewModel @Inject constructor(
 
     val telemetry = controller.telemetry
     val recording = recorder.recording
+
+    /** The ride being recorded, when it belongs to the scooter shown here. */
+    val live: StateFlow<RideSummary?> = combine(recorder.live, bike, settings.settings.map { it.deviceAddress }) { l, b, selected ->
+        l.takeIf { b == null || b == selected }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     val state: StateFlow<AnalyticsState> = combine(store.rides, period, bike) { all, p, b -> build(all.filter { it.shown(b) }, p) }
         .flowOn(Dispatchers.Default)
