@@ -90,7 +90,7 @@ data class RideRecord(
     val toPlace: String? = null,
 )
 
-enum class Period(val days: Int?) { WEEK(7), MONTH(30), YEAR(365), ALL(null) }
+enum class Period(val days: Int?) { TODAY(1), WEEK(7), MONTH(30), YEAR(365), ALL(null) }
 
 /** One bar of the distance chart: a day, or a month for YEAR/ALL. */
 data class Bucket(val start: LocalDate, val monthly: Boolean, val km: Double)
@@ -111,6 +111,8 @@ data class PeriodStats(
     val weekdayKm: List<Double>,
     /** Riding minutes per hour of day. */
     val hourMinutes: List<Double>,
+    /** km per hour of day; each ride's distance is split by its moving time in each hour. */
+    val hourKm: List<Double>,
     /** Riding minutes per speed band. */
     val speedBandMinutes: List<Double>,
     val longestRide: RideRecord?,
@@ -289,6 +291,7 @@ object RideMath {
             buckets = buckets,
             weekdayKm = DayOfWeek.entries.map { dow -> rides.filter { day(it).dayOfWeek == dow }.sumOf { it.summary.distanceKm } },
             hourMinutes = (0 until 24).map { h -> rides.sumOf { it.summary.hourS.getOrElse(h) { 0 }.toDouble() } / 60.0 },
+            hourKm = hourKm(rides.map { it.summary }, zone),
             speedBandMinutes = SPEED_BANDS.indices.map { b -> rides.sumOf { it.summary.speedBandS.getOrElse(b) { 0 }.toDouble() } / 60.0 },
             longestRide = rides.maxByOrNull { it.summary.distanceM },
             fastestRide = rides.maxByOrNull { it.summary.maxSpeedKmh },
@@ -296,6 +299,17 @@ object RideMath {
             activeDays = days.size,
             longestStreakDays = longestStreak(days.toList()),
         )
+    }
+
+    /** km per hour of day: moving time per hour sets the share; a ride with none counts at its start hour. */
+    fun hourKm(rides: List<RideSummary>, zone: ZoneId): List<Double> {
+        val out = DoubleArray(24)
+        for (r in rides) {
+            val moving = r.hourS.sum()
+            if (moving > 0) r.hourS.forEachIndexed { h, sec -> if (h < 24) out[h] += r.distanceKm * sec / moving }
+            else out[Instant.ofEpochMilli(r.start).atZone(zone).hour] += r.distanceKm
+        }
+        return out.toList()
     }
 
     fun longestStreak(sortedDays: List<LocalDate>): Int {

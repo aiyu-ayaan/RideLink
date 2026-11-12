@@ -122,6 +122,18 @@ class RideMathTest {
         assertEquals(30.0, s.hourMinutes[8], 0.1)
     }
 
+    @Test fun todayComparesWithYesterdayAndSplitsByHour() {
+        val today = LocalDate.of(2026, 11, 3)
+        val rides = listOf(record(1, 0, 36), record(2, 1, 60), record(3, 3, 36))
+        val s = RideMath.stats(rides, Period.TODAY, today, zone)
+        assertEquals(1, s.rides)
+        assertEquals(6.0, s.totalKm, 0.2)
+        assertEquals(10.0, s.previousKm!!, 0.3)
+        assertEquals(24, s.hourKm.size)
+        assertEquals(s.totalKm, s.hourKm.sum(), 0.01)
+        assertEquals(s.totalKm, s.hourKm[8], 0.01)
+    }
+
     @Test fun yearAndAllAreMonthly() {
         val today = LocalDate.of(2026, 11, 3)
         val rides = listOf(record(1, 0, 36), record(2, 70, 36))

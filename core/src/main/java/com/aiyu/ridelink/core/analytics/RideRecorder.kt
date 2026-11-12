@@ -49,6 +49,10 @@ class RideRecorder @Inject constructor(
     /** True while a ride is being recorded; the Ride screen shows a small indicator. */
     val recording: StateFlow<Boolean> = _recording.asStateFlow()
 
+    private val _live = MutableStateFlow<RideSummary?>(null)
+    /** The ride being recorded so far, refreshed every sample; null between rides. Not saved until it ends. */
+    val live: StateFlow<RideSummary?> = _live.asStateFlow()
+
     fun start() {
         if (started) return
         started = true
@@ -86,6 +90,7 @@ class RideRecorder @Inject constructor(
             }
             else -> {
                 ride += sample(now, t, speed)
+                _live.value = RideMath.summarize(ride, ZoneId.systemDefault())
                 noteTurn(now)
                 if ((speed ?: 0) >= RideMath.MOVING_KMH) lastMovingAt = now
                 else if (now - lastMovingAt > IDLE_END_MS) finish()
@@ -113,6 +118,7 @@ class RideRecorder @Inject constructor(
         val samples = current ?: return
         current = null
         _recording.value = false
+        _live.value = null
         // Drop the standing-still tail so the ride ends when the wheels stopped.
         val trimmed = samples.filter { it.t <= lastMovingAt + RideMath.SAMPLE_MS }
         val summary = RideMath.summarize(trimmed, ZoneId.systemDefault()) ?: return
