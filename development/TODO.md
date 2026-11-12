@@ -37,8 +37,12 @@
 
 - [x] Ride history page: names, stars, From A to B titles, filters, pagination
 - [x] Turn frames held while a pop-up or call shows; tiles hide values the display never sends
+- [x] Analytics Today view (live ride, km by hour, today's rides); full-width odometer tile
 
 ## Needs the real scooter
+- [ ] Auto-connect (2026-11-13 rework): ignition on with the app open, closed, and after 60 s idle; Console log `ClusterLink` lines
+- [ ] Call indicator during an answered phone / WhatsApp call (caller frame kept every 500 ms); does nav need to show during long calls?
+- [ ] Notification icons on the Race XP: rider reports them "not working properly"; get a Console "Copy log" with STATUS and 5B 9C lines
 - [ ] During a Maps route: caller name and message pop-ups stay on the display (turn frames held)
 - [ ] Refuel detection: check the bar jump at a real pump (ignition off and on) and that a slosh does not log a stop
 - [ ] Service flash on custom line 1: does the Race XP / XT show it on connect
