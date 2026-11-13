@@ -38,6 +38,7 @@
 - [x] Ride history page: names, stars, From A to B titles, filters, pagination
 - [x] Turn frames held while a pop-up or call shows; tiles hide values the display never sends
 - [x] Analytics Today view (live ride, km by hour, today's rides); full-width odometer tile
+- [x] All 22 Scheduled Indian Languages + English with in-app language picker and RTL support
 
 ## Needs the real scooter
 - [ ] Auto-connect (2026-11-13 rework): ignition on with the app open, closed, and after 60 s idle; Console log `ClusterLink` lines
