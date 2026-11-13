@@ -352,7 +352,7 @@
     <string name="settings_forwarding_desc">Navigation, chats, weather, location, music, overspeed</string>
     <string name="settings_calls_section">Calls</string>
     <string name="settings_calls_section_desc">Caller on the display, scooter buttons, auto-replies, ride check-in</string>
-    <string name="settings_in_app_desc">Ride data, vehicle health, ride recording</string>
+    <string name="settings_in_app_desc">Language, ride data, vehicle health, ride recording</string>
     <string name="settings_developer_desc">Console, saved logs</string>
     <!-- Caller shown on the display when the number is unknown -->
     <string name="call_unknown">Incoming call</string>
@@ -518,4 +518,12 @@
     <string name="filter_apply">Show rides</string>
     <string name="history_empty">No rides match these filters.</string>
     <string name="history_clear_filters">Clear filters</string>
+
+    <!-- Language & duration units -->
+    <string name="settings_language">Language</string>
+    <string name="settings_language_system">System default</string>
+    <string name="settings_language_dialog_title">Choose language</string>
+    <string name="duration_hours_minutes">%1$d h %2$d min</string>
+    <string name="duration_minutes">%1$d min</string>
+    <string name="duration_seconds">%1$d s</string>
 </resources>

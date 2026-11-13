@@ -102,11 +102,19 @@ graph TD
     Console --> LF[LogFile: files/logs, 7 days, export via SAF]
 ```
 
+## Localization
+
+- **Supported languages**: System default, English (`en`), and all 22 Scheduled Indian Languages: Hindi (`hi`), Bengali (`bn`), Telugu (`te`), Marathi (`mr`), Tamil (`ta`), Urdu (`ur`), Gujarati (`gu`), Kannada (`kn`), Malayalam (`ml`), Odia (`or`), Punjabi (`pa`), Assamese (`as`), Kashmiri (`ks`), Nepali (`ne`), Sindhi (`sd`), Sanskrit (`sa`), Maithili (`mai`), Santali (`sat`), Konkani (`kok`), Dogri (`doi`), Manipuri (`mni`), and Bodo (`brx`).
+- **Picker & locale wiring**: Exposed in **Settings → In-App → Language** (`SettingsSection.IN_APP`), backed by `AppLocale` (`core/settings/AppLocale.kt`) and `Settings.languageTag` in `SettingsRepository`.
+  - **API 33+**: `AppLocale` delegates to platform `LocaleManager.applicationLocales`, paired with `app/src/main/res/xml/locales_config.xml` (`android:localeConfig="@xml/locales_config"` in `AndroidManifest.xml`).
+  - **API 26–32**: Persists the selected tag in `SharedPreferences` (`app_locale`) and wraps/updates `Configuration` via `AppLocale.wrap` and `AppLocale.applyToResources` in `RideLinkApp`, `MainActivity`, `ClusterService`, and `RideNotificationListener` (recreating `MainActivity` on change).
+- **Resource layout**: Base strings live in `ui/src/main/res/values/strings.xml`. Translations use `values-<lang>/strings.xml` for 2-letter codes (`values-hi`, `values-bn`, …, `values-sa`) and `values-b+<tag>/strings.xml` for 3-letter codes (`values-b+mai`, `values-b+sat`, `values-b+kok`, `values-b+doi`, `values-b+mni`, `values-b+brx`).
+
 ## State ownership
 
 | State | Owner | Exposed as |
 |---|---|---|
-| Active device, its model (null = Auto), rider name, toggles | `SettingsRepository` (DataStore) | `Flow<Settings>` |
+| Active device, its model (null = Auto), rider name, toggles, language tag | `SettingsRepository` (DataStore) | `Flow<Settings>` |
 | Every paired scooter with its own model | `GarageStore` (SQLite `garage.db`) | `StateFlow<List<Bike>>` |
 | Connection | `ClusterLink` | `StateFlow<LinkState>` |
 | Current nav step, caller, speed, telemetry, weather, place, music, social counts, detected model, frame log, demo | `ClusterController` | `StateFlow`s |

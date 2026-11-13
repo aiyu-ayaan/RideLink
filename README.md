@@ -37,6 +37,7 @@ RideLink connects your phone to your TVS SmartXonnect scooter display over Bluet
 - **Riding safety**: WhatsApp auto-reply while riding (one-to-one chats, once per ride), ride check-in SMS with a Google Maps link at start and end, and a precise last-parked spot.
 - **Multi-scooter garage**: Pair and manage multiple scooters with per-bike model profiles and auto-reconnect.
 - **Material 3 Expressive UI**: Built entirely in Jetpack Compose with dynamic color, adaptive layouts, dark/light themes, and floating pill navigation.
+- **22 Indian languages + English**: In-app language picker (**Settings → In-App → Language**) supporting System default, English, and all 22 Scheduled Indian Languages (Hindi, Bengali, Telugu, Marathi, Tamil, Urdu, Gujarati, Kannada, Malayalam, Odia, Punjabi, Assamese, Kashmiri, Nepali, Sindhi, Sanskrit, Maithili, Santali, Konkani, Dogri, Manipuri, and Bodo).
 - **Auto model detection**: Recognises the SmartXonnect LCD (Race XP), older Ntorq and 2025+ clusters from their own frames.
 - **Race XP extras**: Race stats, display brightness, SMS sender, birthday greeting, last parked location and missed-call auto-reply.
 - **Developer tools**: Demo navigation through every turn type, arrow and alert code sweeps, and a live frame console.
