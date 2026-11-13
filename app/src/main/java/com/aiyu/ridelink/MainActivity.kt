@@ -3,6 +3,7 @@ package com.aiyu.ridelink
 import android.animation.Animator
 import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
+import android.content.Context
 import android.os.Bundle
 import android.os.SystemClock
 import android.view.View
@@ -14,6 +15,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.core.animation.doOnEnd
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.splashscreen.SplashScreenViewProvider
+import com.aiyu.ridelink.core.settings.AppLocale
 import com.aiyu.ridelink.service.ClusterService
 import com.aiyu.ridelink.ui.RideLinkRoot
 import com.aiyu.ridelink.ui.theme.RideLinkTheme
@@ -21,6 +23,10 @@ import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(AppLocale.wrap(newBase))
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen().setOnExitAnimationListener(::playSplashExit)
         enableEdgeToEdge()

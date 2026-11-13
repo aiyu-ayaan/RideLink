@@ -1,7 +1,11 @@
 package com.aiyu.ridelink.ui.settings
 
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.provider.Settings as AndroidSettings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -10,12 +14,15 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.toggleable
 import com.aiyu.ridelink.ui.nav.appBarColors
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
@@ -49,6 +56,7 @@ import com.aiyu.ridelink.core.ble.LinkState
 import com.aiyu.ridelink.core.display.DisplayTemplate
 import com.aiyu.ridelink.core.phone.RejectMessage
 import com.aiyu.ridelink.core.protocol.ClusterModel
+import com.aiyu.ridelink.core.settings.AppLocale
 import com.aiyu.ridelink.core.settings.Settings
 import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
@@ -313,6 +321,18 @@ fun SettingsScreen(
             }
                 }
                 SettingsSection.IN_APP -> {
+            item {
+                LanguageRow(
+                    selectedTag = s.languageTag,
+                    onSelect = { tag ->
+                        AppLocale.apply(context, tag)
+                        vm.setLanguageTag(tag)
+                        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+                            context.findActivity()?.recreate()
+                        }
+                    },
+                )
+            }
             item { SwitchRow(R.string.settings_ride_data, R.string.settings_ride_data_hint, s.showRideData, vm::setShowRideData) }
             item { SwitchRow(R.string.settings_vehicle, R.string.settings_vehicle_hint, s.showVehicle, vm::setShowVehicle) }
             item { SwitchRow(R.string.settings_record_rides, R.string.settings_record_rides_hint, s.recordRides, vm::setRecordRides) }
@@ -634,6 +654,63 @@ enum class SettingsSection(val title: Int, val summary: Int, val icon: ImageVect
 @Composable
 private fun SectionGroup(sections: List<SettingsSection>, onOpen: (SettingsSection) -> Unit) = Group {
     sections.forEach { sec -> LinkRow(sec.icon, stringResource(sec.title), stringResource(sec.summary)) { onOpen(sec) } }
+}
+
+@Composable
+private fun LanguageRow(selectedTag: String?, onSelect: (String?) -> Unit) {
+    val context = LocalContext.current
+    val effectiveTag = remember(selectedTag) { AppLocale.getTag(context) ?: selectedTag }
+    val active = remember(effectiveTag) { AppLocale.findLanguage(effectiveTag) }
+    var open by remember { mutableStateOf(false) }
+    ListItem(
+        headlineContent = { Text(stringResource(R.string.settings_language)) },
+        supportingContent = { Text(active?.nativeName ?: stringResource(R.string.settings_language_system)) },
+        modifier = Modifier.clickable { open = true },
+    )
+    if (open) {
+        AlertDialog(
+            onDismissRequest = { open = false },
+            title = { Text(stringResource(R.string.settings_language_dialog_title)) },
+            text = {
+                LazyColumn(Modifier.heightIn(max = 420.dp)) {
+                    item {
+                        val isSystem = active == null
+                        ListItem(
+                            headlineContent = { Text(stringResource(R.string.settings_language_system)) },
+                            leadingContent = { RadioButton(selected = isSystem, onClick = null) },
+                            modifier = Modifier.selectable(selected = isSystem, role = Role.RadioButton) {
+                                open = false
+                                onSelect(null)
+                            },
+                        )
+                    }
+                    items(AppLocale.SUPPORTED_LANGUAGES, key = { it.tag }) { lang ->
+                        val selected = active?.tag == lang.tag
+                        ListItem(
+                            headlineContent = { Text(lang.nativeName) },
+                            supportingContent = if (lang.nativeName != lang.englishName) {
+                                { Text(lang.englishName) }
+                            } else null,
+                            leadingContent = { RadioButton(selected = selected, onClick = null) },
+                            modifier = Modifier.selectable(selected = selected, role = Role.RadioButton) {
+                                open = false
+                                onSelect(lang.tag)
+                            },
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { open = false }) { Text(stringResource(R.string.cancel)) }
+            },
+        )
+    }
+}
+
+private tailrec fun Context.findActivity(): Activity? = when (this) {
+    is Activity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
 }
 
 /** Rounded card holding a run of rows, like Rewire's Profile and About. */

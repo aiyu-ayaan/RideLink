@@ -21,6 +21,7 @@ import androidx.lifecycle.lifecycleScope
 import com.aiyu.ridelink.MainActivity
 import com.aiyu.ridelink.core.ClusterController
 import com.aiyu.ridelink.core.ble.LinkState
+import com.aiyu.ridelink.core.settings.AppLocale
 import com.aiyu.ridelink.core.settings.SettingsRepository
 import com.aiyu.ridelink.ui.R
 import dagger.hilt.android.AndroidEntryPoint
@@ -41,6 +42,10 @@ class ClusterService : LifecycleService() {
     private var idleJob: Job? = null
     private var statusJob: Job? = null
     private var calls: CallStateWatcher? = null
+
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(AppLocale.wrap(newBase))
+    }
 
     /**
      * Held while the display is connected, like stock BaseBleConnectHelperService.startWakelock (partial, 30 min).

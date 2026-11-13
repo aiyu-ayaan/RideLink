@@ -109,6 +109,8 @@ data class Settings(
     val checkIn: Boolean = false,
     val checkInNumber: String = "",
     val checkInName: String = "",
+    /** Optional BCP-47 language tag (null/blank = System default). */
+    val languageTag: String? = null,
 ) {
     companion object {
         val BRIGHTNESS_RANGE = 2..5
@@ -178,6 +180,7 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
         val checkIn = booleanPreferencesKey("check_in")
         val checkInNumber = stringPreferencesKey("check_in_number")
         val checkInName = stringPreferencesKey("check_in_name")
+        val languageTag = stringPreferencesKey("language_tag")
     }
 
     val settings: Flow<Settings> = context.store.data.map { p ->
@@ -236,6 +239,7 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
             checkIn = p[K.checkIn] ?: false,
             checkInNumber = p[K.checkInNumber] ?: "",
             checkInName = p[K.checkInName] ?: "",
+            languageTag = p[K.languageTag]?.takeIf { it.isNotBlank() },
         )
     }
 
@@ -307,6 +311,12 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
         context.store.edit {
             it[K.parkedLat] = lat; it[K.parkedLng] = lng; it[K.parkedAt] = at
             if (bike == null) it.remove(K.parkedBike) else it[K.parkedBike] = bike
+        }
+    }
+    suspend fun setLanguageTag(tag: String?) {
+        val clean = tag?.trim()?.takeIf { it.isNotEmpty() }
+        context.store.edit {
+            if (clean == null) it.remove(K.languageTag) else it[K.languageTag] = clean
         }
     }
 }

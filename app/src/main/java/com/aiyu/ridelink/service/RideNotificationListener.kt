@@ -3,6 +3,7 @@ package com.aiyu.ridelink.service
 import android.app.Notification
 import android.app.Person
 import android.app.RemoteInput
+import android.content.Context
 import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.os.Bundle
@@ -16,6 +17,7 @@ import com.aiyu.ridelink.core.nav.MapsNotificationParser
 import com.aiyu.ridelink.core.nav.MapsTurnIcons
 import com.aiyu.ridelink.core.notify.MessageAlert
 import com.aiyu.ridelink.core.notify.SocialNotificationParser
+import com.aiyu.ridelink.core.settings.AppLocale
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -26,6 +28,10 @@ class RideNotificationListener : NotificationListenerService() {
     @Inject lateinit var turnIcons: MapsTurnIcons
 
     private var lastNavKey: String? = null
+
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(AppLocale.wrap(newBase))
+    }
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
         val n = sbn.notification
