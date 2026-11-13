@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.2.1-alpha.13](https://github.com/aiyu-ayaan/RideLink/compare/v0.2.1-alpha.12...v0.2.1-alpha.13) (2026-11-13)
+
+### Features
+
+* Add translations for all 22 Indian languages
+* Add in-app language picker and locale wiring
+
+### Bug fixes
+
+* Match language picker list background to dialog surface
+
+### Other changes
+
+* Mark Indian language localization done in TODO
+* Document Indian language support in README and development docs
+* Docs(License) : Add view-only source-available license, About link, README and CLAUDE.md notes
+
 ## [0.2.1-alpha.12](https://github.com/aiyu-ayaan/RideLink/compare/v0.2.1-alpha.11...v0.2.1-alpha.12) (2026-11-12)
 
 ### Other changes
