@@ -668,6 +668,7 @@ private fun LanguageRow(selectedTag: String?, onSelect: (String?) -> Unit) {
         modifier = Modifier.clickable { open = true },
     )
     if (open) {
+        val dialogItemColors = ListItemDefaults.colors(containerColor = Color.Transparent)
         AlertDialog(
             onDismissRequest = { open = false },
             title = { Text(stringResource(R.string.settings_language_dialog_title)) },
@@ -678,6 +679,7 @@ private fun LanguageRow(selectedTag: String?, onSelect: (String?) -> Unit) {
                         ListItem(
                             headlineContent = { Text(stringResource(R.string.settings_language_system)) },
                             leadingContent = { RadioButton(selected = isSystem, onClick = null) },
+                            colors = dialogItemColors,
                             modifier = Modifier.selectable(selected = isSystem, role = Role.RadioButton) {
                                 open = false
                                 onSelect(null)
@@ -692,6 +694,7 @@ private fun LanguageRow(selectedTag: String?, onSelect: (String?) -> Unit) {
                                 { Text(lang.englishName) }
                             } else null,
                             leadingContent = { RadioButton(selected = selected, onClick = null) },
+                            colors = dialogItemColors,
                             modifier = Modifier.selectable(selected = selected, role = Role.RadioButton) {
                                 open = false
                                 onSelect(lang.tag)
