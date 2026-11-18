@@ -57,6 +57,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.core.content.pm.PackageInfoCompat
 import com.aiyu.ridelink.core.update.Releases
 import com.aiyu.ridelink.ui.R
 import com.aiyu.ridelink.ui.nav.LinkRow
@@ -101,7 +102,7 @@ fun AboutScreen(onBack: () -> Unit, onOpenUpdates: () -> Unit, onOpenAcknowledge
             Group {
                 ListItem(
                     headlineContent = { Text(stringResource(R.string.app_name)) },
-                    supportingContent = { Text(stringResource(R.string.about_version, info?.versionName ?: "?", info?.longVersionCode ?: 0L)) },
+                    supportingContent = { Text(stringResource(R.string.about_version, info?.versionName ?: "?", info?.let(PackageInfoCompat::getLongVersionCode) ?: 0L)) },
                     leadingContent = { Icon(Icons.Rounded.Info, contentDescription = null) },
                     colors = itemColors(),
                 )
