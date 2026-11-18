@@ -133,23 +133,31 @@ class ClusterController @Inject constructor(
     private fun onCallAnswered() = onCallActive(null)
 
     /**
-     * A call in progress (answered, dialled, or a WhatsApp / Instagram / Messenger call): the caller frame keeps
-     * going every [ClusterProtocol.CALLER_REPEAT_MS] until the call ends, so the display's call indicator stays lit.
+     * The caller of the call that rang on this phone, set at once by [onIncomingCall]; null for a call the rider dialled.
+     * The display draws every caller frame as an incoming call, and stock PhoneStateReceiver sends none for a dialled call.
+     */
+    @Volatile private var ringingCaller: String? = null
+
+    /**
+     * A ringing call was answered (phone, WhatsApp, Instagram, Messenger): the caller frame keeps going every
+     * [ClusterProtocol.CALLER_REPEAT_MS] until the call ends, so the display's call indicator stays lit.
      * Stock does the same on the vehicle types in PhoneStateReceiver.getVehicleTypeIdList (its 400 ms callTimer
      * is only cancelled on IDLE). [name] null keeps the caller already shown. Turn frames wait, as while ringing.
+     * A call the rider dialled never rang, so it is ignored here.
      */
     fun onCallActive(name: String?) {
-        val shown = name?.takeIf { it.isNotBlank() } ?: _caller.value
+        val shown = name?.takeIf { it.isNotBlank() } ?: ringingCaller ?: return
+        if (ringingCaller == null) return
+        ringingCaller = shown
         if (callState == CallState.ACCEPTED && callJob?.isActive == true && shown == _caller.value) return
         // Answered: not a missed call, so no auto-reply or missed-call pop-up when it ends.
         ringStartedAt = 0
         callJob?.cancel()
         callJob = scope.launch {
             if (!settings.current().forwardCalls) return@launch
-            val caller = shown ?: CALL_FALLBACK
-            _caller.value = caller
+            _caller.value = shown
             callState = CallState.ACCEPTED
-            val frame = ClusterProtocol.caller(caller)
+            val frame = ClusterProtocol.caller(shown)
             // Capped so a missed end event cannot keep the display on a call forever.
             withTimeoutOrNull(ACTIVE_CALL_MAX_MS) {
                 while (isActive) {
@@ -680,6 +688,7 @@ class ClusterController @Inject constructor(
     @Volatile private var ringStartedAt = 0L
 
     fun onIncomingCall(nameOrNumber: String) {
+        ringingCaller = nameOrNumber
         if (callJob?.isActive == true && _caller.value == nameOrNumber) return
         if (_caller.value == null) ringStartedAt = System.currentTimeMillis()
         callJob?.cancel()
@@ -700,6 +709,9 @@ class ClusterController @Inject constructor(
     }
 
     fun onCallEnded() {
+        // A dialled call put nothing on the display, so there is nothing to clear.
+        if (ringingCaller == null) return
+        ringingCaller = null
         callJob?.cancel()
         val rang = ringStartedAt.also { ringStartedAt = 0 }
         if (rang > 0) scope.launch {
@@ -1068,8 +1080,6 @@ class ClusterController @Inject constructor(
 
     private companion object {
         const val LOG_SIZE = 300
-        /** Display text for a call whose caller is unknown (a dialled call before the notification names it). */
-        const val CALL_FALLBACK = "On call"
         const val ACTIVE_CALL_MAX_MS = 3 * 60 * 60_000L
         const val DEMO_STEP_MS = 1_500L
         const val DEMO_NAV_STEP_MS = 1_000L

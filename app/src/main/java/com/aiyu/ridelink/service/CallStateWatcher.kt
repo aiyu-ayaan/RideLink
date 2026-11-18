@@ -13,7 +13,8 @@ import com.aiyu.ridelink.ui.R
  * Backup for incoming calls, like the stock app's phone-state listener: some dialers post a call notification
  * RideNotificationListener cannot recognise. Ringing sends the caller at once (the number when call-log access is
  * granted, else "Incoming call"); when the dialer's notification arrives with a contact name, that name replaces it.
- * Answered or dialled keeps the caller up (call indicator) until the call ends. Needs READ_PHONE_STATE (the optional phone card on the Ride screen).
+ * Answered keeps the caller up (call indicator) until the call ends; a dialled call shows nothing, as in stock
+ * PhoneStateReceiver. Needs READ_PHONE_STATE (the optional phone card on the Ride screen).
  *
  * shortcut: PhoneStateListener is deprecated but is the only callback that still hands over the number;
  * move to TelephonyCallback if the number stops mattering.
@@ -35,7 +36,7 @@ class CallStateWatcher(private val context: Context, private val controller: Clu
                         controller.onIncomingCall(phoneNumber?.takeIf { it.isNotBlank() }?.removePrefix("+91") ?: context.getString(R.string.call_unknown))
                     }
                 }
-                // Answered or dialled: keep the caller (or "On call") up for the whole call.
+                // Answered: keep the caller up for the whole call. The controller ignores a dialled call.
                 TelephonyManager.CALL_STATE_OFFHOOK -> {
                     ringing = false
                     inCall = true

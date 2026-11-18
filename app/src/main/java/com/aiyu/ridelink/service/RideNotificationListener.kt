@@ -15,6 +15,7 @@ import android.service.notification.StatusBarNotification
 import com.aiyu.ridelink.core.ClusterController
 import com.aiyu.ridelink.core.nav.MapsNotificationParser
 import com.aiyu.ridelink.core.nav.MapsTurnIcons
+import com.aiyu.ridelink.core.notify.CallNotice
 import com.aiyu.ridelink.core.notify.MessageAlert
 import com.aiyu.ridelink.core.notify.SocialNotificationParser
 import com.aiyu.ridelink.core.settings.AppLocale
@@ -60,7 +61,7 @@ class RideNotificationListener : NotificationListenerService() {
                 val incoming = isIncoming(n)
                 noteOnce("Call ${if (incoming) "ringing" else "not ringing"}: ${sbn.packageName} title=$title | text=$text")
                 // Any app's call (phone, WhatsApp, Instagram, Messenger, Telegram...): ringing shows the caller,
-                // an answered or dialled call keeps it up so the display's call indicator stays lit.
+                // answering keeps it up so the display's call indicator stays lit. A dialled call shows nothing.
                 if (incoming) controller.onIncomingCall(callerName(n) ?: return)
                 else controller.onCallActive(callerName(n))
             }
@@ -227,15 +228,8 @@ class RideNotificationListener : NotificationListenerService() {
                 (it.notification.flags and (Notification.FLAG_GROUP_SUMMARY or Notification.FLAG_ONGOING_EVENT)) == 0
         }
 
-    /**
-     * Ringing calls carry CallStyle type INCOMING (API 31+). Dialers without CallStyle: a full-screen intent,
-     * or no running call timer (an answered call shows a chronometer).
-     */
-    private fun isIncoming(n: Notification): Boolean {
-        val type = n.extras.getInt(Notification.EXTRA_CALL_TYPE, -1)
-        if (type != -1) return type == Notification.CallStyle.CALL_TYPE_INCOMING
-        return n.fullScreenIntent != null || !n.extras.getBoolean(Notification.EXTRA_SHOW_CHRONOMETER)
-    }
+    private fun isIncoming(n: Notification) =
+        CallNotice.isRinging(n.extras.getInt(Notification.EXTRA_CALL_TYPE, -1), n.fullScreenIntent != null, n.flags)
 
     private companion object {
         /** Swiggy, Zomato, Blinkit, Zepto, Swiggy Instamart (same app), Dunzo. */
