@@ -172,4 +172,48 @@ class RideMathTest {
         assertTrue(info, month.totalKm > 100)
         assertTrue(info, month.topSpeedKmh in 60..90)
     }
+
+    private fun fuelRide(vararg bars: Int?) = bars.mapIndexed { i, b -> RideSample(t = i * 60_000L, fuel = b) }
+
+    @Test fun fuelDropIgnoresTheGaugeWakingUpAtZero() {
+        assertEquals(1, RideMath.fuelDrop(fuelRide(0, 5, 5, 5, 4, 4)))
+    }
+
+    @Test fun fuelDropIgnoresOneBarWobble() {
+        val wobble = listOf(5, 5, 4, 5, 5, 5).mapIndexed { i, b -> RideSample(t = i * 5_000L, fuel = b) }
+        assertEquals(0, RideMath.fuelDrop(wobble))
+    }
+
+    @Test fun fuelDropIsNullWithoutALevel() {
+        assertEquals(null, RideMath.fuelDrop(fuelRide(null, 0, null)))
+    }
+
+    @Test fun tripCountsStepsAndSkipsAResetOrTripSwitch() {
+        val trip = listOf(100, 101, 103, 0, 2, 900, 901).mapIndexed { i, v -> RideSample(t = i * 30_000L, tripTenths = v) }
+        assertEquals(6, RideMath.tripCoveredTenths(trip))
+    }
+
+    @Test fun tripIsNullWhenTheMeterNeverMoves() {
+        val trip = List(4) { RideSample(t = it * 5_000L, tripTenths = 0) }
+        assertEquals(null, RideMath.tripCoveredTenths(trip))
+    }
+
+    @Test fun motionSpansMergeStretchesAndTreatAGapAsStopped() {
+        val ride = listOf(0L to 30, 5_000L to 30, 10_000L to 0, 15_000L to 0, 20_000L to 40, 90_000L to 40)
+            .map { (t, v) -> RideSample(t = t, speedKmh = v) }
+        assertEquals(
+            listOf(MotionSpan(0, 10_000, true), MotionSpan(10_000, 90_000, false)),
+            RideMath.motionSpans(ride),
+        )
+    }
+
+    @Test fun rpmBandsCountRunningMinutesOnly() {
+        val ride = listOf(1_500, 2_500, 0, 2_500).mapIndexed { i, r -> RideSample(t = i * 30_000L, rpm = r) }
+        assertEquals(listOf(0.5, 0.5, 0.0, 0.0, 0.0), RideMath.rpmBandMinutes(ride))
+    }
+
+    @Test fun economyBySpeedBandAveragesMovingReadings() {
+        val ride = listOf(RideSample(0, speedKmh = 25, instantEconomy = 40), RideSample(5_000, speedKmh = 30, instantEconomy = 50), RideSample(10_000, speedKmh = 0, instantEconomy = 90))
+        assertEquals(listOf(0.0, 45.0, 0.0, 0.0, 0.0), RideMath.economyBySpeedBand(ride))
+    }
 }

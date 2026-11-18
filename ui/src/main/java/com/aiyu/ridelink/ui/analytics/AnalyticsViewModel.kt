@@ -5,6 +5,7 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aiyu.ridelink.core.ClusterController
+import com.aiyu.ridelink.core.protocol.DisplayTelemetry
 import com.aiyu.ridelink.core.analytics.Period
 import com.aiyu.ridelink.core.analytics.PeriodStats
 import com.aiyu.ridelink.core.analytics.RideMath
@@ -46,8 +47,8 @@ data class AnalyticsState(
 class AnalyticsViewModel @Inject constructor(
     private val store: RideStore,
     private val recorder: RideRecorder,
-    controller: ClusterController,
-    garage: GarageStore,
+    private val controller: ClusterController,
+    private val garage: GarageStore,
     settings: SettingsRepository,
 ) : ViewModel() {
     private val zone: ZoneId get() = ZoneId.systemDefault()
@@ -97,7 +98,13 @@ class AnalyticsViewModel @Inject constructor(
     /** The newest rides of the shown scooter, for the "Recent rides" list under the stats. */
     val recent: StateFlow<List<RideRecord>> = combine(store.rides, bike) { all, b -> all.filter { it.shown(b) }.take(RECENT) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
-    suspend fun samples(id: Long): List<RideSample> = store.samples(id)
+
+    /** Rides saved before fuel was stored as bars hold the raw display byte; masking is safe on both. */
+    suspend fun samples(id: Long): List<RideSample> {
+        val bike = store.rides.value.firstOrNull { it.id == id }?.bike
+        val family = (garage.bikes.value.firstOrNull { it.address == bike }?.model ?: controller.currentModel()).family
+        return store.samples(id).map { s -> s.copy(fuel = DisplayTelemetry(fuelLevel = s.fuel).fuelBars(family)) }
+    }
     suspend fun turns(id: Long): List<RideTurn> = store.turns(id)
 
     /** Every stored ride, unfiltered by period: a ride opened from the records may be older than the period. */

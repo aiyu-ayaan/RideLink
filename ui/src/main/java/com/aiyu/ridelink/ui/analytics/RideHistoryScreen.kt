@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -35,7 +36,6 @@ import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MediumFlexibleTopAppBar
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RangeSlider
@@ -45,7 +45,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -71,11 +70,18 @@ import com.aiyu.ridelink.core.analytics.RideFilter
 import com.aiyu.ridelink.core.analytics.RideRecord
 import com.aiyu.ridelink.core.analytics.RideSort
 import com.aiyu.ridelink.ui.R
-import com.aiyu.ridelink.ui.nav.appBarColors
 import com.aiyu.ridelink.ui.theme.Dimens
 import com.aiyu.ridelink.ui.update.BackButton
 import kotlin.math.ceil
 import kotlin.math.roundToInt
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import com.aiyu.ridelink.ui.nav.AdaptiveTopAppBar
+import com.aiyu.ridelink.ui.nav.PaneRow
+import com.aiyu.ridelink.ui.nav.isTwoPane
+import com.aiyu.ridelink.ui.nav.adaptiveScrollBehavior
 
 /** The rider's name for the ride, else "From A to B" / "Around A" from where it started and ended, else the date. */
 @Composable
@@ -144,7 +150,7 @@ fun RideHistoryScreen(onBack: () -> Unit, onOpenRide: (Long) -> Unit, vm: RideHi
     val filter by vm.filter.collectAsStateWithLifecycle()
     var sheet by rememberSaveable { mutableStateOf(false) }
     val list = rememberLazyListState()
-    val scroll = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    val scroll = adaptiveScrollBehavior()
 
     // Next page when the last few rows come into view.
     val current by rememberUpdatedState(state)
@@ -157,16 +163,14 @@ fun RideHistoryScreen(onBack: () -> Unit, onOpenRide: (Long) -> Unit, vm: RideHi
     Scaffold(
         modifier = Modifier.nestedScroll(scroll.nestedScrollConnection),
         topBar = {
-            MediumFlexibleTopAppBar(
-                colors = appBarColors(),
+            AdaptiveTopAppBar(
                 title = { Text(stringResource(R.string.history_title)) },
                 navigationIcon = { BackButton(onBack) },
                 scrollBehavior = scroll,
             )
         },
     ) { padding ->
-        LazyColumn(Modifier.padding(padding).widthIn(max = Dimens.contentMaxWidth), state = list) {
-            item {
+        val searchField: @Composable () -> Unit = {
                 OutlinedTextField(
                     value = filter.query,
                     onValueChange = { vm.setFilter(filter.copy(query = it)) },
@@ -181,8 +185,8 @@ fun RideHistoryScreen(onBack: () -> Unit, onOpenRide: (Long) -> Unit, vm: RideHi
                     shape = MaterialTheme.shapes.extraLarge,
                     modifier = Modifier.fillMaxWidth().padding(horizontal = Dimens.gutter, vertical = Dimens.sm),
                 )
-            }
-            item { FilterChips(filter, vm::setFilter) { sheet = true } }
+        }
+        val rows: LazyListScope.() -> Unit = {
             items(state.rides, key = { it.id }) { r ->
                 RideRow(r, onStar = { vm.setStarred(r.id, it) }) { onOpenRide(r.id) }
             }
@@ -200,6 +204,19 @@ fun RideHistoryScreen(onBack: () -> Unit, onOpenRide: (Long) -> Unit, vm: RideHi
                 }
             }
             item { Spacer(Modifier.height(Dimens.xxl)) }
+        }
+        if (isTwoPane()) {
+            PaneRow(Modifier.padding(padding)) {
+                Column(Modifier.weight(2f).fillMaxHeight().verticalScroll(rememberScrollState())) {
+                    searchField()
+                    FilterChips(filter, vm::setFilter) { sheet = true }
+                }
+                LazyColumn(Modifier.weight(3f).fillMaxHeight(), state = list) { rows() }
+            }
+        } else LazyColumn(Modifier.padding(padding).fillMaxWidth().wrapContentWidth(Alignment.CenterHorizontally).widthIn(max = Dimens.contentMaxWidth).fillMaxWidth(), state = list) {
+            item { searchField() }
+            item { FilterChips(filter, vm::setFilter) { sheet = true } }
+            rows()
         }
     }
 

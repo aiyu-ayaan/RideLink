@@ -7,6 +7,13 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -72,8 +79,30 @@ fun FloatingNavBar(tabs: List<NavTab>, selected: Int, onSelect: (Int) -> Unit, m
     }
 }
 
+/** The same pill standing upright at the start edge for two-pane windows, where a bottom bar would cover the panes. */
 @Composable
-private fun PillItem(t: NavTab, selected: Boolean, onClick: () -> Unit) {
+fun FloatingNavRail(tabs: List<NavTab>, selected: Int, onSelect: (Int) -> Unit, modifier: Modifier = Modifier) {
+    Box(
+        modifier
+            .fillMaxHeight()
+            .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Start + WindowInsetsSides.Vertical))
+            .padding(start = Dimens.md),
+        contentAlignment = Alignment.Center,
+    ) {
+        Surface(shape = CircleShape, color = MaterialTheme.colorScheme.surfaceContainerHigh, shadowElevation = 6.dp) {
+            Column(Modifier.padding(6.dp).selectableGroup(), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                tabs.forEachIndexed { i, t -> PillItem(t, i == selected, showLabel = false) { onSelect(i) } }
+            }
+        }
+    }
+}
+
+/** System bars and camera cutout on the side the rail stands on; the panes beside it must not pad for them again. */
+val NavRailStartInsets: WindowInsets
+    @Composable get() = WindowInsets.safeDrawing.only(WindowInsetsSides.Start)
+
+@Composable
+private fun PillItem(t: NavTab, selected: Boolean, showLabel: Boolean = true, onClick: () -> Unit) {
     val c = MaterialTheme.colorScheme
     val effects = MaterialTheme.motionScheme.defaultEffectsSpec<Color>()
     val bg by animateColorAsState(if (selected) c.primaryContainer else Color.Transparent, effects, label = "pillBg")
@@ -91,7 +120,7 @@ private fun PillItem(t: NavTab, selected: Boolean, onClick: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         NavIcon(t, selected, fg)
-        if (selected) {
+        if (selected && showLabel) {
             Spacer(Modifier.width(Dimens.sm))
             Text(label, style = MaterialTheme.typography.labelLarge, color = fg, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.widthIn(max = 120.dp))
         }

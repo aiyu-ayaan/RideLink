@@ -21,12 +21,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.toggleable
-import com.aiyu.ridelink.ui.nav.appBarColors
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MediumFlexibleTopAppBar
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
@@ -69,17 +67,15 @@ import com.aiyu.ridelink.ui.nav.BottomBarSpacer
 import com.aiyu.ridelink.ui.nav.LinkRow
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.material.icons.rounded.TwoWheeler
 import androidx.compose.material.icons.rounded.Call
 import androidx.compose.material.icons.rounded.Code
 import androidx.compose.material.icons.rounded.Navigation
 import androidx.compose.material.icons.rounded.PhoneAndroid
 import androidx.compose.material.icons.rounded.TextFields
-import androidx.compose.material.icons.rounded.TwoWheeler
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.LargeFlexibleTopAppBar
 import androidx.compose.material3.ListItemDefaults
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import com.aiyu.ridelink.ui.update.BackButton
@@ -107,6 +103,14 @@ import com.aiyu.ridelink.ui.checkInPermissions
 import com.aiyu.ridelink.ui.granted
 import android.provider.ContactsContract
 import com.aiyu.ridelink.ui.theme.Dimens
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.runtime.key
+import androidx.compose.runtime.saveable.rememberSaveable
+import com.aiyu.ridelink.ui.nav.AdaptiveTopAppBar
+import com.aiyu.ridelink.ui.nav.PaneRow
+import com.aiyu.ridelink.ui.nav.isTwoPane
+import com.aiyu.ridelink.ui.nav.adaptiveScrollBehavior
 
 private val ClusterModel.label
     get() = when (this) {
@@ -169,25 +173,25 @@ fun SettingsScreen(
         }
     }
 
-    val title = section?.title ?: R.string.tab_forwarding
-    val scroll = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    val twoPane = isTwoPane()
+    // Two panes: the section list stays on the start side and this one is open beside it.
+    var openSection by rememberSaveable { mutableStateOf(section ?: SettingsSection.SCOOTER) }
+    val title = section?.title?.takeUnless { twoPane } ?: R.string.tab_forwarding
+    val scroll = adaptiveScrollBehavior()
     Scaffold(
         modifier = Modifier.nestedScroll(scroll.nestedScrollConnection),
         topBar = {
-            if (section == null) MediumFlexibleTopAppBar(colors = appBarColors(), title = { Text(stringResource(title)) }, scrollBehavior = scroll)
-            else LargeFlexibleTopAppBar(
-                colors = appBarColors(),
+            AdaptiveTopAppBar(
                 title = { Text(stringResource(title)) },
-                navigationIcon = { BackButton(onBack) },
+                navigationIcon = { if (section != null) BackButton(onBack) },
                 scrollBehavior = scroll,
+                large = section != null,
             )
         },
     ) { padding ->
-        LazyColumn(Modifier.padding(padding)) {
-            when (section) {
-                null -> {
+        val homeItems: LazyListScope.(SettingsSection?, (SettingsSection) -> Unit) -> Unit = { current, open ->
                     item { Section(R.string.settings_group_ride) }
-                    item { SectionGroup(listOf(SettingsSection.SCOOTER, SettingsSection.DISPLAY_TEXT, SettingsSection.ON_DISPLAY, SettingsSection.CALLS, SettingsSection.IN_APP), onOpenSection) }
+                    item { SectionGroup(listOf(SettingsSection.SCOOTER, SettingsSection.DISPLAY_TEXT, SettingsSection.ON_DISPLAY, SettingsSection.CALLS, SettingsSection.IN_APP), current, open) }
                     item { Section(R.string.settings_about) }
                     item {
                         Group {
@@ -196,9 +200,11 @@ fun SettingsScreen(
                         }
                     }
                     item { Section(R.string.settings_developer) }
-                    item { SectionGroup(listOf(SettingsSection.DEVELOPER), onOpenSection) }
+                    item { SectionGroup(listOf(SettingsSection.DEVELOPER), current, open) }
                     item { BottomBarSpacer() }
-                }
+        }
+        val pageItems: LazyListScope.(SettingsSection) -> Unit = { page ->
+            when (page) {
                 SettingsSection.DISPLAY_TEXT -> {
             item {
                 DisplayTextField(rider, R.string.settings_rider, R.string.settings_rider_hint) { rider = it; vm.setRiderName(it) }
@@ -339,6 +345,20 @@ fun SettingsScreen(
 
                 }
                 SettingsSection.SCOOTER -> {
+            if (android.os.Build.VERSION.SDK_INT >= 33) item {
+                val context = androidx.compose.ui.platform.LocalContext.current
+                val label = stringResource(R.string.app_name)
+                Group {
+                    LinkRow(Icons.Rounded.TwoWheeler, stringResource(R.string.tile_add), stringResource(R.string.tile_add_desc)) {
+                        context.getSystemService(android.app.StatusBarManager::class.java)?.requestAddTileService(
+                            android.content.ComponentName(context, "com.aiyu.ridelink.service.ConnectionTileService"),
+                            label,
+                            android.graphics.drawable.Icon.createWithResource(context, R.drawable.ic_ridelink),
+                            context.mainExecutor,
+                        ) { }
+                    }
+                }
+            }
             items(bikes, key = { it.address }) { b ->
                 val active = b.address == s.deviceAddress
                 val label = b.name ?: b.address
@@ -425,6 +445,24 @@ fun SettingsScreen(
             }
                 }
             }
+        }
+        if (twoPane) {
+            PaneRow(Modifier.padding(padding)) {
+                LazyColumn(Modifier.weight(2f).fillMaxHeight()) {
+                    homeItems(openSection) { openSection = it }
+                    item { Spacer(Modifier.height(Dimens.xl)) }
+                }
+                key(openSection) {
+                    LazyColumn(Modifier.weight(3f).fillMaxHeight()) {
+                        item { Section(openSection.title) }
+                        pageItems(openSection)
+                        item { Spacer(Modifier.height(Dimens.xl)) }
+                        item { BottomBarSpacer() }
+                    }
+                }
+            }
+        } else LazyColumn(Modifier.padding(padding)) {
+            if (section == null) homeItems(null, onOpenSection) else pageItems(section)
             item { Spacer(Modifier.height(Dimens.xl)) }
         }
     }
@@ -652,8 +690,10 @@ enum class SettingsSection(val title: Int, val summary: Int, val icon: ImageVect
 }
 
 @Composable
-private fun SectionGroup(sections: List<SettingsSection>, onOpen: (SettingsSection) -> Unit) = Group {
-    sections.forEach { sec -> LinkRow(sec.icon, stringResource(sec.title), stringResource(sec.summary)) { onOpen(sec) } }
+private fun SectionGroup(sections: List<SettingsSection>, current: SettingsSection?, onOpen: (SettingsSection) -> Unit) = Group {
+    sections.forEach { sec ->
+        LinkRow(sec.icon, stringResource(sec.title), stringResource(sec.summary), selected = current?.let { it == sec }) { onOpen(sec) }
+    }
 }
 
 @Composable

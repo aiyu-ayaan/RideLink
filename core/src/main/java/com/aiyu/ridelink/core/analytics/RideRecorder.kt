@@ -100,8 +100,9 @@ class RideRecorder @Inject constructor(
 
     private fun activeRoute() = controller.nav.value?.takeIf { !it.stopped }
 
-    private fun sample(now: Long, t: DisplayTelemetry, speed: Int?) = RideSample(
-        t = now, speedKmh = speed, odometerTenths = t.odometerTenths, tripTenths = t.tripTenths, fuel = t.fuelLevel,
+    private suspend fun sample(now: Long, t: DisplayTelemetry, speed: Int?) = RideSample(
+        t = now, speedKmh = speed, odometerTenths = t.odometerTenths, tripTenths = t.tripTenths,
+        fuel = t.fuelBars(controller.currentModel().family),
         rangeKm = t.rangeKm, rpm = t.rpm, instantEconomy = t.instantEconomy, averageEconomy = t.averageEconomy,
         navLeftM = activeRoute()?.distanceLeftM?.takeIf { it > 0 },
     )

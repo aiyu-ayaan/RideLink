@@ -20,10 +20,14 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.aiyu.ridelink.ui.theme.Dimens
+import androidx.compose.foundation.background
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 
 /**
  * A row that opens something: icon, title, subtitle, chevron (or open-in-new for [external] links).
  * Unlike ListItem, the icons stay vertically centred when the subtitle wraps to more lines.
+ * [selected] marks the open page in a two-pane list; null for a row that is not part of one.
  */
 @Composable
 fun LinkRow(
@@ -32,12 +36,15 @@ fun LinkRow(
     subtitle: String,
     external: Boolean = false,
     enabled: Boolean = true,
+    selected: Boolean? = null,
     onClick: () -> Unit,
 ) {
     val c = MaterialTheme.colorScheme
     Row(
         Modifier
             .fillMaxWidth()
+            .then(if (selected == true) Modifier.background(c.secondaryContainer) else Modifier)
+            .then(if (selected != null) Modifier.semantics { this.selected = selected } else Modifier)
             .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
             .heightIn(min = 72.dp)
             .padding(horizontal = Dimens.lg, vertical = Dimens.md),

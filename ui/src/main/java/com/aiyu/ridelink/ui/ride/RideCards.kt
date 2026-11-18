@@ -211,7 +211,8 @@ internal fun RideDataCard(t: DisplayTelemetry, family: ClusterFamily, logKmpl: D
             TileGrid(
                 listOf(
                     TileSpec(stringResource(R.string.ride_odometer), km(t.odometerKm), kmUnit),
-                    TileSpec(stringResource(R.string.ride_trip), km(t.tripKm), kmUnit),
+                    // Some displays never fill the trip bytes: a constant 0 is no reading.
+                    TileSpec(stringResource(R.string.ride_trip), km(t.tripKm?.takeIf { it > 0 }), kmUnit),
                     TileSpec(stringResource(R.string.ride_fuel), t.fuelBars(family)?.toString(), stringResource(R.string.detail_fuel_unit)),
                     TileSpec(stringResource(R.string.ride_range), t.rangeKm?.toString(), kmUnit),
                     TileSpec(stringResource(R.string.ride_avg_speed), t.averageSpeedKmh?.toString(), kmh),

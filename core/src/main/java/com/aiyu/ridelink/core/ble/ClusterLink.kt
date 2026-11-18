@@ -1,6 +1,7 @@
 package com.aiyu.ridelink.core.ble
 
 import android.annotation.SuppressLint
+import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCallback
@@ -8,15 +9,21 @@ import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
+import android.bluetooth.BluetoothStatusCodes
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
+import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import android.util.Log
+import androidx.core.content.ContextCompat
 import com.aiyu.ridelink.core.protocol.ClusterProtocol
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CompletableDeferred
@@ -63,6 +70,14 @@ class ClusterLink @Inject constructor(@ApplicationContext private val context: C
     private val _incoming = MutableSharedFlow<ByteArray>(extraBufferCapacity = 32)
     val incoming = _incoming.asSharedFlow()
 
+    private val _seenAt = MutableStateFlow(0L)
+    /** When the scooter's advert was last seen (elapsed realtime): it is switched on while this keeps moving. */
+    val seenAt: StateFlow<Long> = _seenAt.asStateFlow()
+
+    private val _events = MutableSharedFlow<String>(extraBufferCapacity = 16)
+    /** Why the link went down or came back, for the Console log and saved logs. */
+    val events = _events.asSharedFlow()
+
     private var gatt: BluetoothGatt? = null
     private var writeChar: BluetoothGattCharacteristic? = null
     private var wanted: String? = null
@@ -73,12 +88,52 @@ class ClusterLink @Inject constructor(@ApplicationContext private val context: C
     private val main = Handler(Looper.getMainLooper())
 
     /** Connected but never Ready (MTU or discovery hung, or a direct connect that never answered): start over. */
-    private val watchdog = Runnable { if (wanted != null && _state.value !is LinkState.Ready) waitForScooter() }
+    private val watchdog = Runnable { if (wanted != null && _state.value !is LinkState.Ready) waitForScooter("setup timed out") }
+
+    /** Failed attempts since the last Ready; spaces out the retries. */
+    private var failures = 0
+    private var nextDialAt = 0L
+
+    /** Background connect plus the advert scan, a moment after the old GATT client closed. */
+    private val reopen = Runnable {
+        val address = wanted ?: return@Runnable
+        val a = adapter?.takeIf { it.isEnabled } ?: return@Runnable
+        open(a.getRemoteDevice(address), background = true)
+        startFinder(address)
+    }
+
+    /** Bluetooth turned off and on again: scans and GATT clients do not survive it. */
+    private val adapterState = object : BroadcastReceiver() {
+        override fun onReceive(c: Context, intent: Intent) {
+            val address = wanted ?: return
+            when (intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, -1)) {
+                BluetoothAdapter.STATE_ON -> {
+                    failures = 0
+                    nextDialAt = 0
+                    adapter?.getRemoteDevice(address)?.let(::dial)
+                }
+                BluetoothAdapter.STATE_OFF -> {
+                    main.removeCallbacks(watchdog)
+                    main.removeCallbacks(reopen)
+                    stopFinder()
+                    closeGatt()
+                    fail("Bluetooth is off")
+                }
+            }
+        }
+    }
+    private var adapterWatched = false
 
     /** Finds the scooter's advert while waiting, so the link dials it directly instead of a slow background connect. */
     private val finder = object : ScanCallback() {
         override fun onScanResult(callbackType: Int, result: ScanResult) {
-            main.post { if (result.device.address == wanted && finding) dial(result.device) }
+            main.post {
+                if (result.device.address != wanted || !finding) return@post
+                val now = SystemClock.elapsedRealtime()
+                _seenAt.value = now
+                // Every advert would dial again at once: failing that fast trips Android's limit of 5 scans in 30 s.
+                if (now >= nextDialAt) dial(result.device)
+            }
         }
 
         override fun onScanFailed(errorCode: Int) {
@@ -116,16 +171,22 @@ class ClusterLink @Inject constructor(@ApplicationContext private val context: C
     }
 
     fun connect(address: String) {
-        val a = adapter
-        if (a == null || !a.isEnabled) return fail("Bluetooth is off")
         main.post {
             wanted = address
+            failures = 0
+            nextDialAt = 0
+            if (!adapterWatched) {
+                adapterWatched = true
+                ContextCompat.registerReceiver(context, adapterState, IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED), ContextCompat.RECEIVER_NOT_EXPORTED)
+            }
+            val a = adapter?.takeIf { it.isEnabled } ?: return@post fail("Bluetooth is off")
             dial(a.getRemoteDevice(address))
         }
     }
 
     /** Direct connect: fast when the scooter is in range; the watchdog falls back to [waitForScooter] if it is not. */
     private fun dial(device: BluetoothDevice) {
+        main.removeCallbacks(reopen)
         stopFinder()
         open(device, background = false)
         main.removeCallbacks(watchdog)
@@ -136,11 +197,25 @@ class ClusterLink @Inject constructor(@ApplicationContext private val context: C
      * Scooter off, out of range, or setup failed: Android's background connect plus a scan for its advert.
      * The first advert seen dials directly, which is much faster than the background connect alone.
      */
-    private fun waitForScooter() {
+    private fun waitForScooter(reason: String) {
         val address = wanted ?: return
         main.removeCallbacks(watchdog)
-        open(adapter?.getRemoteDevice(address) ?: return fail("Bluetooth is off"), background = true)
-        startFinder(address)
+        main.removeCallbacks(reopen)
+        failures++
+        val first = failures <= 1
+        nextDialAt = SystemClock.elapsedRealtime() + if (first) FIRST_RETRY_MS else RETRY_MS
+        _events.tryEmit("Link: $reason, attempt $failures")
+        // Android needs a moment after close() before the same device connects again (stock waits too).
+        closeGatt()
+        _state.value = LinkState.Connecting(address)
+        main.postDelayed(reopen, if (first) REOPEN_MS else REOPEN_AFTER_FAILURES_MS)
+    }
+
+    private fun closeGatt() {
+        gatt?.close()
+        gatt = null
+        writeChar = null
+        pendingWrite?.complete(false)
     }
 
     private fun open(device: BluetoothDevice, background: Boolean) {
@@ -170,6 +245,7 @@ class ClusterLink @Inject constructor(@ApplicationContext private val context: C
         main.post {
             wanted = null
             main.removeCallbacks(watchdog)
+            main.removeCallbacks(reopen)
             stopFinder()
             gatt?.disconnect()
             gatt?.close()
@@ -186,7 +262,7 @@ class ClusterLink @Inject constructor(@ApplicationContext private val context: C
         val c = writeChar ?: return false
         val done = CompletableDeferred<Boolean>().also { pendingWrite = it }
         val started = if (Build.VERSION.SDK_INT >= 33) {
-            g.writeCharacteristic(c, frame, BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT) == BluetoothGatt.GATT_SUCCESS
+            g.writeCharacteristic(c, frame, BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT) == BluetoothStatusCodes.SUCCESS
         } else {
             @Suppress("DEPRECATION")
             c.writeType = BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
@@ -217,7 +293,7 @@ class ClusterLink @Inject constructor(@ApplicationContext private val context: C
                 }
                 // Out of range, scooter switched off, or GATT error 133: wait for it to come back.
                 Log.i(TAG, "link down (status $status)")
-                waitForScooter()
+                waitForScooter("link down (status $status)")
             }
         }
 
@@ -233,7 +309,9 @@ class ClusterLink @Inject constructor(@ApplicationContext private val context: C
                 val write = service?.getCharacteristic(ClusterProtocol.WRITE)
                 if (status != BluetoothGatt.GATT_SUCCESS || write == null) {
                     Log.w(TAG, "discovery failed (status $status, service ${service != null})")
-                    return@post waitForScooter()
+                    // A stale service cache survives ignition off; stock BluetoothPeripheral clears it the same way.
+                    runCatching { g.javaClass.getMethod("refresh").invoke(g) }
+                    return@post waitForScooter("discovery failed (status $status)")
                 }
                 writeChar = write
                 val notify = service.getCharacteristic(ClusterProtocol.NOTIFY) ?: return@post ready(g)
@@ -271,6 +349,9 @@ class ClusterLink @Inject constructor(@ApplicationContext private val context: C
 
         private fun ready(g: BluetoothGatt) {
             main.removeCallbacks(watchdog)
+            failures = 0
+            nextDialAt = 0
+            _events.tryEmit("Link: ready")
             _state.value = LinkState.Ready(g.device.address, g.device.name)
         }
     }
@@ -280,5 +361,10 @@ class ClusterLink @Inject constructor(@ApplicationContext private val context: C
         const val WRITE_TIMEOUT_MS = 2_000L
         /** Connect + MTU + discovery + notify normally take 1 to 3 s; a direct connect gives up after about 30 s. */
         const val SETUP_TIMEOUT_MS = 15_000L
+        const val FIRST_RETRY_MS = 1_000L
+        /** Long enough that repeated failures stay under Android's 5 scan starts per 30 s. */
+        const val RETRY_MS = 8_000L
+        const val REOPEN_MS = 300L
+        const val REOPEN_AFTER_FAILURES_MS = 3_000L
     }
 }

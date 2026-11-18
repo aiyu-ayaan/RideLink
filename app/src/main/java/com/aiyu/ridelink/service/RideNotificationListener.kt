@@ -13,12 +13,21 @@ import android.provider.Telephony
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import com.aiyu.ridelink.core.ClusterController
+import com.aiyu.ridelink.core.ble.LinkState
 import com.aiyu.ridelink.core.nav.MapsNotificationParser
 import com.aiyu.ridelink.core.nav.MapsTurnIcons
+import com.aiyu.ridelink.core.notify.CallNotice
 import com.aiyu.ridelink.core.notify.MessageAlert
 import com.aiyu.ridelink.core.notify.SocialNotificationParser
 import com.aiyu.ridelink.core.settings.AppLocale
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /** Reads Google Maps directions, incoming calls, chat unread counts and the playing song. */
@@ -60,7 +69,7 @@ class RideNotificationListener : NotificationListenerService() {
                 val incoming = isIncoming(n)
                 noteOnce("Call ${if (incoming) "ringing" else "not ringing"}: ${sbn.packageName} title=$title | text=$text")
                 // Any app's call (phone, WhatsApp, Instagram, Messenger, Telegram...): ringing shows the caller,
-                // an answered or dialled call keeps it up so the display's call indicator stays lit.
+                // answering keeps it up so the display's call indicator stays lit. A dialled call shows nothing.
                 if (incoming) controller.onIncomingCall(callerName(n) ?: return)
                 else controller.onCallActive(callerName(n))
             }
@@ -169,14 +178,42 @@ class RideNotificationListener : NotificationListenerService() {
         runCatching { activeNotifications }.getOrNull()
             ?.filter { it.packageName == MapsNotificationParser.MAPS_PACKAGE }
             ?.forEach(::onNotificationPosted)
-        // Chats already in the shade are not new; only messages from now on raise the badge (stock clears on start).
+        // Chats already in the shade are unread but not new: they set the badge without a pop-up.
         runCatching { activeNotifications }.getOrNull()
             ?.filter { SocialNotificationParser.app(it.packageName) != null }
             ?.forEach(::isNewMessage)
+        syncUnread()
+        // The display forgets its badges when it powers off, and messages can arrive or be read while it is away.
+        linkWatch?.cancel()
+        linkWatch = MainScope().also { scope ->
+            scope.launch {
+                controller.linkState.map { it is LinkState.Ready }.distinctUntilChanged().filter { it }.collect { syncUnread() }
+            }
+        }
         music = MusicWatcher(this, ComponentName(this, RideNotificationListener::class.java), controller).also { it.start() }
     }
 
+    private var linkWatch: CoroutineScope? = null
+
+    /** Sets the display's unread badges to what is waiting in the notification shade. */
+    private fun syncUnread() {
+        val shade = runCatching { activeNotifications }.getOrNull() ?: return
+        val chats = shade.filter { isUnreadChat(it.notification) }.mapNotNull { sbn ->
+            SocialNotificationParser.app(sbn.packageName)?.let { app ->
+                @Suppress("DEPRECATION")
+                app to (sbn.notification.extras.getParcelableArray(Notification.EXTRA_MESSAGES)?.size ?: 1)
+            }
+        }
+        controller.onSocialCounts(SocialNotificationParser.counts(chats))
+    }
+
+    /** A chat itself: not a group summary, an ongoing notice (WhatsApp Web, backup) or a call. */
+    private fun isUnreadChat(n: Notification) =
+        (n.flags and (Notification.FLAG_GROUP_SUMMARY or Notification.FLAG_ONGOING_EVENT)) == 0 && n.category != Notification.CATEGORY_CALL
+
     override fun onListenerDisconnected() {
+        linkWatch?.cancel()
+        linkWatch = null
         music?.stop()
         music = null
     }
@@ -223,19 +260,11 @@ class RideNotificationListener : NotificationListenerService() {
     /** Chat notifications of [app] still in the shade (summaries left out). */
     private fun chatsInShade(app: SocialNotificationParser.App): Int =
         (runCatching { activeNotifications }.getOrNull() ?: return 0).count {
-            SocialNotificationParser.app(it.packageName) == app &&
-                (it.notification.flags and (Notification.FLAG_GROUP_SUMMARY or Notification.FLAG_ONGOING_EVENT)) == 0
+            SocialNotificationParser.app(it.packageName) == app && isUnreadChat(it.notification)
         }
 
-    /**
-     * Ringing calls carry CallStyle type INCOMING (API 31+). Dialers without CallStyle: a full-screen intent,
-     * or no running call timer (an answered call shows a chronometer).
-     */
-    private fun isIncoming(n: Notification): Boolean {
-        val type = n.extras.getInt(Notification.EXTRA_CALL_TYPE, -1)
-        if (type != -1) return type == Notification.CallStyle.CALL_TYPE_INCOMING
-        return n.fullScreenIntent != null || !n.extras.getBoolean(Notification.EXTRA_SHOW_CHRONOMETER)
-    }
+    private fun isIncoming(n: Notification) =
+        CallNotice.isRinging(n.extras.getInt(Notification.EXTRA_CALL_TYPE, -1), n.fullScreenIntent != null, n.flags)
 
     private companion object {
         /** Swiggy, Zomato, Blinkit, Zepto, Swiggy Instamart (same app), Dunzo. */

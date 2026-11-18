@@ -43,8 +43,10 @@ Modules:
    While the session runs, `NearbyReceiver.watch` arms a low-power PendingIntent BLE scan for the scooter's
    address; if Android kills the app, ignition-on wakes `NearbyReceiver`, which restarts the service
    (Android 12+: needs battery optimisation off, else it posts a "Scooter nearby" tap-to-connect notification).
-   Disconnect disarms it. With no link for 60 s (scooter off) the service ends itself and its notification;
-   the armed scan brings it back at the next ignition on.
+   Disconnect disarms it. With no link and no advert for 60 s (scooter off) the service ends itself and its notification,
+   and the armed scan brings it back at the next ignition on. Only an app out of battery optimisation does this: Android 12+
+   blocks the restart otherwise, so that app keeps waiting in the foreground service.
+   The quick settings tile (`ConnectionTileService`) opens `ConnectionPanelActivity`: status, connection switch, saved scooters.
 3. `ClusterLink` connects, requests MTU 512, enables notify on `5354`, then writes on `5352`
    with response, one frame at a time. Setup has a 15 s watchdog; a drop, GATT error or failed discovery
    falls back to a background `autoConnect = true` connect plus a filtered scan for the scooter's address, and the
@@ -72,6 +74,9 @@ Modules:
 - Floating pill bar (Rewire/Domus design, `ui/nav/FloatingNavBar.kt`) with three tabs: Ride, Analytics, Settings.
   It hides on scroll; tab screens end with `BottomBarSpacer()`. No drawer. Pages (Settings sections, ride detail,
   Console, Updates, About) open on the stack in `RideLinkRoot` with predictive back.
+- Landscape (`ui/nav/AdaptivePane.kt`, `isTwoPane()`: landscape window at least 600dp wide): every screen shows two panes,
+  the compact app bar (`AdaptiveTopAppBar`, `adaptiveScrollBehavior`) and an upright pill at the start edge (`FloatingNavRail`).
+  Settings becomes list-detail. Portrait layouts stay single column.
 - Analytics: period picker, one hero number (distance + change), stat tiles, Canvas charts in `ui/analytics/Charts.kt`
   (single series, primary marks, tertiary selection, tap/drag readout, no dual axis), records, last 5 rides + "See all rides",
   ride detail page (`RideDetailScreen`: star, rename, distance source, all stats, charts, speed bands, Maps turn timeline).

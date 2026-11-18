@@ -19,14 +19,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
 import androidx.compose.material.icons.rounded.SystemUpdate
-import com.aiyu.ridelink.ui.nav.appBarColors
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LargeFlexibleTopAppBar
 import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
@@ -39,7 +37,6 @@ import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -74,6 +71,11 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+import androidx.compose.foundation.layout.ColumnScope
+import com.aiyu.ridelink.ui.nav.AdaptiveTopAppBar
+import com.aiyu.ridelink.ui.nav.TwoPane
+import com.aiyu.ridelink.ui.nav.isTwoPane
+import com.aiyu.ridelink.ui.nav.adaptiveScrollBehavior
 
 /** Shown over the app when the launch check found a newer release. "Not now" is quiet for a day. */
 @Composable
@@ -149,13 +151,13 @@ fun UpdateScreen(onBack: () -> Unit) {
     val context = LocalContext.current
     val busy = state is UpdateState.Checking || state is UpdateState.Downloading
     val channel = vm.channel(s)
-    val scroll = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    val scroll = adaptiveScrollBehavior()
 
     Scaffold(
         modifier = Modifier.nestedScroll(scroll.nestedScrollConnection),
         topBar = {
-            LargeFlexibleTopAppBar(
-                colors = appBarColors(),
+            AdaptiveTopAppBar(
+                large = true,
                 title = { Text(stringResource(R.string.update_title)) },
                 subtitle = { Text(stringResource(R.string.update_subtitle, vm.installedName)) },
                 navigationIcon = { BackButton(onBack) },
@@ -163,10 +165,7 @@ fun UpdateScreen(onBack: () -> Unit) {
             )
         },
     ) { padding ->
-        Column(
-            Modifier.padding(padding).verticalScroll(rememberScrollState()).padding(horizontal = Dimens.gutter).padding(bottom = Dimens.xl),
-            verticalArrangement = Arrangement.spacedBy(Dimens.md),
-        ) {
+        val status: @Composable ColumnScope.() -> Unit = {
             Card(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large, colors = CardDefaults.cardColors(containerColor = c.surfaceContainerLow)) {
                 Column(Modifier.padding(Dimens.lg), verticalArrangement = Arrangement.spacedBy(Dimens.md)) {
                     if (!vm.supported) {
@@ -198,7 +197,8 @@ fun UpdateScreen(onBack: () -> Unit) {
                     modifier = Modifier.clickable(role = Role.Switch) { vm.setEnabled(!s.updatesEnabled) },
                 )
             }
-
+        }
+        val channels: @Composable ColumnScope.() -> Unit = {
             Text(stringResource(R.string.update_channel), style = MaterialTheme.typography.titleSmall, color = c.primary, modifier = Modifier.padding(top = Dimens.sm))
             SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
                 UpdateChannel.entries.forEachIndexed { i, ch ->
@@ -216,6 +216,14 @@ fun UpdateScreen(onBack: () -> Unit) {
                 Spacer(Modifier.width(Dimens.sm))
                 Text(stringResource(R.string.update_all_releases))
             }
+        }
+        if (isTwoPane()) TwoPane(Modifier.padding(padding), start = status, end = channels)
+        else Column(
+            Modifier.padding(padding).verticalScroll(rememberScrollState()).padding(horizontal = Dimens.gutter).padding(bottom = Dimens.xl),
+            verticalArrangement = Arrangement.spacedBy(Dimens.md),
+        ) {
+            status()
+            channels()
         }
     }
 }

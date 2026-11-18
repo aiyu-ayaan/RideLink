@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.rememberScrollState
-import com.aiyu.ridelink.ui.nav.appBarColors
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import com.aiyu.ridelink.core.settings.Bike
@@ -19,6 +18,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -44,10 +44,12 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MediumFlexibleTopAppBar
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.ToggleButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -76,10 +78,18 @@ import com.aiyu.ridelink.ui.ride.TileGrid
 import com.aiyu.ridelink.ui.ride.TileSpec
 import com.aiyu.ridelink.ui.theme.Dimens
 import java.time.DayOfWeek
+import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
+import java.time.YearMonth
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.lazy.LazyListScope
+import com.aiyu.ridelink.ui.nav.AdaptiveTopAppBar
+import com.aiyu.ridelink.ui.nav.PaneRow
+import com.aiyu.ridelink.ui.nav.isTwoPane
 
 private val Period.label
     get() = when (this) {
@@ -119,8 +129,7 @@ fun AnalyticsScreen(onOpenRide: (Long) -> Unit, onOpenHistory: () -> Unit, vm: A
 
     Scaffold(
         topBar = {
-            MediumFlexibleTopAppBar(
-                colors = appBarColors(),
+            AdaptiveTopAppBar(
                 title = { Text(stringResource(R.string.tab_analytics)) },
                 // Stats are per scooter; name the one shown.
                 subtitle = { bikes.firstOrNull { it.address == bike }?.let { Text(it.name ?: it.address) } },
@@ -141,22 +150,21 @@ fun AnalyticsScreen(onOpenRide: (Long) -> Unit, onOpenHistory: () -> Unit, vm: A
             )
         },
     ) { padding ->
-        LazyColumn(
-            Modifier.padding(padding).widthIn(max = Dimens.contentMaxWidth),
-            verticalArrangement = Arrangement.spacedBy(Dimens.md),
-        ) {
+        // Nothing ridden yet today: skip the empty charts and records, the list below says so.
+        val hasCharts = state.hasAnyRide && !(today && s.rides == 0)
+        val summary: LazyListScope.() -> Unit = {
             if (bikes.size > 1) item { BikePicker(bikes, bike, vm::pickBike) }
             item { PeriodPicker(state.period, vm::setPeriod) }
             if (recording) item { RecordingRow() }
             live?.let { l -> item { LiveRide(l) } }
             if (!state.hasAnyRide) {
                 item { EmptyState(vm::addSampleRides) }
-                return@LazyColumn
+            } else {
+                item { Hero(s, state.period, telemetry.odometerKm, live?.distanceKm?.takeIf { today && it > 0 }) }
+                item { StatTiles(s) }
             }
-            item { Hero(s, state.period, telemetry.odometerKm, live?.distanceKm?.takeIf { today && it > 0 }) }
-            item { StatTiles(s) }
-            // Nothing ridden yet today: skip the empty charts and records, the list below says so.
-            if (!(today && s.rides == 0)) {
+        }
+        val charts: LazyListScope.() -> Unit = {
             item {
                 // One day has one bar per day; Today splits it by hour instead.
                 if (today) ChartCard(stringResource(R.string.chart_distance_hours)) {
@@ -169,7 +177,18 @@ fun AnalyticsScreen(onOpenRide: (Long) -> Unit, onOpenHistory: () -> Unit, vm: A
                         description = stringResource(R.string.chart_distance_desc, Fmt.km(s.totalKm)),
                     )
                 } else ChartCard(stringResource(R.string.chart_distance)) {
-                    DistanceChart(s.buckets, state.period)
+                    DistanceChart(s.buckets, state.period, state.rides, onOpenRide)
+                }
+            }
+            // Oldest first, so each chart reads left to right; the newest 30 keep the bars tappable.
+            val perRide = state.rides.take(RIDES_CHARTED).reversed()
+            if (perRide.size >= 2) {
+                item { ChartCard(stringResource(R.string.chart_each_ride)) { EachRideChart(perRide, onOpenRide) } }
+                item {
+                    RideTrend(R.string.chart_trend_mileage, stringResource(R.string.unit_kmpl), perRide, onOpenRide) { it.avgEconomy }
+                }
+                item {
+                    RideTrend(R.string.chart_trend_speed, stringResource(R.string.dash_kmh), perRide, onOpenRide) { it.avgMovingSpeedKmh.takeIf { v -> v > 0 } }
                 }
             }
             item {
@@ -213,8 +232,8 @@ fun AnalyticsScreen(onOpenRide: (Long) -> Unit, onOpenHistory: () -> Unit, vm: A
                     )
                 }
             }
-            item { Records(s, onOpenRide) }
-            }
+        }
+        val rideList: LazyListScope.() -> Unit = {
             item {
                 Text(
                     stringResource(if (today) R.string.todays_rides else R.string.recent_rides),
@@ -235,8 +254,38 @@ fun AnalyticsScreen(onOpenRide: (Long) -> Unit, onOpenHistory: () -> Unit, vm: A
                     Text(stringResource(R.string.see_all_rides))
                 }
             }
+        }
+        val paneEnd: LazyListScope.() -> Unit = {
             item { Spacer(Modifier.height(Dimens.xl)) }
             item { BottomBarSpacer() }
+        }
+        if (isTwoPane() && hasCharts) {
+            // Numbers and rides on the start side, every chart beside them.
+            PaneRow(Modifier.padding(padding)) {
+                LazyColumn(Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(Dimens.md)) {
+                    summary()
+                    item { Records(s, onOpenRide) }
+                    rideList()
+                    paneEnd()
+                }
+                LazyColumn(Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(Dimens.md)) {
+                    charts()
+                    paneEnd()
+                }
+            }
+        } else LazyColumn(
+            Modifier.padding(padding).fillMaxWidth().wrapContentWidth(Alignment.CenterHorizontally).widthIn(max = Dimens.contentMaxWidth).fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(Dimens.md),
+        ) {
+            summary()
+            if (state.hasAnyRide) {
+                if (hasCharts) {
+                    charts()
+                    item { Records(s, onOpenRide) }
+                }
+                rideList()
+                paneEnd()
+            }
         }
     }
 }
@@ -412,8 +461,10 @@ private fun ChartCard(title: String, subtitle: String? = null, content: @Composa
     }
 }
 
+/** Tapping a bar offers that day's (or month's) rides. */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun DistanceChart(buckets: List<Bucket>, period: Period) {
+private fun DistanceChart(buckets: List<Bucket>, period: Period, rides: List<RideRecord>, onOpenRide: (Long) -> Unit) {
     val values = buckets.map { it.km }
     val labels = buckets.mapIndexed { i, b ->
         when {
@@ -422,6 +473,11 @@ private fun DistanceChart(buckets: List<Bucket>, period: Period) {
             else -> if ((buckets.size - 1 - i) % 7 == 0) Fmt.dayNumber(b.start) else ""
         }
     }
+    fun ridesIn(b: Bucket) = rides.filter { r ->
+        val day = Instant.ofEpochMilli(r.summary.start).atZone(ZoneId.systemDefault()).toLocalDate()
+        if (b.monthly) YearMonth.from(day) == YearMonth.from(b.start) else day == b.start
+    }
+    var opened by remember { mutableStateOf<Bucket?>(null) }
     val best = buckets.maxByOrNull { it.km }?.takeIf { it.km > 0 }
     BarChart(
         values = values,
@@ -435,7 +491,71 @@ private fun DistanceChart(buckets: List<Bucket>, period: Period) {
         } ?: stringResource(R.string.readout_tap),
         axisFormat = Fmt::tick,
         description = stringResource(R.string.chart_distance_desc, Fmt.km(values.sum())),
+        valueLabel = { i -> Fmt.km(values[i]) },
+        footer = { i ->
+            if (ridesIn(buckets[i]).isNotEmpty()) {
+                TextButton(onClick = { opened = buckets[i] }) { Text(stringResource(R.string.chart_see_rides)) }
+            }
+        },
     )
+    opened?.let { b ->
+        ModalBottomSheet(onDismissRequest = { opened = null }) {
+            LazyColumn {
+                items(ridesIn(b), key = { it.id }) { r ->
+                    RideRow(r, onStar = null) {
+                        opened = null
+                        onOpenRide(r.id)
+                    }
+                }
+                item { Spacer(Modifier.height(Dimens.xl)) }
+            }
+        }
+    }
+}
+
+/** Distance of each ride in the period; the selected bar opens its ride. */
+@Composable
+private fun EachRideChart(rides: List<RideRecord>, onOpenRide: (Long) -> Unit) {
+    val values = rides.map { it.summary.distanceKm }
+    val zone = ZoneId.systemDefault()
+    fun date(r: RideRecord) = Fmt.dayNumber(Instant.ofEpochMilli(r.summary.start).atZone(zone).toLocalDate())
+    BarChart(
+        values = values,
+        xLabels = rides.mapIndexed { i, r -> if (i == 0 || i == rides.lastIndex) date(r) else "" },
+        describe = { i -> stringResource(R.string.readout_distance, Fmt.dateTime(rides[i].summary.start), Fmt.km(values[i])) },
+        idle = stringResource(R.string.readout_tap),
+        axisFormat = Fmt::tick,
+        description = stringResource(R.string.chart_distance_desc, Fmt.km(values.sum())),
+        valueLabel = { i -> Fmt.km(values[i]) },
+        footer = { i -> TextButton(onClick = { onOpenRide(rides[i].id) }) { Text(stringResource(R.string.chart_open_ride)) } },
+    )
+}
+
+/** One number per ride over the period; left out until two rides have it. The selected point opens its ride. */
+@Composable
+private fun RideTrend(title: Int, unit: String, rides: List<RideRecord>, onOpenRide: (Long) -> Unit, value: (RideSummary) -> Double?) {
+    val points = rides.mapNotNull { r -> value(r.summary)?.let { r.summary.start to it } }
+    if (points.size < 2) return
+    val name = stringResource(title)
+    val peak = points.maxOf { it.second }
+    val zone = ZoneId.systemDefault()
+    ChartCard(name) {
+        LineChart(
+            points = points,
+            xLabel = { t -> Fmt.dayNumber(Instant.ofEpochMilli(t).atZone(zone).toLocalDate()) },
+            describe = { t, v -> stringResource(R.string.readout_series, Fmt.dateTime(t), Fmt.one(v), unit) },
+            idle = stringResource(R.string.readout_series_idle, Fmt.one(peak), unit),
+            axisFormat = Fmt::tick,
+            description = stringResource(R.string.chart_trend_desc, name, Fmt.one(peak), unit),
+            ring = MaterialTheme.colorScheme.surfaceContainerLow,
+            valueLabel = { v -> "${Fmt.one(v)} $unit" },
+            footer = { t ->
+                rides.firstOrNull { it.summary.start == t }?.let { r ->
+                    TextButton(onClick = { onOpenRide(r.id) }) { Text(stringResource(R.string.chart_open_ride)) }
+                }
+            },
+        )
+    }
 }
 
 @Composable
@@ -482,3 +602,6 @@ private fun RecordRow(icon: ImageVector, title: String, value: String, detail: S
         modifier = if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier,
     )
 }
+
+/** Bars stay wide enough to tap at this many rides. */
+private const val RIDES_CHARTED = 30
