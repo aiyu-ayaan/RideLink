@@ -213,6 +213,8 @@ notification (deduplicated on key + text), the frame written at once, all counts
 RideLink does the same (key + `when` + text, group summaries and ongoing notices skipped) and resets an app to 0
 once none of its notifications are left in the shade. An earlier RideLink rebuilt the counts from the shade; a
 chat's count then stayed at 1 per chat, so a second message never changed the frame and the badge never popped.
+Unlike stock, RideLink starts from the chats already waiting in the shade, each time the listener binds and the link
+becomes ready, so unread messages show on the display after ignition on. New messages still add 1 each from there.
 
 ### Message pop-up on the custom lines (`N109U347N251DataSenderToCluster.sendCustomData` / `sendEcommerceCustomData`)
 Stock shows short notices ("Food / NOTIFICATION" for Swiggy and Zomato, voice-assist feedback) as line 1 `5B 4C` then
