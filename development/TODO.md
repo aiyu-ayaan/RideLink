@@ -39,6 +39,11 @@
 - [x] Turn frames held while a pop-up or call shows; tiles hide values the display never sends
 - [x] Analytics Today view (live ride, km by hour, today's rides); full-width odometer tile
 - [x] All 22 Scheduled Indian Languages + English with in-app language picker and RTL support
+- [x] Dialled calls stay off the display; only a call that rang sends the caller frame
+- [x] Fuel saved as gauge bars, ride fuel drop from settled levels, trip tile from trip steps or the odometer
+- [x] BLE retry backoff, stale GATT refresh, Bluetooth off/on resume, session keeps waiting while battery optimised
+- [x] Quick settings tile with floating connection panel
+- [x] Charts: press and drag to read, shared crosshair on ride detail, tap through to rides, six new graphs
 
 ## Needs the real scooter
 - [ ] Auto-connect (2026-11-13 rework): ignition on with the app open, closed, and after 60 s idle; Console log `ClusterLink` lines
@@ -51,6 +56,9 @@
 - [ ] Location while screen off: parked spot accuracy after a ride (FGS location type)
 - [ ] Analytics: check recorded distance against the scooter's trip meter on a real ride
 - [ ] Trip meter: 5A 10 [14..16] reads empty on the rider's XT; get a Console "Copy log" with RX frames
+- [ ] Auto-connect (2026-11-18 rework): ignition off for 2+ minutes, then on, with battery optimisation on and off; Console `Link:` lines
+- [ ] Outgoing phone and WhatsApp call on the scooter: the display must show no caller
+- [ ] Fuel drop on a real ride: bars in the ride detail match the gauge
 - [ ] Signal bars, call icon, notification badge: still missing? compare decoded STATUS lines, try model U577 premium
 - [ ] Pair the user's Ntorq 125 Race XP (2026, U458) and confirm the display accepts the 2025+ status frame
 - [ ] Race XP (SmartXonnect LCD): left family arrows confirmed (ids 0/1/2); check right 10, sharp right 11, slight right 12, keep left 7 / right 17, U-turn 19, destination 22, straight 57, roundabout 48 / exits 28 / 32 with Demo navigation (Console -> Arrow codes 0 to 80 to see any other id)
