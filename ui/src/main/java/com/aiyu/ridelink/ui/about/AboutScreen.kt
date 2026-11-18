@@ -23,18 +23,15 @@ import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.SystemUpdate
 import androidx.compose.material.icons.rounded.Warning
-import com.aiyu.ridelink.ui.nav.appBarColors
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LargeFlexibleTopAppBar
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -63,6 +60,11 @@ import com.aiyu.ridelink.ui.R
 import com.aiyu.ridelink.ui.nav.LinkRow
 import com.aiyu.ridelink.ui.theme.Dimens
 import com.aiyu.ridelink.ui.update.BackButton
+import androidx.compose.foundation.layout.ColumnScope
+import com.aiyu.ridelink.ui.nav.AdaptiveTopAppBar
+import com.aiyu.ridelink.ui.nav.TwoPane
+import com.aiyu.ridelink.ui.nav.isTwoPane
+import com.aiyu.ridelink.ui.nav.adaptiveScrollBehavior
 
 private const val DEVELOPER = "aiyu-ayaan"
 private const val GITHUB_URL = "https://github.com/aiyu-ayaan"
@@ -75,7 +77,7 @@ fun AboutScreen(onBack: () -> Unit, onOpenUpdates: () -> Unit, onOpenAcknowledge
     val context = LocalContext.current
     val open = { url: String -> context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
     val info = remember(context) { runCatching { context.packageManager.getPackageInfo(context.packageName, 0) }.getOrNull() }
-    val scroll = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    val scroll = adaptiveScrollBehavior()
     // Live from GitHub; the placeholder below shows while offline or rate limited.
     val user by produceState<GitHubUser?>(null) { value = GitHubProfile.fetch(DEVELOPER) }
     val avatar by produceState<androidx.compose.ui.graphics.ImageBitmap?>(null, user?.avatarUrl) {
@@ -85,8 +87,8 @@ fun AboutScreen(onBack: () -> Unit, onOpenUpdates: () -> Unit, onOpenAcknowledge
     Scaffold(
         modifier = Modifier.nestedScroll(scroll.nestedScrollConnection),
         topBar = {
-            LargeFlexibleTopAppBar(
-                colors = appBarColors(),
+            AdaptiveTopAppBar(
+                large = true,
                 title = { Text(stringResource(R.string.about_title)) },
                 subtitle = { Text(stringResource(R.string.about_tagline)) },
                 navigationIcon = { BackButton(onBack) },
@@ -94,10 +96,7 @@ fun AboutScreen(onBack: () -> Unit, onOpenUpdates: () -> Unit, onOpenAcknowledge
             )
         },
     ) { padding ->
-        Column(
-            Modifier.padding(padding).verticalScroll(rememberScrollState()).padding(horizontal = Dimens.gutter).padding(bottom = Dimens.xl),
-            verticalArrangement = Arrangement.spacedBy(Dimens.sm),
-        ) {
+        val app: @Composable ColumnScope.() -> Unit = {
             SectionTitle(R.string.about_app)
             Group {
                 ListItem(
@@ -120,7 +119,8 @@ fun AboutScreen(onBack: () -> Unit, onOpenUpdates: () -> Unit, onOpenAcknowledge
                     colors = itemColors(),
                 )
             }
-
+        }
+        val people: @Composable ColumnScope.() -> Unit = {
             SectionTitle(R.string.about_developer)
             Group {
                 Column(Modifier.fillMaxWidth().padding(Dimens.lg), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(Dimens.xs)) {
@@ -162,6 +162,14 @@ fun AboutScreen(onBack: () -> Unit, onOpenUpdates: () -> Unit, onOpenAcknowledge
                 LinkRow(Icons.Rounded.Description, stringResource(R.string.about_acknowledgements), stringResource(R.string.about_acknowledgements_desc), onClick = onOpenAcknowledgements)
             }
         }
+        if (isTwoPane()) TwoPane(Modifier.padding(padding), spacing = Dimens.sm, start = app, end = people)
+        else Column(
+            Modifier.padding(padding).verticalScroll(rememberScrollState()).padding(horizontal = Dimens.gutter).padding(bottom = Dimens.xl),
+            verticalArrangement = Arrangement.spacedBy(Dimens.sm),
+        ) {
+            app()
+            people()
+        }
     }
 }
 
@@ -189,13 +197,13 @@ private val libraries = listOf(
 fun AcknowledgementsScreen(onBack: () -> Unit) {
     val context = LocalContext.current
     val open = { url: String -> context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
-    val scroll = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    val scroll = adaptiveScrollBehavior()
 
     Scaffold(
         modifier = Modifier.nestedScroll(scroll.nestedScrollConnection),
         topBar = {
-            LargeFlexibleTopAppBar(
-                colors = appBarColors(),
+            AdaptiveTopAppBar(
+                large = true,
                 title = { Text(stringResource(R.string.about_acknowledgements)) },
                 subtitle = { Text(stringResource(R.string.about_acknowledgements_subtitle)) },
                 navigationIcon = { BackButton(onBack) },
@@ -203,12 +211,18 @@ fun AcknowledgementsScreen(onBack: () -> Unit) {
             )
         },
     ) { padding ->
-        Column(Modifier.padding(padding).verticalScroll(rememberScrollState()).padding(horizontal = Dimens.gutter).padding(bottom = Dimens.xl)) {
+        val group: @Composable (List<Library>) -> Unit = { libs ->
             Group {
-                libraries.forEach { lib ->
+                libs.forEach { lib ->
                     LinkRow(null, lib.name, "${lib.license}\n${lib.url.removePrefix("https://")}", external = true) { open(lib.url) }
                 }
             }
+        }
+        if (isTwoPane()) {
+            val (first, second) = libraries.chunked((libraries.size + 1) / 2)
+            TwoPane(Modifier.padding(padding), start = { group(first) }, end = { group(second) })
+        } else Column(Modifier.padding(padding).verticalScroll(rememberScrollState()).padding(horizontal = Dimens.gutter).padding(bottom = Dimens.xl)) {
+            group(libraries)
         }
     }
 }

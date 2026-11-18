@@ -23,7 +23,6 @@ import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LargeFlexibleTopAppBar
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
@@ -35,7 +34,6 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -60,7 +58,6 @@ import com.aiyu.ridelink.core.care.Fill
 import com.aiyu.ridelink.core.care.Urgency
 import com.aiyu.ridelink.core.settings.Settings
 import com.aiyu.ridelink.ui.R
-import com.aiyu.ridelink.ui.nav.appBarColors
 import com.aiyu.ridelink.ui.ride.Tile
 import com.aiyu.ridelink.ui.ride.TileGrid
 import com.aiyu.ridelink.ui.ride.TileSpec
@@ -75,6 +72,12 @@ import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import kotlin.math.roundToInt
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.lazy.LazyListScope
+import com.aiyu.ridelink.ui.nav.AdaptiveTopAppBar
+import com.aiyu.ridelink.ui.nav.PaneRow
+import com.aiyu.ridelink.ui.nav.isTwoPane
+import com.aiyu.ridelink.ui.nav.adaptiveScrollBehavior
 
 private fun one(x: Double) = "%.1f".format(x)
 private fun km(tenths: Int) = one(tenths / 10.0)
@@ -95,20 +98,20 @@ fun CareScreen(onBack: () -> Unit, vm: CareViewModel = hiltViewModel()) {
     var editingFill by remember { mutableStateOf<Fill?>(null) }
     var editingItem by remember { mutableStateOf<CareRecord?>(null) }
     var pickingDate by remember { mutableStateOf<CareRecord?>(null) }
-    val scroll = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    val scroll = adaptiveScrollBehavior()
 
     Scaffold(
         modifier = Modifier.nestedScroll(scroll.nestedScrollConnection),
         topBar = {
-            LargeFlexibleTopAppBar(
-                colors = appBarColors(),
+            AdaptiveTopAppBar(
+                large = true,
                 title = { Text(stringResource(R.string.care_title)) },
                 navigationIcon = { BackButton(onBack) },
                 scrollBehavior = scroll,
             )
         },
     ) { padding ->
-        LazyColumn(Modifier.padding(padding), verticalArrangement = Arrangement.spacedBy(Dimens.xs)) {
+        val fuel: LazyListScope.() -> Unit = {
             item { MileageCard(ui) }
             ui.pendingRefuel?.let { f ->
                 item {
@@ -139,7 +142,8 @@ fun CareScreen(onBack: () -> Unit, vm: CareViewModel = hiltViewModel()) {
                     }) { Text(stringResource(R.string.care_add_fill)) }
                 }
             }
-
+        }
+        val upkeep: LazyListScope.() -> Unit = {
             item { Header(R.string.care_service) }
             item { Hint(stringResource(R.string.care_service_hint)) }
             items(ui.statuses.filter { !it.record.item.byDate }, key = { it.record.item.name }) { st ->
@@ -156,6 +160,21 @@ fun CareScreen(onBack: () -> Unit, vm: CareViewModel = hiltViewModel()) {
             item { SwitchRow(R.string.care_low_fuel, R.string.care_low_fuel_hint, s.lowFuelAlert, vm::setLowFuelAlert) }
             if (s.lowFuelAlert) item { LowFuelSlider(s.lowFuelKm, vm::setLowFuelKm) }
             item { SwitchRow(R.string.care_reminders, R.string.care_reminders_hint, s.careReminders, vm::setCareReminders) }
+        }
+        if (isTwoPane()) {
+            PaneRow(Modifier.padding(padding)) {
+                LazyColumn(Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(Dimens.xs)) {
+                    fuel()
+                    item { Spacer(Modifier.height(Dimens.xxl)) }
+                }
+                LazyColumn(Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(Dimens.xs)) {
+                    upkeep()
+                    item { Spacer(Modifier.height(Dimens.xxl)) }
+                }
+            }
+        } else LazyColumn(Modifier.padding(padding), verticalArrangement = Arrangement.spacedBy(Dimens.xs)) {
+            fuel()
+            upkeep()
             item { Spacer(Modifier.height(Dimens.xxl)) }
         }
     }

@@ -17,7 +17,6 @@ import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.ErrorOutline
-import com.aiyu.ridelink.ui.nav.appBarColors
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Button
@@ -26,7 +25,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MediumFlexibleTopAppBar
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -48,6 +46,13 @@ import com.aiyu.ridelink.ui.MainViewModel
 import com.aiyu.ridelink.ui.update.BackButton
 import com.aiyu.ridelink.ui.R
 import com.aiyu.ridelink.ui.theme.Dimens
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import com.aiyu.ridelink.ui.nav.AdaptiveTopAppBar
+import com.aiyu.ridelink.ui.nav.PaneRow
+import com.aiyu.ridelink.ui.nav.isTwoPane
 
 /** Manual frame sender and log; used to test against tools/fake_cluster.py or the real display. */
 @Composable
@@ -63,8 +68,7 @@ fun ConsoleScreen(vm: MainViewModel, onBack: () -> Unit) {
     val context = LocalContext.current
     Scaffold(
         topBar = {
-            MediumFlexibleTopAppBar(
-                colors = appBarColors(),
+            AdaptiveTopAppBar(
                 title = { Text(stringResource(R.string.tab_console)) },
                 navigationIcon = { BackButton(onBack) },
                 actions = {
@@ -79,7 +83,7 @@ fun ConsoleScreen(vm: MainViewModel, onBack: () -> Unit) {
             )
         },
     ) { padding ->
-        Column(Modifier.padding(padding).fillMaxSize()) {
+        val controls: @Composable ColumnScope.() -> Unit = {
             Row(Modifier.padding(horizontal = Dimens.gutter), verticalAlignment = Alignment.CenterVertically) {
                 OutlinedTextField(
                     value = text,
@@ -147,6 +151,8 @@ fun ConsoleScreen(vm: MainViewModel, onBack: () -> Unit) {
                 TestFrameChip(R.string.console_test_check_in, vm::testCheckIn)
                 FilterChip(selected = riding, onClick = { vm.setPretendRiding(!riding) }, label = { Text(stringResource(R.string.console_pretend_riding)) })
             }
+        }
+        val frames: @Composable ColumnScope.() -> Unit = {
             if (log.isEmpty()) {
                 Text(
                     stringResource(R.string.console_empty),
@@ -185,6 +191,15 @@ fun ConsoleScreen(vm: MainViewModel, onBack: () -> Unit) {
                     )
                 }
             }
+        }
+        if (isTwoPane()) {
+            PaneRow(Modifier.padding(padding)) {
+                Column(Modifier.weight(1f).fillMaxHeight().verticalScroll(rememberScrollState()), content = controls)
+                Column(Modifier.weight(1f).fillMaxHeight(), content = frames)
+            }
+        } else Column(Modifier.padding(padding).fillMaxSize()) {
+            controls()
+            frames()
         }
     }
 }
