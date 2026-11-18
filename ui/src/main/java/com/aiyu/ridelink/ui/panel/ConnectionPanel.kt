@@ -48,15 +48,21 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.aiyu.ridelink.core.ble.LinkState
+import com.aiyu.ridelink.core.protocol.ClusterFamily
+import com.aiyu.ridelink.core.protocol.ClusterModel
+import com.aiyu.ridelink.core.protocol.DisplayTelemetry
 import com.aiyu.ridelink.ui.MainViewModel
 import com.aiyu.ridelink.ui.R
 import com.aiyu.ridelink.ui.askBatteryExemption
 import com.aiyu.ridelink.ui.hasBluetooth
+import com.aiyu.ridelink.ui.ride.TileGrid
+import com.aiyu.ridelink.ui.ride.TileSpec
 import com.aiyu.ridelink.ui.theme.Dimens
 
 /**
  * The quick settings tile's panel, laid out like Android's own Internet panel: live status, the connection switch,
- * the saved scooters and a way into the app. Floats over whatever the rider was doing.
+ * the scooter's live readings while connected, else the saved scooters, and a way into the app. Floats over whatever
+ * the rider was doing.
  */
 @Composable
 fun ConnectionPanel(
@@ -70,6 +76,8 @@ fun ConnectionPanel(
     val link by vm.linkState.collectAsStateWithLifecycle()
     val settings by vm.settings.collectAsStateWithLifecycle()
     val bikes by vm.bikes.collectAsStateWithLifecycle()
+    val telemetry by vm.telemetry.collectAsStateWithLifecycle()
+    val detected by vm.detected.collectAsStateWithLifecycle()
     val c = MaterialTheme.colorScheme
     var resumes by remember { mutableIntStateOf(0) }
     LifecycleResumeEffect(Unit) {
@@ -135,7 +143,10 @@ fun ConnectionPanel(
                             Switch(checked = sessionOn, onCheckedChange = null)
                         }
                     }
-                    if (bikes.size > 1) {
+                    if (link is LinkState.Ready) {
+                        val family = (detected?.takeIf { it.family == ClusterFamily.SMARTXONNECT } ?: settings.model ?: detected ?: ClusterModel.DEFAULT).family
+                        LiveStats(telemetry, family)
+                    } else if (bikes.size > 1) {
                         Text(stringResource(R.string.panel_saved), style = MaterialTheme.typography.titleSmall, color = c.primary)
                         bikes.forEach { bike ->
                             val active = bike.address == settings.deviceAddress
@@ -176,5 +187,32 @@ fun ConnectionPanel(
                 }
             }
         }
+    }
+}
+
+/** What the display is reporting right now; values it never sends are left out. */
+@Composable
+private fun LiveStats(t: DisplayTelemetry, family: ClusterFamily) {
+    val km = stringResource(R.string.unit_km)
+    val kmh = stringResource(R.string.dash_kmh)
+    fun tenths(v: Double?) = v?.let { "%.1f".format(it) }
+    Text(stringResource(R.string.ride_data), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+    Column(verticalArrangement = Arrangement.spacedBy(Dimens.sm)) {
+        TileGrid(
+            listOf(
+                TileSpec(stringResource(R.string.chart_ride_speed), t.speedKmh?.toString(), kmh),
+                TileSpec(stringResource(R.string.ride_fuel), t.fuelBars(family)?.toString(), stringResource(R.string.detail_fuel_unit)),
+                TileSpec(stringResource(R.string.ride_range), t.rangeKm?.toString(), km),
+                TileSpec(stringResource(R.string.ride_mileage), t.averageEconomy?.takeIf { it > 0 }?.toString(), stringResource(R.string.unit_kmpl)),
+                TileSpec(stringResource(R.string.ride_odometer), tenths(t.odometerKm), km),
+                TileSpec(stringResource(R.string.ride_trip), tenths(t.tripKm?.takeIf { it > 0 }), km),
+                TileSpec(stringResource(R.string.ride_avg_speed), t.averageSpeedKmh?.toString(), kmh),
+                TileSpec(stringResource(R.string.ride_top_speed), t.topSpeedKmh?.toString(), kmh),
+                TileSpec(stringResource(R.string.vehicle_rpm), t.rpm?.toString()),
+                TileSpec(stringResource(R.string.vehicle_battery), t.batteryVoltage?.toString()),
+                TileSpec(stringResource(R.string.vehicle_engine_temp), t.engineTemp?.toString()),
+            ),
+            MaterialTheme.colorScheme.onSurface,
+        )
     }
 }
