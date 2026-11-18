@@ -262,43 +262,134 @@ private fun TurnRow(t: RideTurn) {
     }
 }
 
-/** Every measure over the ride, then time in each speed band. */
+/** Touching any chart moves the crosshair on all of them, so one moment of the ride can be read across every measure. */
 @Composable
 private fun Charts(ride: RideRecord, samples: List<RideSample>) {
     val bg = MaterialTheme.colorScheme.surface
     val kmh = stringResource(R.string.dash_kmh)
     val km = stringResource(R.string.unit_km)
+    val kmpl = stringResource(R.string.unit_kmpl)
+    var at by remember(samples) { mutableStateOf<Long?>(null) }
+    val pickAt = { t: Long -> at = t }
+    fun series(f: (RideSample) -> Int?) = RideMath.downsample(samples.mapNotNull { s -> f(s)?.let { s.t to it.toDouble() } }, 160)
+    val distance = remember(samples) { RideMath.downsample(RideMath.distanceSeries(samples), 160) }
+    val speed = remember(samples) { series { it.speedKmh } }
+    val rpm = remember(samples) { series { it.rpm } }
+    val economy = remember(samples) { series { it.instantEconomy } }
+    val range = remember(samples) { series { it.rangeKm } }
+    val fuel = remember(samples) { series { it.fuel } }
+    val spans = remember(samples) { RideMath.motionSpans(samples) }
+    val rpmMinutes = remember(samples) { RideMath.rpmBandMinutes(samples) }
+    val economyBands = remember(samples) { RideMath.economyBySpeedBand(samples) }
+    val speedLabels = remember { bandLabels(RideMath.SPEED_BANDS) }
+
     SectionTitle(R.string.detail_charts)
-    fun pick(f: (RideSample) -> Int?) = RideMath.downsample(samples.mapNotNull { s -> f(s)?.let { s.t to it.toDouble() } }, 160)
-    ChartSection(R.string.chart_ride_distance, km, RideMath.downsample(RideMath.distanceSeries(samples), 160), bg)
-    ChartSection(R.string.chart_ride_speed, kmh, pick { it.speedKmh }, bg)
-    ChartSection(R.string.chart_ride_rpm, "", pick { it.rpm }, bg)
-    ChartSection(R.string.chart_ride_economy, stringResource(R.string.unit_kmpl), pick { it.instantEconomy }, bg)
-    ChartSection(R.string.chart_ride_range, km, pick { it.rangeKm }, bg)
-    ChartSection(R.string.chart_ride_fuel, "", pick { it.fuel }, bg)
+    if (spans.isNotEmpty()) {
+        val name = stringResource(R.string.chart_motion)
+        Column {
+            Text(name, style = MaterialTheme.typography.titleMediumEmphasized)
+            Spacer(Modifier.height(Dimens.xs))
+            MotionTimeline(
+                spans = spans,
+                selectedTime = at,
+                onSelectTime = pickAt,
+                describe = { s ->
+                    stringResource(
+                        if (s.moving) R.string.readout_motion_moving else R.string.readout_motion_stopped,
+                        Fmt.time(s.from), Fmt.time(s.to), Fmt.duration((s.to - s.from) / 1000),
+                    )
+                },
+                idle = stringResource(R.string.readout_motion_idle),
+                description = name,
+                startLabel = Fmt.time(spans.first().from),
+                endLabel = Fmt.time(spans.last().to),
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+    }
+    ChartSection(R.string.chart_ride_distance, km, distance, bg, at, pickAt)
+    ChartSection(R.string.chart_ride_speed, kmh, speed, bg, at, pickAt)
+    ChartSection(R.string.chart_ride_rpm, "", rpm, bg, at, pickAt)
+    ChartSection(R.string.chart_ride_economy, kmpl, economy, bg, at, pickAt)
+    ChartSection(R.string.chart_ride_range, km, range, bg, at, pickAt)
+    ChartSection(R.string.chart_ride_fuel, stringResource(R.string.detail_fuel_unit), fuel, bg, at, pickAt)
 
     val bands = ride.summary.speedBandS
     if (bands.any { it > 0 }) {
-        val labels = RideMath.SPEED_BANDS.mapIndexed { i, lo -> RideMath.SPEED_BANDS.getOrNull(i + 1)?.let { "$lo-${it - 1}" } ?: "$lo+" }
         val minutes = bands.map { it / 60.0 }
-        val name = stringResource(R.string.chart_ride_bands)
-        Text(name, style = MaterialTheme.typography.titleMediumEmphasized)
-        BarChart(
+        BandChart(
+            title = stringResource(R.string.chart_ride_bands),
             values = minutes,
-            xLabels = labels,
-            describe = { i -> stringResource(R.string.readout_band, labels[i], Fmt.minutes(minutes[i])) },
+            labels = speedLabels,
+            describe = { i -> stringResource(R.string.readout_band, speedLabels[i], Fmt.minutes(minutes[i])) },
             idle = stringResource(R.string.readout_band_idle, kmh),
-            axisFormat = Fmt::tick,
-            description = stringResource(R.string.chart_series_desc, name, Fmt.whole(minutes.max()), stringResource(R.string.unit_min)),
-            modifier = Modifier.fillMaxWidth(),
-            height = 160.dp,
+            valueLabel = { i -> Fmt.one(minutes[i]) },
+            unit = stringResource(R.string.unit_min),
+        )
+    }
+    if (rpmMinutes.any { it > 0 }) {
+        val labels = remember { bandLabels(RideMath.RPM_BANDS.map { it / 1000 }) }
+        BandChart(
+            title = stringResource(R.string.chart_rpm_bands),
+            values = rpmMinutes,
+            labels = labels,
+            describe = { i -> stringResource(R.string.readout_rpm_band, labels[i], Fmt.minutes(rpmMinutes[i])) },
+            idle = stringResource(R.string.readout_tap),
+            valueLabel = { i -> Fmt.one(rpmMinutes[i]) },
+            unit = stringResource(R.string.unit_min),
+        )
+    }
+    if (economyBands.any { it > 0 }) {
+        BandChart(
+            title = stringResource(R.string.chart_economy_speed),
+            values = economyBands,
+            labels = speedLabels,
+            describe = { i -> stringResource(R.string.readout_economy_speed, speedLabels[i], Fmt.one(economyBands[i]), kmpl) },
+            idle = stringResource(R.string.readout_tap),
+            valueLabel = { i -> Fmt.one(economyBands[i]) },
+            unit = kmpl,
         )
     }
 }
 
+/** "0-19", "20-39" ... "80+" from the lower bounds of a band table. */
+private fun bandLabels(bounds: List<Int>) = bounds.mapIndexed { i, lo -> bounds.getOrNull(i + 1)?.let { "$lo-${it - 1}" } ?: "$lo+" }
+
+/** One value per band of a ride, under its own title. */
+@Composable
+private fun BandChart(
+    title: String,
+    values: List<Double>,
+    labels: List<String>,
+    describe: @Composable (Int) -> String,
+    idle: String,
+    valueLabel: (Int) -> String,
+    unit: String,
+) {
+    Text(title, style = MaterialTheme.typography.titleMediumEmphasized)
+    BarChart(
+        values = values,
+        xLabels = labels,
+        describe = describe,
+        idle = idle,
+        axisFormat = Fmt::tick,
+        description = stringResource(R.string.chart_series_desc, title, Fmt.whole(values.max()), unit),
+        modifier = Modifier.fillMaxWidth(),
+        height = 160.dp,
+        valueLabel = valueLabel,
+    )
+}
+
 /** One measure over the ride; skipped when the display never sent it. */
 @Composable
-private fun ChartSection(title: Int, unit: String, points: List<Pair<Long, Double>>, ring: Color) {
+private fun ChartSection(
+    title: Int,
+    unit: String,
+    points: List<Pair<Long, Double>>,
+    ring: Color,
+    selectedTime: Long? = null,
+    onSelectTime: ((Long) -> Unit)? = null,
+) {
     if (points.size < 2) return
     val name = stringResource(title)
     val max = points.maxOf { it.second }
@@ -316,6 +407,9 @@ private fun ChartSection(title: Int, unit: String, points: List<Pair<Long, Doubl
             ring = ring,
             modifier = Modifier.fillMaxWidth(),
             height = 160.dp,
+            selectedTime = selectedTime,
+            onSelectTime = onSelectTime,
+            valueLabel = { v -> "${fmt(v)} $unit".trim() },
         )
     }
 }

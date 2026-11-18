@@ -197,4 +197,23 @@ class RideMathTest {
         val trip = List(4) { RideSample(t = it * 5_000L, tripTenths = 0) }
         assertEquals(null, RideMath.tripCoveredTenths(trip))
     }
+
+    @Test fun motionSpansMergeStretchesAndTreatAGapAsStopped() {
+        val ride = listOf(0L to 30, 5_000L to 30, 10_000L to 0, 15_000L to 0, 20_000L to 40, 90_000L to 40)
+            .map { (t, v) -> RideSample(t = t, speedKmh = v) }
+        assertEquals(
+            listOf(MotionSpan(0, 10_000, true), MotionSpan(10_000, 90_000, false)),
+            RideMath.motionSpans(ride),
+        )
+    }
+
+    @Test fun rpmBandsCountRunningMinutesOnly() {
+        val ride = listOf(1_500, 2_500, 0, 2_500).mapIndexed { i, r -> RideSample(t = i * 30_000L, rpm = r) }
+        assertEquals(listOf(0.5, 0.5, 0.0, 0.0, 0.0), RideMath.rpmBandMinutes(ride))
+    }
+
+    @Test fun economyBySpeedBandAveragesMovingReadings() {
+        val ride = listOf(RideSample(0, speedKmh = 25, instantEconomy = 40), RideSample(5_000, speedKmh = 30, instantEconomy = 50), RideSample(10_000, speedKmh = 0, instantEconomy = 90))
+        assertEquals(listOf(0.0, 45.0, 0.0, 0.0, 0.0), RideMath.economyBySpeedBand(ride))
+    }
 }

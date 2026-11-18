@@ -32,6 +32,9 @@ data class RideTurn(
     val distanceLeftM: Int,
 )
 
+/** One stretch of a ride spent moving or standing still. */
+data class MotionSpan(val from: Long, val to: Long, val moving: Boolean)
+
 /** Where a ride's distance came from, largest share first. */
 enum class DistanceSource { MAPS, ODOMETER, SPEED }
 
@@ -136,7 +139,39 @@ object RideMath {
     /** Lower bounds of the speed bands, km/h: 0-19, 20-39, 40-59, 60-79, 80+. */
     val SPEED_BANDS = listOf(0, 20, 40, 60, 80)
 
+    /** Lower bounds of the engine speed bands, rpm. */
+    val RPM_BANDS = listOf(0, 2_000, 4_000, 6_000, 8_000)
+
     fun band(speed: Int) = SPEED_BANDS.indexOfLast { speed >= it }.coerceAtLeast(0)
+
+    /** The ride as moving and stopped stretches, in order. A gap in the samples counts as stopped. */
+    fun motionSpans(samples: List<RideSample>): List<MotionSpan> {
+        val out = mutableListOf<MotionSpan>()
+        samples.sortedBy { it.t }.zipWithNext { a, b ->
+            val moving = (a.speedKmh ?: 0) >= MOVING_KMH && b.t - a.t <= MAX_GAP_MS
+            val last = out.lastOrNull()
+            if (last?.moving == moving) out[out.lastIndex] = last.copy(to = b.t) else out += MotionSpan(a.t, b.t, moving)
+        }
+        return out
+    }
+
+    /** Minutes with the engine running in each of [RPM_BANDS]. */
+    fun rpmBandMinutes(samples: List<RideSample>): List<Double> {
+        val minutes = DoubleArray(RPM_BANDS.size)
+        samples.sortedBy { it.t }.zipWithNext { a, b ->
+            val rpm = a.rpm?.takeIf { it > 0 } ?: return@zipWithNext
+            if (b.t - a.t <= MAX_GAP_MS) minutes[RPM_BANDS.indexOfLast { rpm >= it }] += (b.t - a.t) / 60_000.0
+        }
+        return minutes.toList()
+    }
+
+    /** Average instant mileage while moving in each of [SPEED_BANDS]; 0 for a band with no reading. */
+    fun economyBySpeedBand(samples: List<RideSample>): List<Double> {
+        val moving = samples.filter { (it.speedKmh ?: 0) >= MOVING_KMH && (it.instantEconomy ?: 0) > 0 }
+        return SPEED_BANDS.indices.map { i ->
+            moving.filter { band(it.speedKmh!!) == i }.map { it.instantEconomy!! }.takeIf { it.isNotEmpty() }?.average() ?: 0.0
+        }
+    }
 
     /**
      * Distance per ride, interval by interval:
