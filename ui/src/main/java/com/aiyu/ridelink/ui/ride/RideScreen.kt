@@ -98,6 +98,7 @@ import com.aiyu.ridelink.core.protocol.hasHealth
 import com.aiyu.ridelink.ui.MainViewModel
 import com.aiyu.ridelink.core.settings.Bike
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
@@ -165,9 +166,12 @@ fun RideScreen(vm: MainViewModel, onConnect: () -> Unit, onDisconnect: () -> Uni
         Column(
             Modifier
                 .padding(padding)
+                .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
+                .wrapContentWidth(Alignment.CenterHorizontally)
                 .padding(horizontal = Dimens.gutter)
-                .widthIn(max = Dimens.contentMaxWidth),
+                .widthIn(max = Dimens.contentMaxWidth)
+                .fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(Dimens.md),
         ) {
             if (!bluetoothOk) {
