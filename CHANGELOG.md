@@ -1,5 +1,34 @@
 # Changelog
 
+## [1.0.0](https://github.com/aiyu-ayaan/RideLink/compare/v0.2.1-alpha.13...v1.0.0) (2026-11-18)
+
+### ⚠ Breaking changes
+
+* First stable release
+
+### Other changes
+
+* Docs(Design) : Document the landscape two-pane layout
+* Feat(Layout) : Show Care, Console, About and Updates in two panes
+* Feat(Settings) : Open sections beside the list in landscape
+* Feat(Layout) : Show Ride and Analytics in two panes in landscape
+* Feat(Layout) : Add two-pane layout helpers and a landscape nav rail
+* Fix(Layout) : Center Ride and Analytics content in landscape
+* Fix(Manifest) : Mark telephony as optional
+* Fix(Boot) : Always finish the boot receiver when settings fail to load
+* Fix(BLE) : Check scan permission and compare the right write status
+* Fix(About) : Read the version code safely on Android 8
+* Fix(Calls) : Stop caller frames colliding with turn frames on the display
+* Feat(QuickSettings) : Show panel stats during a demo ride
+* Fix(Notifications) : Show unread chats already in the shade on the display
+* Feat(QuickSettings) : Show live scooter stats in the panel while connected
+* I18n(Strings) : Translate the panel and chart text into all 22 languages
+* Feat(Analytics) : Rebuild ride charts with scrubbing and tap-through
+* Feat(QuickSettings) : Add connection tile with a floating control panel
+* Fix(BLE) : Reconnect reliably after the scooter is switched off
+* Fix(Analytics) : Show fuel drop and a working trip meter on ride detail
+* Fix(Calls) : Keep dialled calls off the display
+
 ## [0.2.1-alpha.13](https://github.com/aiyu-ayaan/RideLink/compare/v0.2.1-alpha.12...v0.2.1-alpha.13) (2026-11-13)
 
 ### Features
