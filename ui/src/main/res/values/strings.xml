@@ -358,6 +358,16 @@
     <string name="call_unknown">Incoming call</string>
     <!-- Ride detail page -->
     <string name="cancel">Cancel</string>
+    <string name="panel_connection">Scooter connection</string>
+    <string name="panel_saved">Saved scooters</string>
+    <string name="panel_no_scooter">Pair a scooter in RideLink first.</string>
+    <string name="panel_open">Open RideLink</string>
+    <string name="panel_done">Done</string>
+    <string name="panel_battery">Allow background use so the scooter reconnects on its own.</string>
+    <string name="panel_off">Off</string>
+    <string name="panel_waiting">Waiting</string>
+    <string name="tile_add">Add to quick settings</string>
+    <string name="tile_add_desc">Connect or disconnect from the notification panel</string>
     <string name="unit_min">min</string>
     <string name="detail_title">Ride</string>
     <string name="detail_delete_title">Delete this ride?</string>

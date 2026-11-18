@@ -24,6 +24,14 @@ internal fun Context.granted(permission: String) =
 /** Notification permission is nice-to-have; the Bluetooth ones gate everything. */
 internal fun Context.hasBluetooth() = bluetoothPermissions.all { it == Manifest.permission.POST_NOTIFICATIONS || granted(it) }
 
+/** Opens Android's "stop optimising battery usage" prompt for RideLink. */
+@android.annotation.SuppressLint("BatteryLife") // Personal sideloaded app; the ride session must not be frozen.
+internal fun Context.askBatteryExemption() {
+    val ask = android.content.Intent(android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, android.net.Uri.parse("package:$packageName"))
+    runCatching { startActivity(ask) }
+        .onFailure { startActivity(android.content.Intent(android.provider.Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)) }
+}
+
 internal fun Context.hasListener() = packageName in NotificationManagerCompat.getEnabledListenerPackages(this)
 
 /**

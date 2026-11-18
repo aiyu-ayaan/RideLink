@@ -7,6 +7,13 @@
         <item name="android:colorBackground">@color/splash_background</item>
     </style>
 
+    <!-- Quick settings panel: floats over the current screen; Compose draws the scrim and the card. -->
+    <style name="Theme.RideLink.Panel" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:colorBackgroundCacheHint">@null</item>
+    </style>
+
     <!-- Launch theme: splash on the app surface colour (splash_background) with the primary-coloured mark with the animated "Closed loop" mark, then Theme.RideLink.
          The icon animation is 1000 ms; MainActivity waits for it, then plays the exit. -->
     <style name="Theme.RideLink.Starting" parent="Theme.SplashScreen">

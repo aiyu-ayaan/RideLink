@@ -69,12 +69,12 @@ import com.aiyu.ridelink.ui.nav.BottomBarSpacer
 import com.aiyu.ridelink.ui.nav.LinkRow
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.material.icons.rounded.TwoWheeler
 import androidx.compose.material.icons.rounded.Call
 import androidx.compose.material.icons.rounded.Code
 import androidx.compose.material.icons.rounded.Navigation
 import androidx.compose.material.icons.rounded.PhoneAndroid
 import androidx.compose.material.icons.rounded.TextFields
-import androidx.compose.material.icons.rounded.TwoWheeler
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.LargeFlexibleTopAppBar
@@ -339,6 +339,20 @@ fun SettingsScreen(
 
                 }
                 SettingsSection.SCOOTER -> {
+            if (android.os.Build.VERSION.SDK_INT >= 33) item {
+                val context = androidx.compose.ui.platform.LocalContext.current
+                val label = stringResource(R.string.app_name)
+                Group {
+                    LinkRow(Icons.Rounded.TwoWheeler, stringResource(R.string.tile_add), stringResource(R.string.tile_add_desc)) {
+                        context.getSystemService(android.app.StatusBarManager::class.java)?.requestAddTileService(
+                            android.content.ComponentName(context, "com.aiyu.ridelink.service.ConnectionTileService"),
+                            label,
+                            android.graphics.drawable.Icon.createWithResource(context, R.drawable.ic_ridelink),
+                            context.mainExecutor,
+                        ) { }
+                    }
+                }
+            }
             items(bikes, key = { it.address }) { b ->
                 val active = b.address == s.deviceAddress
                 val label = b.name ?: b.address

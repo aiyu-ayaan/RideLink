@@ -1,7 +1,6 @@
 package com.aiyu.ridelink.ui.ride
 
 import android.content.Intent
-import android.net.Uri
 import android.os.PowerManager
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -106,6 +105,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import com.aiyu.ridelink.ui.nav.BottomBarSpacer
 import com.aiyu.ridelink.ui.R
+import com.aiyu.ridelink.ui.askBatteryExemption
 import com.aiyu.ridelink.ui.bluetoothPermissions
 import com.aiyu.ridelink.ui.care.CareCard
 import com.aiyu.ridelink.ui.care.CareViewModel
@@ -188,10 +188,7 @@ fun RideScreen(vm: MainViewModel, onConnect: () -> Unit, onDisconnect: () -> Uni
             }
             if (bluetoothOk && !batteryOk) {
                 PermissionCard(Icons.Rounded.BatteryAlert, R.string.perm_battery_title, R.string.perm_battery_body, R.string.perm_grant, optional = true) {
-                    @android.annotation.SuppressLint("BatteryLife") // Personal sideloaded app; the ride session must not be frozen.
-                    val ask = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:${context.packageName}"))
-                    runCatching { context.startActivity(ask) }
-                        .onFailure { context.startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)) }
+                    context.askBatteryExemption()
                 }
             }
 
