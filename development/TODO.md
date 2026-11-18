@@ -42,7 +42,8 @@
 - [x] Dialled calls stay off the display; only a call that rang sends the caller frame
 - [x] Fuel saved as gauge bars, ride fuel drop from settled levels, trip tile from trip steps or the odometer
 - [x] BLE retry backoff, stale GATT refresh, Bluetooth off/on resume, session keeps waiting while battery optimised
-- [x] Quick settings tile with floating connection panel
+- [x] Quick settings tile with floating connection panel and live scooter stats
+- [x] Unread chat badges start from the notification shade on every connect
 - [x] Charts: press and drag to read, shared crosshair on ride detail, tap through to rides, six new graphs
 
 ## Needs the real scooter
@@ -59,6 +60,9 @@
 - [ ] Auto-connect (2026-11-18 rework): ignition off for 2+ minutes, then on, with battery optimisation on and off; Console `Link:` lines
 - [ ] Outgoing phone and WhatsApp call on the scooter: the display must show no caller
 - [ ] Fuel drop on a real ride: bars in the ride detail match the gauge
+- [ ] Unread badge after ignition on with chats already waiting in the shade
+- [ ] Panel live stats while connected
+- [ ] Trip A / B: Console "Copy log" (RX `5a 10` lines) while switching trips on the display
 - [ ] Signal bars, call icon, notification badge: still missing? compare decoded STATUS lines, try model U577 premium
 - [ ] Pair the user's Ntorq 125 Race XP (2026, U458) and confirm the display accepts the 2025+ status frame
 - [ ] Race XP (SmartXonnect LCD): left family arrows confirmed (ids 0/1/2); check right 10, sharp right 11, slight right 12, keep left 7 / right 17, U-turn 19, destination 22, straight 57, roundabout 48 / exits 28 / 32 with Demo navigation (Console -> Arrow codes 0 to 80 to see any other id)

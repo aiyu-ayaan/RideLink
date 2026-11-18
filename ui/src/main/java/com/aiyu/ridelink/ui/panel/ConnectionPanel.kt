@@ -78,6 +78,7 @@ fun ConnectionPanel(
     val bikes by vm.bikes.collectAsStateWithLifecycle()
     val telemetry by vm.telemetry.collectAsStateWithLifecycle()
     val detected by vm.detected.collectAsStateWithLifecycle()
+    val demo by vm.demo.collectAsStateWithLifecycle()
     val c = MaterialTheme.colorScheme
     var resumes by remember { mutableIntStateOf(0) }
     LifecycleResumeEffect(Unit) {
@@ -143,7 +144,8 @@ fun ConnectionPanel(
                             Switch(checked = sessionOn, onCheckedChange = null)
                         }
                     }
-                    if (link is LinkState.Ready) {
+                    // Telemetry outlives the link, so waiting for the scooter must not show its last readings.
+                    if (link is LinkState.Ready || demo) {
                         val family = (detected?.takeIf { it.family == ClusterFamily.SMARTXONNECT } ?: settings.model ?: detected ?: ClusterModel.DEFAULT).family
                         LiveStats(telemetry, family)
                     } else if (bikes.size > 1) {
