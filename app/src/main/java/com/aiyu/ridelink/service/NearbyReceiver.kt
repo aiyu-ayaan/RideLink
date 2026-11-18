@@ -1,5 +1,6 @@
 package com.aiyu.ridelink.service
 
+import android.Manifest
 import android.app.ForegroundServiceStartNotAllowedException
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -10,9 +11,11 @@ import android.bluetooth.le.ScanSettings
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Build
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
 import com.aiyu.ridelink.core.ClusterController
 import com.aiyu.ridelink.ui.R
 import dagger.hilt.android.AndroidEntryPoint
@@ -84,6 +87,10 @@ class NearbyReceiver : BroadcastReceiver() {
          * shortcut: Bluetooth off/on drops the scan until the ride service starts again; add a BT state hook if that bites.
          */
         fun watch(context: Context, address: String?) {
+            // BLUETOOTH_SCAN only exists on Android 12+; older versions always report it as denied.
+            if (Build.VERSION.SDK_INT >= 31 &&
+                ContextCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED
+            ) return
             val scanner = context.getSystemService(BluetoothManager::class.java)?.adapter?.bluetoothLeScanner ?: return
             val pi = pending(context)
             runCatching {

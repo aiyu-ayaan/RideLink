@@ -9,6 +9,7 @@ import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
+import android.bluetooth.BluetoothStatusCodes
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanResult
@@ -261,7 +262,7 @@ class ClusterLink @Inject constructor(@ApplicationContext private val context: C
         val c = writeChar ?: return false
         val done = CompletableDeferred<Boolean>().also { pendingWrite = it }
         val started = if (Build.VERSION.SDK_INT >= 33) {
-            g.writeCharacteristic(c, frame, BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT) == BluetoothGatt.GATT_SUCCESS
+            g.writeCharacteristic(c, frame, BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT) == BluetoothStatusCodes.SUCCESS
         } else {
             @Suppress("DEPRECATION")
             c.writeType = BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
