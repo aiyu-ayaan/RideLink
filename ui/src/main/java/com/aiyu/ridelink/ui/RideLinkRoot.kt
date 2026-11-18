@@ -71,6 +71,11 @@ import com.aiyu.ridelink.ui.settings.SettingsScreen
 import com.aiyu.ridelink.ui.update.UpdateHost
 import com.aiyu.ridelink.ui.update.UpdateScreen
 import com.aiyu.ridelink.ui.update.UpdateViewModel
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.consumeWindowInsets
+import com.aiyu.ridelink.ui.nav.FloatingNavRail
+import com.aiyu.ridelink.ui.nav.NavRailStartInsets
+import com.aiyu.ridelink.ui.nav.isTwoPane
 
 private val tabs = listOf(
     NavTab(R.string.tab_ride, Icons.Outlined.TwoWheeler, Icons.Rounded.TwoWheeler),
@@ -200,18 +205,26 @@ private fun Tabs(tab: Int, onSelect: (Int) -> Unit, content: @Composable (Int) -
     }
     val density = LocalDensity.current
     var pill by remember { mutableStateOf(0.dp) }
-    Box(Modifier.fillMaxSize().nestedScroll(hideOnScroll)) {
-        CompositionLocalProvider(LocalBottomBarInset provides pill) {
-            AnimatedContent(
-                targetState = tab,
-                // M3 "fade through": outgoing fades fast, incoming fades and scales up slightly.
-                transitionSpec = {
-                    (fadeIn(motion.defaultEffectsSpec()) + scaleIn(motion.defaultSpatialSpec(), initialScale = 0.94f)) togetherWith
-                        fadeOut(motion.fastEffectsSpec())
-                },
-                label = "tab",
-            ) { content(it) }
+    val screens = @Composable {
+        AnimatedContent(
+            targetState = tab,
+            // M3 "fade through": outgoing fades fast, incoming fades and scales up slightly.
+            transitionSpec = {
+                (fadeIn(motion.defaultEffectsSpec()) + scaleIn(motion.defaultSpatialSpec(), initialScale = 0.94f)) togetherWith
+                    fadeOut(motion.fastEffectsSpec())
+            },
+            label = "tab",
+        ) { content(it) }
+    }
+    if (isTwoPane()) {
+        Row(Modifier.fillMaxSize()) {
+            FloatingNavRail(tabs, tab, onSelect)
+            Box(Modifier.weight(1f).consumeWindowInsets(NavRailStartInsets)) { screens() }
         }
+        return
+    }
+    Box(Modifier.fillMaxSize().nestedScroll(hideOnScroll)) {
+        CompositionLocalProvider(LocalBottomBarInset provides pill) { screens() }
         AnimatedVisibility(
             !scrolledAway,
             modifier = Modifier.align(Alignment.BottomCenter),
