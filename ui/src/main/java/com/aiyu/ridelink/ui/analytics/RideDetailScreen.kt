@@ -15,19 +15,16 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Map
-import com.aiyu.ridelink.ui.nav.appBarColors
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LargeFlexibleTopAppBar
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -54,6 +51,12 @@ import com.aiyu.ridelink.ui.ride.Tile
 import com.aiyu.ridelink.ui.ride.icon
 import com.aiyu.ridelink.ui.theme.Dimens
 import com.aiyu.ridelink.ui.update.BackButton
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.ui.text.style.TextOverflow
+import com.aiyu.ridelink.ui.nav.AdaptiveTopAppBar
+import com.aiyu.ridelink.ui.nav.TwoPane
+import com.aiyu.ridelink.ui.nav.isTwoPane
+import com.aiyu.ridelink.ui.nav.adaptiveScrollBehavior
 
 /**
  * One ride, everything recorded about it: distance and where it came from (Google Maps route, odometer, speed),
@@ -68,14 +71,14 @@ fun RideDetailScreen(rideId: Long, onBack: () -> Unit, vm: AnalyticsViewModel = 
     val turns by produceState<List<RideTurn>>(emptyList(), rideId) { value = vm.turns(rideId) }
     var confirmDelete by rememberSaveable { mutableStateOf(false) }
     var renaming by rememberSaveable { mutableStateOf(false) }
-    val scroll = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    val scroll = adaptiveScrollBehavior()
 
     Scaffold(
         modifier = Modifier.nestedScroll(scroll.nestedScrollConnection),
         topBar = {
-            LargeFlexibleTopAppBar(
-                colors = appBarColors(),
-                title = { Text(ride?.let { rideTitle(it) } ?: stringResource(R.string.detail_title), maxLines = 2) },
+            AdaptiveTopAppBar(
+                large = true,
+                title = { Text(ride?.let { rideTitle(it) } ?: stringResource(R.string.detail_title), maxLines = if (isTwoPane()) 1 else 2, overflow = TextOverflow.Ellipsis) },
                 subtitle = {
                     ride?.let { r ->
                         // The date moves here when the title is a name or the places.
@@ -108,19 +111,26 @@ fun RideDetailScreen(rideId: Long, onBack: () -> Unit, vm: AnalyticsViewModel = 
             LoadingIndicator(Modifier.padding(padding).padding(Dimens.xl).size(48.dp))
             return@Scaffold
         }
-        Column(
-            Modifier.padding(padding).verticalScroll(rememberScrollState()).padding(horizontal = Dimens.gutter).padding(bottom = Dimens.xxl),
-            verticalArrangement = Arrangement.spacedBy(Dimens.md),
-        ) {
+        val list = samples
+        val overview: @Composable ColumnScope.() -> Unit = {
             DistanceHero(ride)
             Facts(ride, samples)
-            val list = samples
             if (ride.summary.navigatedS > 0 || turns.isNotEmpty()) RouteSection(ride, list, turns)
+        }
+        val charts: @Composable ColumnScope.() -> Unit = {
             when {
                 list == null -> LoadingIndicator(Modifier.size(48.dp).align(Alignment.CenterHorizontally))
                 list.size < 2 -> Text(stringResource(R.string.detail_no_samples), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 else -> Charts(ride, list)
             }
+        }
+        if (isTwoPane()) TwoPane(Modifier.padding(padding), start = overview, end = charts)
+        else Column(
+            Modifier.padding(padding).verticalScroll(rememberScrollState()).padding(horizontal = Dimens.gutter).padding(bottom = Dimens.xxl),
+            verticalArrangement = Arrangement.spacedBy(Dimens.md),
+        ) {
+            overview()
+            charts()
         }
     }
 

@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.rememberScrollState
-import com.aiyu.ridelink.ui.nav.appBarColors
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import com.aiyu.ridelink.core.settings.Bike
@@ -45,7 +44,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MediumFlexibleTopAppBar
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -87,6 +85,11 @@ import java.time.YearMonth
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.lazy.LazyListScope
+import com.aiyu.ridelink.ui.nav.AdaptiveTopAppBar
+import com.aiyu.ridelink.ui.nav.PaneRow
+import com.aiyu.ridelink.ui.nav.isTwoPane
 
 private val Period.label
     get() = when (this) {
@@ -126,8 +129,7 @@ fun AnalyticsScreen(onOpenRide: (Long) -> Unit, onOpenHistory: () -> Unit, vm: A
 
     Scaffold(
         topBar = {
-            MediumFlexibleTopAppBar(
-                colors = appBarColors(),
+            AdaptiveTopAppBar(
                 title = { Text(stringResource(R.string.tab_analytics)) },
                 // Stats are per scooter; name the one shown.
                 subtitle = { bikes.firstOrNull { it.address == bike }?.let { Text(it.name ?: it.address) } },
@@ -148,22 +150,21 @@ fun AnalyticsScreen(onOpenRide: (Long) -> Unit, onOpenHistory: () -> Unit, vm: A
             )
         },
     ) { padding ->
-        LazyColumn(
-            Modifier.padding(padding).fillMaxWidth().wrapContentWidth(Alignment.CenterHorizontally).widthIn(max = Dimens.contentMaxWidth).fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(Dimens.md),
-        ) {
+        // Nothing ridden yet today: skip the empty charts and records, the list below says so.
+        val hasCharts = state.hasAnyRide && !(today && s.rides == 0)
+        val summary: LazyListScope.() -> Unit = {
             if (bikes.size > 1) item { BikePicker(bikes, bike, vm::pickBike) }
             item { PeriodPicker(state.period, vm::setPeriod) }
             if (recording) item { RecordingRow() }
             live?.let { l -> item { LiveRide(l) } }
             if (!state.hasAnyRide) {
                 item { EmptyState(vm::addSampleRides) }
-                return@LazyColumn
+            } else {
+                item { Hero(s, state.period, telemetry.odometerKm, live?.distanceKm?.takeIf { today && it > 0 }) }
+                item { StatTiles(s) }
             }
-            item { Hero(s, state.period, telemetry.odometerKm, live?.distanceKm?.takeIf { today && it > 0 }) }
-            item { StatTiles(s) }
-            // Nothing ridden yet today: skip the empty charts and records, the list below says so.
-            if (!(today && s.rides == 0)) {
+        }
+        val charts: LazyListScope.() -> Unit = {
             item {
                 // One day has one bar per day; Today splits it by hour instead.
                 if (today) ChartCard(stringResource(R.string.chart_distance_hours)) {
@@ -231,8 +232,8 @@ fun AnalyticsScreen(onOpenRide: (Long) -> Unit, onOpenHistory: () -> Unit, vm: A
                     )
                 }
             }
-            item { Records(s, onOpenRide) }
-            }
+        }
+        val rideList: LazyListScope.() -> Unit = {
             item {
                 Text(
                     stringResource(if (today) R.string.todays_rides else R.string.recent_rides),
@@ -253,8 +254,38 @@ fun AnalyticsScreen(onOpenRide: (Long) -> Unit, onOpenHistory: () -> Unit, vm: A
                     Text(stringResource(R.string.see_all_rides))
                 }
             }
+        }
+        val paneEnd: LazyListScope.() -> Unit = {
             item { Spacer(Modifier.height(Dimens.xl)) }
             item { BottomBarSpacer() }
+        }
+        if (isTwoPane() && hasCharts) {
+            // Numbers and rides on the start side, every chart beside them.
+            PaneRow(Modifier.padding(padding)) {
+                LazyColumn(Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(Dimens.md)) {
+                    summary()
+                    item { Records(s, onOpenRide) }
+                    rideList()
+                    paneEnd()
+                }
+                LazyColumn(Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(Dimens.md)) {
+                    charts()
+                    paneEnd()
+                }
+            }
+        } else LazyColumn(
+            Modifier.padding(padding).fillMaxWidth().wrapContentWidth(Alignment.CenterHorizontally).widthIn(max = Dimens.contentMaxWidth).fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(Dimens.md),
+        ) {
+            summary()
+            if (state.hasAnyRide) {
+                if (hasCharts) {
+                    charts()
+                    item { Records(s, onOpenRide) }
+                }
+                rideList()
+                paneEnd()
+            }
         }
     }
 }

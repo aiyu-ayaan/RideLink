@@ -51,7 +51,6 @@ import androidx.compose.material.icons.rounded.SignalCellularAlt
 import androidx.compose.material.icons.rounded.Straight
 import androidx.compose.material.icons.rounded.TwoWheeler
 import androidx.compose.material.icons.rounded.UTurnLeft
-import com.aiyu.ridelink.ui.nav.appBarColors
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -61,7 +60,6 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MediumFlexibleTopAppBar
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
@@ -120,6 +118,10 @@ import com.aiyu.ridelink.ui.hasListener
 import com.aiyu.ridelink.ui.hasPhoneState
 import com.aiyu.ridelink.ui.phonePermissions
 import com.aiyu.ridelink.ui.theme.Dimens
+import androidx.compose.foundation.layout.ColumnScope
+import com.aiyu.ridelink.ui.nav.AdaptiveTopAppBar
+import com.aiyu.ridelink.ui.nav.TwoPane
+import com.aiyu.ridelink.ui.nav.isTwoPane
 
 @Composable
 fun RideScreen(vm: MainViewModel, onConnect: () -> Unit, onDisconnect: () -> Unit, onOpenCare: () -> Unit) {
@@ -162,18 +164,7 @@ fun RideScreen(vm: MainViewModel, onConnect: () -> Unit, onDisconnect: () -> Uni
     val paired = settings.deviceAddress != null
     val rideOn = link !is LinkState.Idle
 
-    Scaffold(topBar = { MediumFlexibleTopAppBar(colors = appBarColors(), title = { Text(stringResource(R.string.app_name)) }) }) { padding ->
-        Column(
-            Modifier
-                .padding(padding)
-                .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
-                .wrapContentWidth(Alignment.CenterHorizontally)
-                .padding(horizontal = Dimens.gutter)
-                .widthIn(max = Dimens.contentMaxWidth)
-                .fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(Dimens.md),
-        ) {
+    val permissionCards: @Composable ColumnScope.() -> Unit = {
             if (!bluetoothOk) {
                 PermissionCard(Icons.Rounded.Bluetooth, R.string.perm_bluetooth_title, R.string.perm_bluetooth_body, R.string.perm_grant) {
                     askBluetooth.launch(bluetoothPermissions)
@@ -195,12 +186,15 @@ fun RideScreen(vm: MainViewModel, onConnect: () -> Unit, onDisconnect: () -> Uni
                     context.askBatteryExemption()
                 }
             }
-
+    }
+    val status: @Composable ColumnScope.() -> Unit = {
             HeroCard(link, paired, settings.deviceName, demo)
             if (paired) BikeChips(bikes, settings.deviceAddress, bluetoothOk, onSelect = vm::select, onAdd = { pairing = true })
             AnimatedVisibility(nav != null || speed != null, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
                 RideDashboard(nav, speed)
             }
+    }
+    val details: @Composable ColumnScope.() -> Unit = {
             AnimatedVisibility(settings.showRideData && telemetry.hasRideData, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
                 RideDataCard(telemetry, family, careUi.averageKmpl)
             }
@@ -225,10 +219,13 @@ fun RideScreen(vm: MainViewModel, onConnect: () -> Unit, onDisconnect: () -> Uni
             AnimatedVisibility(music != null && settings.showMusic, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
                 music?.let { MusicCard(it) }
             }
+    }
+    val callCard: @Composable ColumnScope.() -> Unit = {
             AnimatedVisibility(caller != null, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
                 InfoCard(Icons.Rounded.Call, stringResource(R.string.call_now), caller.orEmpty())
             }
-
+    }
+    val action: @Composable ColumnScope.() -> Unit = {
             if (!paired) {
                 Button(onClick = { pairing = true }, enabled = bluetoothOk, modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)) {
                     Text(stringResource(R.string.pair_scooter))
@@ -243,7 +240,34 @@ fun RideScreen(vm: MainViewModel, onConnect: () -> Unit, onDisconnect: () -> Uni
                     Text(stringResource(R.string.connect))
                 }
             }
+    }
+    // Before pairing, with every grant given, there is nothing to put beside the status.
+    val twoPane = isTwoPane() && (paired || !bluetoothOk || !listenerOk || !phoneOk || !batteryOk)
 
+    Scaffold(topBar = { AdaptiveTopAppBar(title = { Text(stringResource(R.string.app_name)) }) }) { padding ->
+        if (twoPane) {
+            // What a rider glances at on the start side; everything else beside it.
+            TwoPane(
+                Modifier.padding(padding),
+                start = { status(); callCard(); action() },
+                end = { permissionCards(); details() },
+            )
+        } else Column(
+            Modifier
+                .padding(padding)
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .wrapContentWidth(Alignment.CenterHorizontally)
+                .padding(horizontal = Dimens.gutter)
+                .widthIn(max = Dimens.contentMaxWidth)
+                .fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(Dimens.md),
+        ) {
+            permissionCards()
+            status()
+            details()
+            callCard()
+            action()
             Spacer(Modifier.height(Dimens.xl))
             BottomBarSpacer()
         }
