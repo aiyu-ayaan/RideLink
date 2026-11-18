@@ -41,3 +41,12 @@ Material 3 Expressive, Compose only. Matches Findex and domus.
 - Hero, dashboard and call cards are polite live regions (status changes are announced).
 - Decorative icons have `contentDescription = null`; console status icons are labelled.
 - Rows with switches/radios are whole-row `toggleable`/`selectable` with roles.
+
+## Landscape
+
+A landscape window at least 600dp wide uses two panes (`ui/nav/AdaptivePane.kt`).
+
+- `TwoPane` for scrolling columns, `PaneRow` for lazy lists whose items bring their own gutters.
+- `AdaptiveTopAppBar` with `adaptiveScrollBehavior()`: compact and pinned in two panes. A collapsing behavior with no flexible bar swallows every scroll.
+- `FloatingNavRail` replaces the bottom pill, so it never covers a pane.
+- Ride: status, call and connect on the start side, details on the end side. Analytics: numbers and rides, then charts. Settings: section list, then the open section.

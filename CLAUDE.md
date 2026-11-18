@@ -74,6 +74,9 @@ Modules:
 - Floating pill bar (Rewire/Domus design, `ui/nav/FloatingNavBar.kt`) with three tabs: Ride, Analytics, Settings.
   It hides on scroll; tab screens end with `BottomBarSpacer()`. No drawer. Pages (Settings sections, ride detail,
   Console, Updates, About) open on the stack in `RideLinkRoot` with predictive back.
+- Landscape (`ui/nav/AdaptivePane.kt`, `isTwoPane()`: landscape window at least 600dp wide): every screen shows two panes,
+  the compact app bar (`AdaptiveTopAppBar`, `adaptiveScrollBehavior`) and an upright pill at the start edge (`FloatingNavRail`).
+  Settings becomes list-detail. Portrait layouts stay single column.
 - Analytics: period picker, one hero number (distance + change), stat tiles, Canvas charts in `ui/analytics/Charts.kt`
   (single series, primary marks, tertiary selection, tap/drag readout, no dual axis), records, last 5 rides + "See all rides",
   ride detail page (`RideDetailScreen`: star, rename, distance source, all stats, charts, speed bands, Maps turn timeline).
