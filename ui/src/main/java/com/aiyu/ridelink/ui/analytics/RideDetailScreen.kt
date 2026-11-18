@@ -186,7 +186,10 @@ private fun Facts(ride: RideRecord, samples: List<RideSample>?) {
     val km = stringResource(R.string.unit_km)
     val rpm = samples?.mapNotNull { it.rpm?.takeIf { r -> r > 0 } }.orEmpty()
     val range = samples?.mapNotNull { it.rangeKm }.orEmpty()
-    val trip = samples?.mapNotNull { it.tripTenths }.orEmpty()
+    val fuelUsed = samples?.let(RideMath::fuelDrop) ?: s.fuelUsed
+    // The display's trip meter when it counted this ride, else the odometer, which measures the same distance.
+    val tripTenths = samples?.let(RideMath::tripCoveredTenths)
+        ?: s.odometerStartTenths?.let { from -> s.odometerEndTenths?.minus(from) }?.takeIf { it > 0 }
     val tiles = buildList {
         add(Triple(stringResource(R.string.detail_duration), Fmt.duration(s.durationS.toLong()), ""))
         add(Triple(stringResource(R.string.detail_moving), Fmt.duration(s.movingS.toLong()), ""))
@@ -194,13 +197,13 @@ private fun Facts(ride: RideRecord, samples: List<RideSample>?) {
         add(Triple(stringResource(R.string.stat_top_speed), s.maxSpeedKmh.toString(), kmh))
         add(Triple(stringResource(R.string.detail_stopped), Fmt.duration((s.durationS - s.movingS).toLong().coerceAtLeast(0)), ""))
         s.avgEconomy?.let { add(Triple(stringResource(R.string.stat_mileage), Fmt.one(it), stringResource(R.string.unit_kmpl))) }
-        s.fuelUsed?.let { add(Triple(stringResource(R.string.detail_fuel_used), it.toString(), stringResource(R.string.detail_fuel_unit))) }
+        fuelUsed?.let { add(Triple(stringResource(R.string.detail_fuel_used), it.toString(), stringResource(R.string.detail_fuel_unit))) }
         if (rpm.isNotEmpty()) {
             add(Triple(stringResource(R.string.detail_avg_rpm), Fmt.whole(rpm.average()), ""))
             add(Triple(stringResource(R.string.detail_max_rpm), Fmt.whole(rpm.max().toDouble()), ""))
         }
         if (range.size >= 2) add(Triple(stringResource(R.string.detail_range), "${range.first()} → ${range.last()}", km))
-        if (trip.size >= 2) add(Triple(stringResource(R.string.detail_trip), "${Fmt.one(trip.first() / 10.0)} → ${Fmt.one(trip.last() / 10.0)}", km))
+        tripTenths?.let { add(Triple(stringResource(R.string.detail_trip), Fmt.one(it / 10.0), km)) }
     }
     tiles.chunked(2).forEach { row ->
         Row(horizontalArrangement = Arrangement.spacedBy(Dimens.sm)) {

@@ -172,4 +172,29 @@ class RideMathTest {
         assertTrue(info, month.totalKm > 100)
         assertTrue(info, month.topSpeedKmh in 60..90)
     }
+
+    private fun fuelRide(vararg bars: Int?) = bars.mapIndexed { i, b -> RideSample(t = i * 60_000L, fuel = b) }
+
+    @Test fun fuelDropIgnoresTheGaugeWakingUpAtZero() {
+        assertEquals(1, RideMath.fuelDrop(fuelRide(0, 5, 5, 5, 4, 4)))
+    }
+
+    @Test fun fuelDropIgnoresOneBarWobble() {
+        val wobble = listOf(5, 5, 4, 5, 5, 5).mapIndexed { i, b -> RideSample(t = i * 5_000L, fuel = b) }
+        assertEquals(0, RideMath.fuelDrop(wobble))
+    }
+
+    @Test fun fuelDropIsNullWithoutALevel() {
+        assertEquals(null, RideMath.fuelDrop(fuelRide(null, 0, null)))
+    }
+
+    @Test fun tripCountsStepsAndSkipsAResetOrTripSwitch() {
+        val trip = listOf(100, 101, 103, 0, 2, 900, 901).mapIndexed { i, v -> RideSample(t = i * 30_000L, tripTenths = v) }
+        assertEquals(6, RideMath.tripCoveredTenths(trip))
+    }
+
+    @Test fun tripIsNullWhenTheMeterNeverMoves() {
+        val trip = List(4) { RideSample(t = it * 5_000L, tripTenths = 0) }
+        assertEquals(null, RideMath.tripCoveredTenths(trip))
+    }
 }

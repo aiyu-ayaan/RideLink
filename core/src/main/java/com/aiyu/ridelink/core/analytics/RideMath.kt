@@ -46,7 +46,7 @@ data class RideSummary(
     val avgMovingSpeedKmh: Double,
     /** km/l as the display reports it; null when the display sent none. */
     val avgEconomy: Double?,
-    /** Drop in the display's raw fuel level over the ride; null when unknown. */
+    /** Fuel gauge bars used over the ride, see [RideMath.fuelDrop]; null when the display sent no level. */
     val fuelUsed: Int?,
     val odometerStartTenths: Int?,
     val odometerEndTenths: Int?,
@@ -132,6 +132,7 @@ object RideMath {
     const val MOVING_KMH = 3
     /** A gap longer than this between samples is not counted (app killed, display asleep). */
     const val MAX_GAP_MS = 30_000L
+    private const val FUEL_SETTLE_MS = 60_000L
     /** Lower bounds of the speed bands, km/h: 0-19, 20-39, 40-59, 60-79, 80+. */
     val SPEED_BANDS = listOf(0, 20, 40, 60, 80)
 
@@ -190,8 +191,6 @@ object RideMath {
         val odoEnd = s.lastOrNull { it.odometerTenths != null }?.odometerTenths
         val eco = s.mapNotNull { it.instantEconomy?.takeIf { e -> e > 0 } }.takeIf { it.isNotEmpty() }?.average()
             ?: s.lastOrNull { (it.averageEconomy ?: 0) > 0 }?.averageEconomy?.toDouble()
-        val fuelStart = s.firstNotNullOfOrNull { it.fuel }
-        val fuelEnd = s.lastOrNull { it.fuel != null }?.fuel
         return RideSummary(
             start = s.first().t,
             end = s.last().t,
@@ -201,7 +200,7 @@ object RideMath {
             maxSpeedKmh = s.maxOf { it.speedKmh ?: 0 },
             avgMovingSpeedKmh = if (movingS > 0) distanceM / 1000.0 / (movingS / 3600.0) else 0.0,
             avgEconomy = eco,
-            fuelUsed = if (fuelStart != null && fuelEnd != null && fuelStart >= fuelEnd) fuelStart - fuelEnd else null,
+            fuelUsed = fuelDrop(s),
             odometerStartTenths = odoStart,
             odometerEndTenths = odoEnd,
             speedBandS = bands.map { it.toInt() },
@@ -211,6 +210,32 @@ object RideMath {
             speedM = restSpeed,
             navigatedS = navigatedS.toInt(),
         )
+    }
+
+    /**
+     * Bars used over the ride: the usual level of the first minute minus that of the last, so a slosh does not count.
+     * Zero readings are left out (the gauge reports 0 while it wakes up). Null when the display sent no level.
+     */
+    fun fuelDrop(samples: List<RideSample>): Int? {
+        val s = samples.filter { (it.fuel ?: 0) > 0 }.sortedBy { it.t }
+        if (s.isEmpty()) return null
+        fun usual(part: List<RideSample>) = part.groupingBy { it.fuel!! }.eachCount().maxBy { it.value }.key
+        val start = usual(s.filter { it.t <= s.first().t + FUEL_SETTLE_MS })
+        val end = usual(s.filter { it.t >= s.last().t - FUEL_SETTLE_MS })
+        return (start - end).coerceAtLeast(0)
+    }
+
+    /**
+     * Distance on the display's trip meter (`5A 10` [14..16]) during the ride, in 0.1 km steps. A step too large for the
+     * time between two samples is a reset or the rider switching trips, and is skipped. Null when the meter never moved.
+     */
+    fun tripCoveredTenths(samples: List<RideSample>): Int? {
+        val s = samples.filter { it.tripTenths != null }.sortedBy { it.t }
+        val covered = s.zipWithNext { a, b ->
+            val step = b.tripTenths!! - a.tripTenths!!
+            step.takeIf { it > 0 && it * 100 <= 60 * (b.t - a.t) / 1000 + 100 } ?: 0
+        }.sum()
+        return covered.takeIf { it > 0 }
     }
 
     /** Route progress between two samples, or null when this interval is not a plausible Maps interval. */

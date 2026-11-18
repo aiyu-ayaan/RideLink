@@ -278,8 +278,14 @@ only when they change, plus once on every connect.
 Odometer and trip are in **0.1 km** steps (confirmed: raw 1718 shown as 171.8 km on the rider's Ntorq XT).
 Fuel and the other fields are raw until confirmed. Trip [14..16] read 0/empty on the rider's scooter; needs a capture.
 
+Trip A / Trip B: no supported Ntorq sends them. `NtorqSpeedOMeter1`, `JupiterSpeedOMeter1` and `N251ClusterDataReceiver` read one
+trip value, `5A 10` [14..16] (`TRIP_F_METER`). Separate A and B distances exist only in `N360ClusterDataReceiver.readFrame19`
+(vehicle type 29) and `U546TripData`, neither of which is a RideLink model. RideLink's ride detail counts the steps of [14..16]
+during the ride and falls back to the odometer when the display leaves those bytes at 0.
+
 Fuel bars: the SmartXonnect LCD (legacy `N251ClusterDataReceiver`) keeps them in the **low nibble** of `5A 10` [6]
-(`String.format("0x%02X ", b[6]).substring(3, 4)`); `JupiterSpeedOMeter1` / `NtorqSpeedOMeter1` store the whole byte.
+(`String.format("0x%02X ", b[6]).substring(3, 4)`), and `NtorqSpeedOMeter1.getFuelLevel` reads the same digit;
+`JupiterSpeedOMeter1` stores the whole byte. On the U445B / U566 themes the high nibble is the backlight.
 The rider's Race XP reports `05` (5 bars). Stock low-fuel rule (`N251ClusterDataReceiver`, `N360ClusterDataReceiver`):
 bars <= 1 broadcasts `ACTION_LOW_FUEL_ALERT` (petrol pump dialog), bars > 1 clears it. RideLink: `DisplayTelemetry.fuelBars`,
 `LowFuelWatch` (range from 5A 19 when present, else that bar rule).

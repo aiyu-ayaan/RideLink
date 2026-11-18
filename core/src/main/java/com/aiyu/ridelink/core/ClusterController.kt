@@ -896,7 +896,7 @@ class ClusterController @Inject constructor(
             DisplayTemplate.Token.ODO to t.odometerKm?.toInt()?.toString(),
             DisplayTemplate.Token.TRIP to t.tripKm?.toInt()?.toString(),
             DisplayTemplate.Token.RANGE to t.rangeKm?.toString(),
-            DisplayTemplate.Token.FUEL to t.fuelLevel?.toString(),
+            DisplayTemplate.Token.FUEL to t.fuelBars(model(s).family)?.toString(),
             DisplayTemplate.Token.MILEAGE to t.averageEconomy?.toString(),
             DisplayTemplate.Token.WHATSAPP to _social.value.whatsappMessages.takeIf { it > 0 }?.toString(),
             DisplayTemplate.Token.MISSED to (if (s.missedCalls) missedCalls.count() else 0).takeIf { it > 0 }?.toString(),
