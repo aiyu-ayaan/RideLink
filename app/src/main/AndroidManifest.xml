@@ -3,6 +3,8 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-feature android:name="android.hardware.bluetooth_le" android:required="true" />
+    <!-- SEND_SMS and the call permissions would otherwise require a cellular radio. -->
+    <uses-feature android:name="android.hardware.telephony" android:required="false" />
 
     <!-- Android 12+: scan without location, connect to the cluster. -->
     <uses-permission android:name="android.permission.BLUETOOTH_SCAN" android:usesPermissionFlags="neverForLocation"
