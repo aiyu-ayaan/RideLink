@@ -2,32 +2,62 @@
 
 ## [1.0.0](https://github.com/aiyu-ayaan/RideLink/compare/v0.2.1-alpha.13...v1.0.0) (2026-11-18)
 
-### ⚠ Breaking changes
+### 🎉 RideLink 1.0: the first stable release
 
-* First stable release
+Two weeks, 13 alpha builds and more than 150 commits later, RideLink is stable! Your scooter's display gets turn-by-turn directions, calls and live ride data, with no account and no server.
 
-### Other changes
+Thank you to everyone who rode with the alphas. A special thank you to **Amish** (@BlackFeather-git), whose road tests and detailed reports in #4, #5, #11 and #12 made this release better.
 
-* Docs(Design) : Document the landscape two-pane layout
-* Feat(Layout) : Show Care, Console, About and Updates in two panes
-* Feat(Settings) : Open sections beside the list in landscape
-* Feat(Layout) : Show Ride and Analytics in two panes in landscape
-* Feat(Layout) : Add two-pane layout helpers and a landscape nav rail
-* Fix(Layout) : Center Ride and Analytics content in landscape
-* Fix(Manifest) : Mark telephony as optional
-* Fix(Boot) : Always finish the boot receiver when settings fail to load
-* Fix(BLE) : Check scan permission and compare the right write status
-* Fix(About) : Read the version code safely on Android 8
-* Fix(Calls) : Stop caller frames colliding with turn frames on the display
-* Feat(QuickSettings) : Show panel stats during a demo ride
-* Fix(Notifications) : Show unread chats already in the shade on the display
-* Feat(QuickSettings) : Show live scooter stats in the panel while connected
-* I18n(Strings) : Translate the panel and chart text into all 22 languages
-* Feat(Analytics) : Rebuild ride charts with scrubbing and tap-through
-* Feat(QuickSettings) : Add connection tile with a floating control panel
-* Fix(BLE) : Reconnect reliably after the scooter is switched off
-* Fix(Analytics) : Show fuel drop and a working trip meter on ride detail
-* Fix(Calls) : Keep dialled calls off the display
+### 🏍️ What RideLink does
+
+* **Google Maps on your display:** turn arrows, distance and street names while you ride
+* **Calls:** see who is ringing, accept or reject from the scooter's switch, and auto-reply to missed calls
+* **Live phone status:** clock, battery, signal, music and WhatsApp, Facebook and Instagram counts
+* **Weather on TFT displays:** temperature, air quality and your current place
+* **Connects by itself:** pair once and RideLink finds the scooter when the ignition comes on
+* **Ride analytics:** rides record automatically, with charts, records, search and filters
+* **Fuel and service:** real mileage, service reminders, paper expiry dates and low fuel alerts
+* **Safety and convenience:** ride check-in SMS and the spot where you parked
+* **Your whole garage:** save several scooters and switch between them
+* **Your language:** English and 22 Indian languages
+* **Always current:** RideLink updates itself from GitHub releases
+
+### ✨ New in 1.0
+
+* **Landscape layout:** every screen now uses two panes on a handlebar mount, with a side rail for navigation
+* **Settings side by side:** the section list stays open next to the section you are editing
+* **Quick settings tile:** connect, switch scooters and see live stats from the notification panel
+* **Rebuilt ride charts:** drag across a chart to read any moment, or tap through to the ride
+
+### 🐛 Fixed in 1.0
+
+* Caller name and number no longer collide with Maps turn frames on the display (#12)
+* A phone number can no longer replace a contact name that has just arrived (#12)
+* Calls you dial yourself stay off the display
+* The scooter reconnects reliably after it is switched off
+* Unread chats already in the notification shade now show on the display
+* Ride detail shows the fuel drop and a working trip meter
+* About no longer crashes on Android 8.0 and 8.1 (#11)
+* The scooter wake-up scan checks its Bluetooth permission on Android 12 and newer (#11)
+* A settings failure during boot can no longer leave the boot receiver hanging (#11)
+* RideLink can now be installed on devices without a cellular radio (#11)
+
+### 📌 Known limits
+
+* The #12 call fixes come from reading the code and are not yet confirmed on a scooter. If the caller still glitches, please reopen #12 with your Console frame log
+* Some ride data and vehicle health values are shown raw until they are confirmed on each scooter
+* Turn detection from Maps text works in English only
+* Air quality uses the US and European scales, not the Indian NAQI scale
+* Missed-call pop-ups cover phone calls only, not WhatsApp calls
+* Turning Bluetooth off and on stops the wake-up scan until the next ride session starts
+
+### 🛵 Works with
+
+Ntorq 125, Ntorq XT, Race XP and the 2025+ Ntorq with a SmartXonnect Bluetooth display, on Android 8.0 or newer.
+
+RideLink is an independent personal project and is not affiliated with or endorsed by TVS Motor Company.
+
+Ride safe! 🏁
 
 ## [0.2.1-alpha.13](https://github.com/aiyu-ayaan/RideLink/compare/v0.2.1-alpha.12...v0.2.1-alpha.13) (2026-11-13)
 
