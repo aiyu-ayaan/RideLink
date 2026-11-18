@@ -49,8 +49,10 @@ class MainViewModel @Inject constructor(
     val music = controller.music
     val telemetry = controller.telemetry
 
-    /** Set by the Disconnect button; stops auto-connect until the app process starts again. */
-    var userStopped = false
+    /** Set by any Disconnect control; stops auto-connect until the rider connects again. */
+    var userStopped: Boolean
+        get() = controller.userStopped.value
+        set(value) { controller.userStopped.value = value }
 
     fun startScan() = link.startScan()
     fun stopScan() = link.stopScan()

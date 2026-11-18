@@ -13,8 +13,10 @@ import android.content.Intent
 import android.os.Build
 import android.util.Log
 import androidx.core.app.NotificationCompat
-import com.aiyu.ridelink.MainActivity
+import com.aiyu.ridelink.core.ClusterController
 import com.aiyu.ridelink.ui.R
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 /**
  * Wakes RideLink when the paired scooter starts advertising (ignition on), even after Android killed the app.
@@ -23,34 +25,26 @@ import com.aiyu.ridelink.ui.R
  * phones) at low-power duty cycle and only wakes the app on a match, so the idle cost is close to zero.
  * The display stops advertising once connected, so hits only come while RideLink is not linked.
  */
+@AndroidEntryPoint
 class NearbyReceiver : BroadcastReceiver() {
+    @Inject lateinit var controller: ClusterController
 
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action != ACTION_FOUND) return
         if (intent.getIntExtra(android.bluetooth.le.BluetoothLeScanner.EXTRA_ERROR_CODE, 0) != 0) return
         if (ClusterService.running) return
         Log.i(TAG, "scooter nearby, starting ride session")
+        controller.note("Scooter nearby, starting the ride session")
         try {
             ClusterService.start(context)
         } catch (e: Exception) {
             // Android 12+ blocks background service starts unless RideLink is out of battery optimisation.
-            if (Build.VERSION.SDK_INT >= 31 && e is ForegroundServiceStartNotAllowedException) promptToConnect(context)
+            if (Build.VERSION.SDK_INT >= 31 && e is ForegroundServiceStartNotAllowedException) {
+                controller.note("Scooter nearby, but Android blocked the background start (battery optimisation is on)")
+                promptToConnect(context)
+            }
             else Log.w(TAG, "start failed", e)
         }
-    }
-
-    private fun promptToConnect(context: Context) {
-        val nm = context.getSystemService(NotificationManager::class.java) ?: return
-        nm.createNotificationChannel(NotificationChannel(CHANNEL, context.getString(R.string.channel_nearby), NotificationManager.IMPORTANCE_DEFAULT))
-        val open = PendingIntent.getActivity(context, 0, Intent(context, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE)
-        val n = NotificationCompat.Builder(context, CHANNEL)
-            .setSmallIcon(R.drawable.ic_ridelink)
-            .setContentTitle(context.getString(R.string.notify_nearby_title))
-            .setContentText(context.getString(R.string.notify_nearby_body))
-            .setContentIntent(open)
-            .setAutoCancel(true)
-            .build()
-        runCatching { nm.notify(NOTIFICATION_ID, n) }
     }
 
     companion object {
@@ -58,6 +52,25 @@ class NearbyReceiver : BroadcastReceiver() {
         private const val ACTION_FOUND = "com.aiyu.ridelink.SCOOTER_NEARBY"
         private const val CHANNEL = "nearby"
         private const val NOTIFICATION_ID = 40
+
+        /** Tapping connects straight away: a notification tap is allowed to start the foreground service. */
+        fun promptToConnect(context: Context) {
+            val nm = context.getSystemService(NotificationManager::class.java) ?: return
+            nm.createNotificationChannel(NotificationChannel(CHANNEL, context.getString(R.string.channel_nearby), NotificationManager.IMPORTANCE_DEFAULT))
+            val connect = PendingIntent.getForegroundService(context, 0, Intent(context, ClusterService::class.java), PendingIntent.FLAG_IMMUTABLE)
+            val n = NotificationCompat.Builder(context, CHANNEL)
+                .setSmallIcon(R.drawable.ic_ridelink)
+                .setContentTitle(context.getString(R.string.notify_nearby_title))
+                .setContentText(context.getString(R.string.notify_nearby_body))
+                .setContentIntent(connect)
+                .setAutoCancel(true)
+                .build()
+            runCatching { nm.notify(NOTIFICATION_ID, n) }
+        }
+
+        fun clearPrompt(context: Context) {
+            context.getSystemService(NotificationManager::class.java)?.cancel(NOTIFICATION_ID)
+        }
 
         private fun pending(context: Context) = PendingIntent.getBroadcast(
             context, 0,

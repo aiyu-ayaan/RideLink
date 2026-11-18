@@ -28,6 +28,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -62,23 +63,32 @@ class ClusterService : LifecycleService() {
         super.onStartCommand(intent, flags, startId)
         if (intent?.action == ACTION_STOP) {
             // The rider ended the session: stay off until they press Connect, even if the scooter is nearby.
+            controller.userStopped.value = true
             watchJob?.cancel()
             NearbyReceiver.watch(this, null)
             shutDown()
             return START_NOT_STICKY
         }
-        startForegroundTyped(notification(getString(R.string.status_connecting)))
+        if (!startForegroundTyped(notification(getString(R.string.status_connecting)))) {
+            // Android refused a background start (a sticky restart): ask the rider instead of crashing.
+            NearbyReceiver.promptToConnect(this)
+            stopSelf()
+            return START_NOT_STICKY
+        }
+        NearbyReceiver.clearPrompt(this)
+        controller.userStopped.value = false
         running = true
         controller.start()
         // Armed while the session runs, so the scooter wakes RideLink again if Android kills it.
         if (watchJob == null) watchJob = lifecycleScope.launch {
             settings.settings.map { it.deviceAddress }.distinctUntilChanged().collect { NearbyReceiver.watch(this@ClusterService, it) }
         }
-        // Scooter off or out of range: end the session (and its "Waiting for scooter" notification);
-        // the nearby scan above starts it again at the next ignition on.
+        // Scooter off or out of range: end the session (and its "Waiting for scooter" notification); the nearby scan
+        // above starts it again at the next ignition on. Android 12+ only allows that restart for an app out of battery
+        // optimisation, so any other app keeps waiting here. An advert means the scooter is on: keep trying.
         if (idleJob == null) idleJob = lifecycleScope.launch {
-            controller.linkState.collectLatest { state ->
-                if (state is LinkState.Ready) return@collectLatest
+            combine(controller.linkState, controller.scooterSeenAt) { state, _ -> state }.collectLatest { state ->
+                if (state is LinkState.Ready || !mayRestartAlone()) return@collectLatest
                 delay(IDLE_STOP_MS)
                 shutDown()
             }
@@ -106,13 +116,16 @@ class ClusterService : LifecycleService() {
      * while the screen is off. Android refuses that type when the service is started from the background (boot):
      * then it runs as `connectedDevice` only, and the next start from the app adds location.
      */
-    private fun startForegroundTyped(n: Notification) {
+    private fun startForegroundTyped(n: Notification): Boolean {
         val device = ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE
         val withLocation = Build.VERSION.SDK_INT >= 29 && hasLocation() && runCatching {
             ServiceCompat.startForeground(this, NOTIFICATION_ID, n, device or ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION)
         }.isSuccess
-        if (!withLocation) ServiceCompat.startForeground(this, NOTIFICATION_ID, n, device)
+        return withLocation || runCatching { ServiceCompat.startForeground(this, NOTIFICATION_ID, n, device) }.isSuccess
     }
+
+    private fun mayRestartAlone() = Build.VERSION.SDK_INT < 31 ||
+        getSystemService(PowerManager::class.java).isIgnoringBatteryOptimizations(packageName)
 
     private fun shutDown() {
         calls?.stop()

@@ -90,6 +90,14 @@ class ClusterController @Inject constructor(
     val log: StateFlow<List<FrameLog>> = _log.asStateFlow()
 
     val linkState = link.state
+    val scooterSeenAt = link.seenAt
+
+    /** The rider pressed Disconnect (app, notification or quick settings): stay off until they connect again. */
+    val userStopped = MutableStateFlow(false)
+
+    init {
+        scope.launch { link.events.collect(::note) }
+    }
 
     /** Model inferred from display frames while in Auto mode; null until something proves it. */
     private val _detected = MutableStateFlow<ClusterModel?>(null)
