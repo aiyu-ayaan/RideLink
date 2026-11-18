@@ -169,7 +169,8 @@ class ClusterController @Inject constructor(
             // Capped so a missed end event cannot keep the display on a call forever.
             withTimeoutOrNull(ACTIVE_CALL_MAX_MS) {
                 while (isActive) {
-                    send(frame)
+                    // Under navLock so a caller frame cannot land between the two frames of a turn (issue #12).
+                    navLock.withLock { send(frame) }
                     delay(ClusterProtocol.CALLER_REPEAT_MS)
                 }
             }
@@ -500,7 +501,7 @@ class ClusterController @Inject constructor(
                 if (link.state.value !is LinkState.Ready || _arrowSweep.value || navHeld()) continue
                 if (System.currentTimeMillis() - navSentAt < every) continue
                 val seq = navSeq.get()
-                navLock.withLock { if (seq == navSeq.get() && _nav.value === step) sendNav(settings.current(), step) }
+                navLock.withLock { if (seq == navSeq.get() && _nav.value === step && !navHeld()) sendNav(settings.current(), step) }
             }
         }
     }
@@ -695,6 +696,14 @@ class ClusterController @Inject constructor(
 
     @Volatile private var ringStartedAt = 0L
 
+    /**
+     * Phone-state backup for [onIncomingCall]: only shows [fallback] when no call has started yet. Checks the job too,
+     * because [caller] is set a moment later and the number must not replace a name that just arrived (issue #12).
+     */
+    fun onPhoneRinging(fallback: String) {
+        if (callJob?.isActive != true && _caller.value == null) onIncomingCall(fallback)
+    }
+
     fun onIncomingCall(nameOrNumber: String) {
         ringingCaller = nameOrNumber
         if (callJob?.isActive == true && _caller.value == nameOrNumber) return
@@ -709,7 +718,8 @@ class ClusterController @Inject constructor(
             // Stock app repeats the caller frame every 500 ms while ringing; cap it at 60 s.
             withTimeoutOrNull(60_000) {
                 while (isActive) {
-                    send(frame)
+                    // Under navLock so a caller frame cannot land between the two frames of a turn (issue #12).
+                    navLock.withLock { send(frame) }
                     delay(ClusterProtocol.CALLER_REPEAT_MS)
                 }
             }

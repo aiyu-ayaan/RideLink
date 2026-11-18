@@ -32,9 +32,7 @@ class CallStateWatcher(private val context: Context, private val controller: Clu
                 TelephonyManager.CALL_STATE_RINGING -> {
                     ringing = true
                     // A name from the notification wins; only start the frames if nothing is showing yet.
-                    if (controller.caller.value == null) {
-                        controller.onIncomingCall(phoneNumber?.takeIf { it.isNotBlank() }?.removePrefix("+91") ?: context.getString(R.string.call_unknown))
-                    }
+                    controller.onPhoneRinging(phoneNumber?.takeIf { it.isNotBlank() }?.removePrefix("+91") ?: context.getString(R.string.call_unknown))
                 }
                 // Answered: keep the caller up for the whole call. The controller ignores a dialled call.
                 TelephonyManager.CALL_STATE_OFFHOOK -> {
