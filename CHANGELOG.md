@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.1.0](https://github.com/aiyu-ayaan/RideLink/compare/v1.0.0...v1.1.0) (2026-11-27)
+
+### Features
+
+* Add Google sign-in and Firestore cloud backup
+
+### Other changes
+
+* Fix(Backup) : Respect cloud deletion on every phone, restore scooters, fix release crash
+* Fix(Backup) : Offer restore on a fresh install and keep Analytics anonymous
+* Ui(Backup) : Add backup screen with progress, schedule and conflict choices
+* Core(Backup) : Add Firestore cloud backup with WorkManager and conflict choices
+* Build(Account) : Read the Google web client ID from local.properties
+* Feat(Account) : Add optional Google sign-in with a skippable welcome screen
+* Core(Nav) : Keep the pop-up turn rhythm at the resend period
+* Docs(Readme) : Add a direct APK download button
+* Ui(Pair) : Show how to put the display in pairing mode
+* Core(Nav) : Keep the route alive while a message pop-up shows
+* Core(Call) : Drop the caller from the display once a call is answered
+* Core(Nav) : Time turn resends from the last turn sent
+
 ## [1.0.0](https://github.com/aiyu-ayaan/RideLink/compare/v0.2.1-alpha.13...v1.0.0) (2026-11-18)
 
 ### 🎉 RideLink 1.0: the first stable release
