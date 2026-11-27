@@ -10,6 +10,10 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/aiyu-ayaan/RideLink/releases/latest/download/RideLink.apk"><img src="https://img.shields.io/badge/Download-APK-B3261E?style=for-the-badge&logo=android&logoColor=white" alt="Download the APK" height="40" /></a>
+</p>
+
+<p align="center">
   <a href="https://github.com/aiyu-ayaan/RideLink/actions/workflows/release.yml"><img src="https://img.shields.io/github/actions/workflow/status/aiyu-ayaan/RideLink/release.yml?branch=master&label=release&logo=githubactions&logoColor=white" alt="Release status" /></a>
   <a href="https://github.com/aiyu-ayaan/RideLink/releases"><img src="https://img.shields.io/github/v/release/aiyu-ayaan/RideLink?include_prereleases&label=version&logo=github" alt="Latest release" /></a>
   <a href="https://github.com/aiyu-ayaan/RideLink/commits/master"><img src="https://img.shields.io/github/last-commit/aiyu-ayaan/RideLink/master" alt="Last commit" /></a>
@@ -134,7 +138,8 @@ For deep dive into state ownership and lifecycle, see [`development/docs/ARCHITE
 
 ### Releases
 
-Download the latest signed release APK from the [Releases](https://github.com/aiyu-ayaan/RideLink/releases) page.
+**[Download RideLink.apk](https://github.com/aiyu-ayaan/RideLink/releases/latest/download/RideLink.apk)** (latest stable, signed), open it on your phone and allow the install.
+Older versions, Beta and Alpha builds are on the [Releases](https://github.com/aiyu-ayaan/RideLink/releases) page.
 
 RideLink features an in-app updater (**Settings → About → Updates**). Once installed, updates can be checked, downloaded, and installed directly with support for **Stable**, **Beta**, and **Alpha** channels.
 

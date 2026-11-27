@@ -123,7 +123,7 @@ Modules:
   gitignored `keystore.properties` locally (alias `ridelink` in `~/Keys/aiyu-soft-android-keys.jsk`).
 - `.github/workflows/release.yml` (ported from Rewire): a `!alpha` / `!beta` / `!fix` / `!feat` / `!major` /
   `!stable` / `!patch` marker at the start of a commit subject opens a release PR; merging it (a
-  `chore(release): vX` commit on master) builds the signed `RideLink-<version>.apk` and publishes the Release.
+  `chore(release): vX` commit on master) builds the signed `RideLink-<version>.apk` (plus a `RideLink.apk` copy for the README download button) and publishes the Release.
   The PR step needs "Allow GitHub Actions to create pull requests" in the repo settings; without it, bump
   `VERSION` + `CHANGELOG.md` with `scripts/release-version.mjs` / `release-notes.mjs` and push `chore(release): vX`.
 - The app updates itself from those releases (`core/update/AppUpdater`). Debug builds (`.debug`, "RideLink Dev",

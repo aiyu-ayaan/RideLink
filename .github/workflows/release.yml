@@ -367,6 +367,9 @@ jobs:
         run: |
           mkdir -p "$RUNNER_TEMP/android"
           cp app/build/outputs/apk/release/app-release.apk "$RUNNER_TEMP/android/RideLink-${VERSION}.apk"
+          # Fixed name for the README download button (releases/latest/download/RideLink.apk).
+          # The updater only takes RideLink-<version>.apk, so this copy never confuses it.
+          cp app/build/outputs/apk/release/app-release.apk "$RUNNER_TEMP/android/RideLink.apk"
           ls -la "$RUNNER_TEMP/android"
 
       # Signed with the release key, or the in-app updater cannot replace it.
