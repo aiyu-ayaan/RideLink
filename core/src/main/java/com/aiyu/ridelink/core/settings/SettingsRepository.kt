@@ -3,6 +3,7 @@ package com.aiyu.ridelink.core.settings
 import android.content.Context
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.doublePreferencesKey
+import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
@@ -113,6 +114,10 @@ data class Settings(
     val languageTag: String? = null,
     /** First-launch welcome (optional Google sign-in) answered: signed in or skipped. */
     val welcomeDone: Boolean = false,
+    /** Automatic cloud backup while signed in; MANUAL = only "Back up now". */
+    val backupFrequency: BackupFrequency = BackupFrequency.WEEKLY,
+    /** Automatic backups wait for an unmetered network (Wi-Fi). "Back up now" uses any network. */
+    val backupWifiOnly: Boolean = false,
 ) {
     companion object {
         val BRIGHTNESS_RANGE = 2..5
@@ -122,6 +127,9 @@ data class Settings(
         val LOW_FUEL_RANGE = 10..60
     }
 }
+
+/** How often the WorkManager job backs up to Firestore. */
+enum class BackupFrequency(val days: Long?) { MANUAL(null), DAILY(1), WEEKLY(7), MONTHLY(30) }
 
 private val Context.store by preferencesDataStore("settings")
 
@@ -184,7 +192,14 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
         val checkInName = stringPreferencesKey("check_in_name")
         val languageTag = stringPreferencesKey("language_tag")
         val welcomeDone = booleanPreferencesKey("welcome_done")
+        val backupFrequency = stringPreferencesKey("backup_frequency")
+        val backupWifiOnly = booleanPreferencesKey("backup_wifi_only")
     }
+
+    /** Keys that describe this phone, not the rider: never sent to or restored from the cloud backup. */
+    private val localOnly = setOf(
+        K.updateChecked.name, K.updateSnoozed.name, K.welcomeDone.name, K.careNotified.name, K.saveLogs.name,
+    )
 
     val settings: Flow<Settings> = context.store.data.map { p ->
         Settings(
@@ -245,6 +260,8 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
             languageTag = p[K.languageTag]?.takeIf { it.isNotBlank() },
             // Installs from before the welcome screen already have a scooter: they are not new riders.
             welcomeDone = p[K.welcomeDone] ?: (p[K.address] != null),
+            backupFrequency = p[K.backupFrequency]?.let { runCatching { BackupFrequency.valueOf(it) }.getOrNull() } ?: BackupFrequency.WEEKLY,
+            backupWifiOnly = p[K.backupWifiOnly] ?: false,
         )
     }
 
@@ -319,6 +336,32 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
             if (bike == null) it.remove(K.parkedBike) else it[K.parkedBike] = bike
         }
     }
+    suspend fun setBackupFrequency(f: BackupFrequency) { context.store.edit { it[K.backupFrequency] = f.name } }
+    suspend fun setBackupWifiOnly(on: Boolean) { context.store.edit { it[K.backupWifiOnly] = on } }
+
+    /** Every saved preference the backup carries, by DataStore key name (Boolean, Int, Long, Double, String or Set<String>). */
+    suspend fun exportPrefs(): Map<String, Any> =
+        context.store.data.first().asMap().mapKeys { it.key.name }.filterKeys { it !in localOnly }
+
+    /** Replaces the backed-up preferences with [values] (from [exportPrefs] on some phone); local-only keys stay. */
+    @Suppress("UNCHECKED_CAST")
+    suspend fun importPrefs(values: Map<String, Any>) {
+        context.store.edit { p ->
+            p.asMap().keys.filter { it.name !in localOnly }.forEach { p.remove(it as Preferences.Key<Any>) }
+            for ((name, v) in values) {
+                if (name in localOnly) continue
+                when (v) {
+                    is Boolean -> p[booleanPreferencesKey(name)] = v
+                    is Int -> p[intPreferencesKey(name)] = v
+                    is Long -> p[longPreferencesKey(name)] = v
+                    is Double -> p[doublePreferencesKey(name)] = v
+                    is String -> p[stringPreferencesKey(name)] = v
+                    is Set<*> -> p[stringSetPreferencesKey(name)] = (v as Set<String>)
+                }
+            }
+        }
+    }
+
     suspend fun setLanguageTag(tag: String?) {
         val clean = tag?.trim()?.takeIf { it.isNotEmpty() }
         context.store.edit {

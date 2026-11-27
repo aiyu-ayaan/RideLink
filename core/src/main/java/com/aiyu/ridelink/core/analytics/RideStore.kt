@@ -5,6 +5,11 @@ import android.content.Context
 import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
+import com.aiyu.ridelink.core.backup.Row
+import com.aiyu.ridelink.core.backup.columns
+import com.aiyu.ridelink.core.backup.insertRow
+import com.aiyu.ridelink.core.backup.row
+import com.aiyu.ridelink.core.backup.rows
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -21,9 +26,13 @@ import java.time.ZoneId
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/** A real ride for the cloud backup: its row without the local id, and its samples and turns without the ride column. */
+data class RideRows(val ride: Row, val samples: List<Row>, val turns: List<Row>)
+
 /**
  * Ride history on the phone (framework SQLite, no extra library). One row per finished ride with its summary,
- * plus the 5 s samples for the ride detail charts. Nothing leaves the phone except through CSV export.
+ * plus the 5 s samples for the ride detail charts. Leaves the phone only through CSV export and the optional
+ * cloud backup ([backupRows] / [replaceAll]).
  */
 @Singleton
 class RideStore @Inject constructor(@ApplicationContext context: Context) {
@@ -122,6 +131,49 @@ class RideStore @Inject constructor(@ApplicationContext context: Context) {
         db.writableDatabase.delete(T_TURNS, "ride IN (SELECT id FROM $T_RIDES WHERE demo = 1)", null)
         db.writableDatabase.delete(T_SAMPLES, "ride IN (SELECT id FROM $T_RIDES WHERE demo = 1)", null)
         db.writableDatabase.delete(T_RIDES, "demo = 1", null)
+        reload()
+    }
+
+    /** Every real ride (demo rides stay on the phone), oldest first, samples and turns in time order. */
+    suspend fun backupRows(): List<RideRows> = withContext(Dispatchers.IO) {
+        val r = db.readableDatabase
+        r.query(T_RIDES, null, "demo = 0", null, null, null, "start ASC").use { c ->
+            buildList {
+                while (c.moveToNext()) {
+                    val id = arrayOf(c.long("id").toString())
+                    add(
+                        RideRows(
+                            ride = c.row(setOf("id")),
+                            samples = r.rows(T_SAMPLES, "ride = ?", id, setOf("ride")).sortedBy { it["t"] as Long },
+                            turns = r.rows(T_TURNS, "ride = ?", id, setOf("ride")).sortedBy { it["t"] as Long },
+                        ),
+                    )
+                }
+            }
+        }
+    }
+
+    /** Swaps every real ride for [rides] in one transaction (restore / merge from the cloud). Demo rides stay. */
+    suspend fun replaceAll(rides: List<RideRows>) = withContext(Dispatchers.IO) {
+        val w = db.writableDatabase
+        w.beginTransaction()
+        try {
+            w.delete(T_TURNS, "ride IN (SELECT id FROM $T_RIDES WHERE demo = 0)", null)
+            w.delete(T_SAMPLES, "ride IN (SELECT id FROM $T_RIDES WHERE demo = 0)", null)
+            w.delete(T_RIDES, "demo = 0", null)
+            val rideCols = w.columns(T_RIDES) - "id"
+            val sampleCols = w.columns(T_SAMPLES)
+            val turnCols = w.columns(T_TURNS)
+            for (r in rides) {
+                val id = w.insertRow(T_RIDES, r.ride, rideCols, mapOf("demo" to 0L))
+                val link = mapOf("ride" to id)
+                r.samples.forEach { w.insertRow(T_SAMPLES, it, sampleCols, link) }
+                r.turns.forEach { w.insertRow(T_TURNS, it, turnCols, link) }
+            }
+            w.setTransactionSuccessful()
+        } finally {
+            w.endTransaction()
+        }
         reload()
     }
 
