@@ -111,6 +111,8 @@ data class Settings(
     val checkInName: String = "",
     /** Optional BCP-47 language tag (null/blank = System default). */
     val languageTag: String? = null,
+    /** First-launch welcome (optional Google sign-in) answered: signed in or skipped. */
+    val welcomeDone: Boolean = false,
 ) {
     companion object {
         val BRIGHTNESS_RANGE = 2..5
@@ -181,6 +183,7 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
         val checkInNumber = stringPreferencesKey("check_in_number")
         val checkInName = stringPreferencesKey("check_in_name")
         val languageTag = stringPreferencesKey("language_tag")
+        val welcomeDone = booleanPreferencesKey("welcome_done")
     }
 
     val settings: Flow<Settings> = context.store.data.map { p ->
@@ -240,6 +243,8 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
             checkInNumber = p[K.checkInNumber] ?: "",
             checkInName = p[K.checkInName] ?: "",
             languageTag = p[K.languageTag]?.takeIf { it.isNotBlank() },
+            // Installs from before the welcome screen already have a scooter: they are not new riders.
+            welcomeDone = p[K.welcomeDone] ?: (p[K.address] != null),
         )
     }
 
@@ -281,6 +286,7 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
     suspend fun setUpdateLastChecked(at: Long) { context.store.edit { it[K.updateChecked] = at } }
     suspend fun setUpdateSnoozedUntil(at: Long) { context.store.edit { it[K.updateSnoozed] = at } }
     suspend fun setDeveloperMode(on: Boolean) { context.store.edit { it[K.developer] = on } }
+    suspend fun setWelcomeDone() { context.store.edit { it[K.welcomeDone] = true } }
     suspend fun setSaveLogs(on: Boolean) { context.store.edit { it[K.saveLogs] = on } }
     suspend fun setDisplayBrightness(level: Int) { context.store.edit { it[K.brightness] = level.coerceIn(Settings.BRIGHTNESS_RANGE) } }
     suspend fun setSmsAlerts(on: Boolean) { context.store.edit { it[K.smsAlerts] = on } }

@@ -7,6 +7,10 @@ plugins {
     alias(libs.plugins.hilt)
 }
 
+// google-services.json is gitignored (it names the Firebase project); CI writes it from a secret.
+// Without it the app still builds and runs, with Google sign-in hidden (AccountRepository.available).
+if (file("google-services.json").exists()) apply(plugin = "com.google.gms.google-services")
+
 // Release signing: env vars (CI) win over gitignored keystore.properties (local); neither = unsigned release.
 val keystoreProps = Properties().apply {
     rootProject.file("keystore.properties").takeIf { it.exists() }?.inputStream()?.use(::load)

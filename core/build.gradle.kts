@@ -23,6 +23,13 @@ dependencies {
     implementation(libs.androidx.lifecycle.service)
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.kotlinx.coroutines.play.services)
+
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.auth)
+    implementation(libs.androidx.credentials)
+    implementation(libs.androidx.credentials.play.services)
+    implementation(libs.googleid)
 
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)

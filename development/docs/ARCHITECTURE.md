@@ -119,6 +119,7 @@ graph TD
 | Connection | `ClusterLink` | `StateFlow<LinkState>` |
 | Current nav step, caller, speed, telemetry, weather, place, music, social counts, detected model, frame log, demo | `ClusterController` | `StateFlow`s |
 | Ride history (summaries + 5 s samples + Maps turns, per scooter) | `RideStore` (SQLite `rides.db`, v3) | `StateFlow<List<RideRecord>>` |
+| Google account (optional, for backups), welcome-screen gate | `AccountRepository` (Firebase Auth + Credential Manager), `Settings.welcomeDone` | `Flow<Account?>` |
 | Update check / download / install | `AppUpdater` | `StateFlow<UpdateState>` |
 | Saved Console log | `LogFile` (`files/logs`) | export to a file the rider picks |
 | Ride session lifetime | `ClusterService` (foreground, connectedDevice) | notification |

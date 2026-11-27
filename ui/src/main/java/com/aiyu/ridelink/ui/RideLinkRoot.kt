@@ -57,6 +57,8 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.aiyu.ridelink.core.ble.LinkState
 import com.aiyu.ridelink.ui.about.AboutScreen
+import com.aiyu.ridelink.ui.account.AccountViewModel
+import com.aiyu.ridelink.ui.account.WelcomeScreen
 import com.aiyu.ridelink.ui.about.AcknowledgementsScreen
 import com.aiyu.ridelink.ui.analytics.AnalyticsScreen
 import com.aiyu.ridelink.ui.analytics.RideDetailScreen
@@ -92,8 +94,30 @@ private const val SETTINGS = "settings:"
 /** Stack entry prefix for a ride's detail page, e.g. "ride:42". */
 private const val RIDE = "ride:"
 
+/** The welcome screen (optional Google sign-in) on a fresh install, then the app. */
 @Composable
 fun RideLinkRoot(onConnect: () -> Unit, onDisconnect: () -> Unit) {
+    val account: AccountViewModel = hiltViewModel()
+    val welcome by account.showWelcome.collectAsStateWithLifecycle()
+    val motion = MaterialTheme.motionScheme
+    AnimatedContent(
+        welcome,
+        transitionSpec = {
+            (fadeIn(motion.defaultEffectsSpec()) + scaleIn(motion.defaultSpatialSpec(), initialScale = 0.94f)) togetherWith fadeOut(motion.fastEffectsSpec())
+        },
+        label = "welcome",
+    ) { show ->
+        when (show) {
+            // DataStore has not answered yet: the splash exit covers this frame.
+            null -> Surface(Modifier.fillMaxSize()) {}
+            true -> WelcomeScreen(account)
+            false -> RideLinkApp(onConnect, onDisconnect)
+        }
+    }
+}
+
+@Composable
+private fun RideLinkApp(onConnect: () -> Unit, onDisconnect: () -> Unit) {
     val vm: MainViewModel = hiltViewModel()
     val updates: UpdateViewModel = hiltViewModel()
     var tab by rememberSaveable { mutableIntStateOf(0) }

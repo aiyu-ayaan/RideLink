@@ -25,6 +25,7 @@ Modules:
   `analytics/` (`RideMath` pure stats, `RideRecorder` auto-records rides, `RideStore` framework SQLite),
   `care/` (`CareMath` mileage + due status, `FuelWatch` refuel / low fuel, `CareMonitor`, `CareStore` care.db),
   `phone/RideCheckIn` (start/end SMS).
+  `account/AccountRepository` (optional Google sign-in: Credential Manager bottom sheet -> Firebase Auth).
 - `ui` => all Compose screens, theme, and **all strings** (`ui/src/main/res/values/strings.xml`).
   `core` and `app` hold no user-facing strings; the app module reads them via `com.aiyu.ridelink.ui.R`.
 
@@ -62,6 +63,12 @@ Modules:
    Auto model detection.
 7. Every TFT feature has a Settings toggle. Runtime grants: Bluetooth (required), notification access,
    and the optional READ_PHONE_STATE + ACCESS_COARSE_LOCATION + ANSWER_PHONE_CALLS card.
+
+Google sign-in (optional, for backups): fresh installs open `ui/account/WelcomeScreen` (skippable, `Settings.welcomeDone`);
+Settings -> Google account signs in/out later. `app/google-services.json` is gitignored; CI writes it from the
+`GOOGLE_SERVICES_JSON` secret. Without it the build still works and sign-in is hidden (`AccountRepository.available`).
+Error `[28444] Developer console is not set up correctly` = the package + SHA-1 has no Android OAuth client in project
+`monolith-664a6`.
 
 ## Design
 
