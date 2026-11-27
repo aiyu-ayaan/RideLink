@@ -28,6 +28,7 @@ import androidx.compose.ui.semantics.semantics
  * A row that opens something: icon, title, subtitle, chevron (or open-in-new for [external] links).
  * Unlike ListItem, the icons stay vertically centred when the subtitle wraps to more lines.
  * [selected] marks the open page in a two-pane list; null for a row that is not part of one.
+ * [leading] replaces [icon] when set, e.g. a profile photo.
  */
 @Composable
 fun LinkRow(
@@ -37,6 +38,7 @@ fun LinkRow(
     external: Boolean = false,
     enabled: Boolean = true,
     selected: Boolean? = null,
+    leading: (@Composable () -> Unit)? = null,
     onClick: () -> Unit,
 ) {
     val c = MaterialTheme.colorScheme
@@ -51,7 +53,7 @@ fun LinkRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Dimens.lg),
     ) {
-        if (icon != null) Icon(icon, contentDescription = null, tint = c.onSurfaceVariant)
+        if (leading != null) leading() else if (icon != null) Icon(icon, contentDescription = null, tint = c.onSurfaceVariant)
         Column(Modifier.weight(1f)) {
             Text(title, style = MaterialTheme.typography.bodyLarge, color = c.onSurface)
             Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = c.onSurfaceVariant)

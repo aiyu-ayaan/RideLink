@@ -4,6 +4,10 @@ import android.content.ContentValues
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
+import com.aiyu.ridelink.core.backup.Row
+import com.aiyu.ridelink.core.backup.columns
+import com.aiyu.ridelink.core.backup.insertRow
+import com.aiyu.ridelink.core.backup.rows
 import com.aiyu.ridelink.core.protocol.ClusterModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
@@ -57,6 +61,38 @@ class GarageStore @Inject constructor(@ApplicationContext context: Context, sett
 
     suspend fun remove(address: String) = withContext(Dispatchers.IO) {
         db.writableDatabase.delete(T_BIKES, "address = ?", arrayOf(address))
+        reload()
+    }
+
+    /** Re-pair: the saved scooter at [from] becomes [to], keeping its model and place in the list. */
+    suspend fun readdress(from: String, to: Bike) = withContext(Dispatchers.IO) {
+        val w = db.writableDatabase
+        w.beginTransaction()
+        try {
+            if (from != to.address) w.delete(T_BIKES, "address = ?", arrayOf(to.address))
+            w.update(T_BIKES, ContentValues().apply { put("address", to.address); put("name", to.name) }, "address = ?", arrayOf(from))
+            w.setTransactionSuccessful()
+        } finally {
+            w.endTransaction()
+        }
+        reload()
+    }
+
+    /** garage.db rows for the cloud backup. */
+    suspend fun backupRows(): List<Row> = withContext(Dispatchers.IO) { db.readableDatabase.rows(T_BIKES) }
+
+    /** Swaps the saved scooters for [rows] (restore / merge from the cloud). */
+    suspend fun replaceAll(rows: List<Row>) = withContext(Dispatchers.IO) {
+        val w = db.writableDatabase
+        w.beginTransaction()
+        try {
+            w.delete(T_BIKES, null, null)
+            val cols = w.columns(T_BIKES)
+            rows.forEach { w.insertRow(T_BIKES, it, cols) }
+            w.setTransactionSuccessful()
+        } finally {
+            w.endTransaction()
+        }
         reload()
     }
 

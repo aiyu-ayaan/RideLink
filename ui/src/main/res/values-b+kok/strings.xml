@@ -196,7 +196,6 @@
     <string name="analytics_sample">नमुनो</string>
     <string name="analytics_recording">ही रायड रेकॉर्ड करता</string>
     <string name="analytics_empty_title">अजून रायडी नात</string>
-    <string name="analytics_empty_body">स्कुटर जोडिल्लें आसतना रायडी आपोआप रेकॉर्ड जातात: ओडोमीटर वयल्यान अंतर, वेग, मायलेज आनी इंधन दर 5 सेकंदांनी. सगळें ह्या फोनार उरता. ह्या स्क्रीनाचें पूर्वावलोकन करपाक नमुनो रायडी लोड करात; तांचेर लेबल लायलां आनी एका टॅपान काडूं येतात.</string>
     <string name="period_today">आयज</string>
     <string name="period_week">सप्तक</string>
     <string name="period_month">म्हयनो</string>
@@ -262,7 +261,6 @@
     <string name="chart_ride_rpm">इंजिन RPM</string>
     <string name="chart_ride_range">उरिल्ली रेंज</string>
     <string name="settings_record_rides">विश्लेषणा खातीर रायडी रेकॉर्ड करात</string>
-    <string name="settings_record_rides_hint">जोडिल्लें आसतना दर 5 सेकंदांनी अंतर, वेग, मायलेज आनी इंधन. ह्या फोनार उरता.</string>
 
     <!-- Navigation -->
     <string name="back">फाटीं</string>
@@ -329,7 +327,6 @@
     <string name="about_version">आवृत्ती %1$s (%2$d)</string>
     <string name="about_updates_desc">नवे आवृत्ती खातीर तपासात</string>
     <string name="about_privacy">गोपनीयता</string>
-    <string name="about_privacy_desc">सगळें ह्या फोनार उरता. खातें ना, सर्व्हर ना, विश्लेषण ना.</string>
     <string name="about_disclaimer">अधिकृत अ‍ॅप न्हय</string>
     <string name="about_disclaimer_desc">RideLink हो एक वैयक्तिक प्रकल्प आसा आनी तो TVS Motor Company कडेन संलग्न वा तांच्या कडल्यान मान्यता प्राप्त ना.</string>
     <string name="about_developer">विकासक</string>

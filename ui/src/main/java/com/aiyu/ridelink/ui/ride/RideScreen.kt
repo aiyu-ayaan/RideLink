@@ -1,5 +1,6 @@
 package com.aiyu.ridelink.ui.ride
 
+import com.aiyu.ridelink.core.ble.FoundCluster
 import android.content.Intent
 import android.os.PowerManager
 import android.provider.Settings
@@ -478,7 +479,7 @@ private fun BikeChips(bikes: List<Bike>, active: String?, bluetoothOk: Boolean, 
 private const val STUCK_SEARCHING_MS = 20_000L
 
 @Composable
-internal fun PairSheet(vm: MainViewModel, onDone: () -> Unit) {
+internal fun PairSheet(vm: MainViewModel, title: String? = null, hint: String? = null, onPick: (FoundCluster) -> Unit = { vm.pair(it) }, onDone: () -> Unit) {
     val found by vm.found.collectAsStateWithLifecycle()
     val scanning by vm.scanning.collectAsStateWithLifecycle()
     LaunchedEffect(Unit) { vm.startScan() }
@@ -491,8 +492,8 @@ internal fun PairSheet(vm: MainViewModel, onDone: () -> Unit) {
         LazyColumn(Modifier.padding(bottom = Dimens.xl)) {
             item {
                 Column(Modifier.padding(horizontal = Dimens.gutter)) {
-                    Text(stringResource(R.string.pair_title), style = MaterialTheme.typography.headlineSmall)
-                    Text(stringResource(R.string.pair_hint), color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(vertical = Dimens.sm))
+                    Text(title ?: stringResource(R.string.pair_title), style = MaterialTheme.typography.headlineSmall)
+                    Text(hint ?: stringResource(R.string.pair_hint), color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(vertical = Dimens.sm))
                     PairingGuide()
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.heightIn(min = Dimens.minTouch).padding(top = Dimens.sm)) {
                         if (scanning) {
@@ -513,7 +514,7 @@ internal fun PairSheet(vm: MainViewModel, onDone: () -> Unit) {
                     supportingContent = { Text("${c.address} · ${c.rssi} dBm") },
                     leadingContent = { Icon(Icons.Rounded.TwoWheeler, contentDescription = null) },
                     modifier = Modifier.clickable {
-                        vm.pair(c)
+                        onPick(c)
                         onDone()
                     },
                 )

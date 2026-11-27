@@ -196,7 +196,6 @@
     <string name="analytics_sample">نمونو</string>
     <string name="analytics_recording">هي سواري رڪارڊ ٿي رهي آهي</string>
     <string name="analytics_empty_title">اڃا تائين ڪا به سواري ناهي</string>
-    <string name="analytics_empty_body">اسڪوٽر ڳنڍيل هجڻ دوران سواريون پاڻمرادو رڪارڊ ٿين ٿيون: هر 5 سيڪنڊن ۾ اوڊوميٽر مان فاصلو، رفتار، مائليج ۽ ٻارڻ. سڀ ڪجهه هن ئي فون تي رهي ٿو. هن اسڪرين جو پيش منظر ڏسڻ لاءِ نموني سواريون لوڊ ڪريو؛ اهي ليبل ٿيل آهن ۽ هڪ ٽيپ ۾ هٽائي سگهجن ٿيون.</string>
     <string name="period_today">اڄ</string>
     <string name="period_week">هفتو</string>
     <string name="period_month">مهينو</string>
@@ -262,7 +261,6 @@
     <string name="chart_ride_rpm">انجن RPM</string>
     <string name="chart_ride_range">باقي رينج</string>
     <string name="settings_record_rides">تجزيي لاءِ سواريون رڪارڊ ڪريو</string>
-    <string name="settings_record_rides_hint">ڳنڍيل هجڻ دوران هر 5 سيڪنڊن ۾ فاصلو، رفتار، مائليج ۽ ٻارڻ. هن ئي فون تي رهي ٿو.</string>
 
     <!-- Navigation -->
     <string name="back">پوئتي</string>
@@ -329,7 +327,6 @@
     <string name="about_version">ورزن %1$s (%2$d)</string>
     <string name="about_updates_desc">نئين رليز چيڪ ڪريو</string>
     <string name="about_privacy">رازداري</string>
-    <string name="about_privacy_desc">سڀ ڪجهه هن ئي فون تي رهي ٿو. ڪو اڪائونٽ ناهي، ڪو سرور ناهي، ڪو تجزيو ناهي.</string>
     <string name="about_disclaimer">سرڪاري ايپ ناهي</string>
     <string name="about_disclaimer_desc">RideLink هڪ ذاتي منصوبو آهي ۽ TVS Motor Company سان لاڳاپيل يا ان جي منظور ڪيل ناهي.</string>
     <string name="about_developer">ڊولپر</string>

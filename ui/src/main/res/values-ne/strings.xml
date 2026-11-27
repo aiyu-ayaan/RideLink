@@ -196,7 +196,6 @@
     <string name="analytics_sample">नमुना</string>
     <string name="analytics_recording">यो राइड रेकर्ड हुँदैछ</string>
     <string name="analytics_empty_title">अहिलेसम्म कुनै राइड छैन</string>
-    <string name="analytics_empty_body">स्कुटर जडान भएको बेला राइडहरू आफै रेकर्ड हुन्छन्: प्रत्येक ५ सेकेन्डमा ओडोमिटरबाट दूरी, गति, माइलेज र इन्धन। सबै कुरा यही फोनमा रहन्छ। यो स्क्रिन पूर्वावलोकन गर्न नमुना राइडहरू लोड गर्नुहोस्; तिनीहरू लेबल गरिएका छन् र एकै ट्यापमा हटाउन सकिन्छ।</string>
     <string name="period_today">आज</string>
     <string name="period_week">हप्ता</string>
     <string name="period_month">महिना</string>
@@ -262,7 +261,6 @@
     <string name="chart_ride_rpm">इन्जिन RPM</string>
     <string name="chart_ride_range">बाँकी दायरा</string>
     <string name="settings_record_rides">विश्लेषणको लागि राइडहरू रेकर्ड गर्नुहोस्</string>
-    <string name="settings_record_rides_hint">जडान भएको बेला प्रत्येक ५ सेकेन्डमा दूरी, गति, माइलेज र इन्धन। यही फोनमा रहन्छ।</string>
 
     <!-- Navigation -->
     <string name="back">पछाडि</string>
@@ -329,7 +327,6 @@
     <string name="about_version">संस्करण %1$s (%2$d)</string>
     <string name="about_updates_desc">नयाँ रिलिज जाँच गर्नुहोस्</string>
     <string name="about_privacy">गोपनीयता</string>
-    <string name="about_privacy_desc">सबै कुरा यही फोनमा रहन्छ। कुनै खाता छैन, कुनै सर्भर छैन, कुनै विश्लेषण छैन।</string>
     <string name="about_disclaimer">आधिकारिक एप होइन</string>
     <string name="about_disclaimer_desc">RideLink एक व्यक्तिगत परियोजना हो र यो TVS Motor Company सँग सम्बद्ध वा अनुमोदित छैन।</string>
     <string name="about_developer">विकासकर्ता</string>

@@ -1,0 +1,26 @@
+rules_version = '2';
+
+// RideLink cloud backup. Paste into Firebase console -> Firestore -> Rules.
+// Paths are case-sensitive: the app writes to RideLink/{uid} (BackupRepository.COLLECTION).
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isOwner(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    // One summary document per Google account (revision, last backup time, device, counts, size).
+    match /RideLink/{uid} {
+      allow read, delete: if isOwner(uid);
+      allow create, update: if isOwner(uid) && request.resource.data.revision is int;
+
+      // Backed-up data: RideLink/{uid}/{kind}/{doc}
+      match /{kind}/{doc} {
+        allow read, delete: if isOwner(uid);
+        allow create, update: if isOwner(uid)
+          && kind in ['rides', 'fills', 'care', 'readings', 'bikes', 'settings'];
+      }
+    }
+
+    // No other match: every other collection in the project stays closed until a rule is added here.
+  }
+}

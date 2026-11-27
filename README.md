@@ -27,7 +27,7 @@
 
 RideLink connects your phone to your TVS SmartXonnect scooter display over Bluetooth Low Energy (BLE). It replaces the official TVS Connect app for riding features: it streams Google Maps turn-by-turn directions, forwards caller ID and accepts/rejects calls with handlebar buttons, syncs media info, and keeps time, battery, signal, and local weather up to date.
 
-**Zero accounts. Zero cloud servers. Zero tracking.** All communications stay between your phone and your scooter.
+**No TVS account, no TVS servers.** Riding features run between your phone and your scooter. A Google account is optional and only used for your own cloud backup.
 
 ## Highlights
 
@@ -39,6 +39,7 @@ RideLink connects your phone to your TVS SmartXonnect scooter display over Bluet
 - **Weather & environment**: Optional local temperature, AQI, and location sync via Open-Meteo (no API key required).
 - **Fuel and service**: Fuel log with real full-to-full mileage and cost per km (₹), automatic refuel detection from the fuel gauge, low-fuel alert that finds a petrol pump in Maps, and service / insurance / PUC reminders shown on the display.
 - **Riding safety**: WhatsApp auto-reply while riding (one-to-one chats, once per ride), ride check-in SMS with a Google Maps link at start and end, and a precise last-parked spot.
+- **Cloud backup (optional)**: Sign in with Google to back up rides, fuel log, care records, scooters and settings to Firestore, WhatsApp style: daily, weekly, monthly or only when you tap *Back up now*, in the background via WorkManager. A new phone gets a restore offer; when two phones disagree you choose *Merge both*, *Use cloud backup* or *Keep this phone's data*.
 - **Multi-scooter garage**: Pair and manage multiple scooters with per-bike model profiles and auto-reconnect.
 - **Material 3 Expressive UI**: Built entirely in Jetpack Compose with dynamic color, adaptive layouts, dark/light themes, and floating pill navigation.
 - **22 Indian languages + English**: In-app language picker (**Settings → In-App → Language**) supporting System default, English, and all 22 Scheduled Indian Languages (Hindi, Bengali, Telugu, Marathi, Tamil, Urdu, Gujarati, Kannada, Malayalam, Odia, Punjabi, Assamese, Kashmiri, Nepali, Sindhi, Sanskrit, Maithili, Santali, Konkani, Dogri, Manipuri, and Bodo).
@@ -129,7 +130,7 @@ graph LR
 ```
 
 - **`:app`**: Application entry point, Android manifest, foreground services, broadcast receivers, and application lifecycle.
-- **`:core`**: Protocol encoders/decoders, BLE GATT link manager, notification parsers, telecom integration, weather repository, and SQLite databases (`garage.db`, `rides.db`).
+- **`:core`**: Protocol encoders/decoders, BLE GATT link manager, notification parsers, telecom integration, weather repository, SQLite databases (`garage.db`, `rides.db`, `care.db`), optional Google sign-in and the Firestore cloud backup (`core/backup`).
 - **`:ui`**: 100% Jetpack Compose UI, Material 3 Expressive theming, navigation graphs, canvas analytics charts, and localized strings.
 
 For deep dive into state ownership and lifecycle, see [`development/docs/ARCHITECTURE.md`](development/docs/ARCHITECTURE.md).
@@ -191,7 +192,8 @@ The repository includes desktop Python test utilities (requires BlueZ on Linux, 
 
 ## Privacy & ethics
 
-- **No telematics sent to third parties**: RideLink contains zero analytics SDKs, trackers, or telemetry endpoints.
+- **Usage statistics**: Builds with Firebase configured send anonymous usage statistics through Firebase Analytics (app opens, screens, sessions), without the advertising ID. RideLink logs no ride data, names, numbers or locations to it. Turn it off in **Settings → In the app → Usage statistics**.
+- **Cloud backup is opt-in**: Nothing is backed up until you sign in with Google. The backup lives at `RideLink/{your uid}` in Firestore, readable only by your account (see [`firestore.rules`](firestore.rules)). It holds your rides (routes, speeds, places), fuel log, care records, scooters and settings, including the check-in contact number, birthday and last parked spot. *Delete cloud data* (Google account dialog or Settings → Backup) removes it from the server only; other phones on the same account stop backing up automatically until someone taps *Back up now*. After a restore, *Settings → Scooter → Re-pair* moves a scooter's history to its new Bluetooth address if it changed.
 - **Personal use project**: RideLink is an independent project and is not affiliated with, endorsed by, or connected to TVS Motor Company. No proprietary TVS code or assets are distributed.
 
 ## Related docs

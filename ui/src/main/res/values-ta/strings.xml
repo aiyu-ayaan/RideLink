@@ -196,7 +196,6 @@
     <string name="analytics_sample">மாதிரி</string>
     <string name="analytics_recording">இந்தப் பயணம் பதிவாகிறது</string>
     <string name="analytics_empty_title">இதுவரை பயணங்கள் இல்லை</string>
-    <string name="analytics_empty_body">ஸ்கூட்டர் இணைக்கப்பட்டிருக்கும்போது பயணங்கள் தானாகவே பதிவாகும்: 5 வினாடிகளுக்கு ஒருமுறை ஓடோமீட்டரிலிருந்து தூரம், வேகம், மைலேஜ் மற்றும் எரிபொருள். அனைத்தும் இந்தத் தொலைபேசியிலேயே இருக்கும். இந்தத் திரையை முன்னோட்டமிட மாதிரி பயணங்களை ஏற்றவும்; அவை லேபிளிடப்பட்டு ஒரே தட்டலில் அகற்றக்கூடியவை.</string>
     <string name="period_today">இன்று</string>
     <string name="period_week">வாரம்</string>
     <string name="period_month">மாதம்</string>
@@ -262,7 +261,6 @@
     <string name="chart_ride_rpm">எஞ்சின் RPM</string>
     <string name="chart_ride_range">மீதமுள்ள வரம்பு</string>
     <string name="settings_record_rides">பகுப்பாய்விற்காகப் பயணங்களைப் பதிவு செய்</string>
-    <string name="settings_record_rides_hint">இணைக்கப்பட்டிருக்கும்போது 5 வினாடிகளுக்கு ஒருமுறை தூரம், வேகம், மைலேஜ் மற்றும் எரிபொருள். இந்தத் தொலைபேசியிலேயே இருக்கும்.</string>
 
     <!-- Navigation -->
     <string name="back">பின்</string>
@@ -329,7 +327,6 @@
     <string name="about_version">பதிப்பு %1$s (%2$d)</string>
     <string name="about_updates_desc">புதிய வெளியீட்டைச் சரிபார்</string>
     <string name="about_privacy">தனியுரிமை</string>
-    <string name="about_privacy_desc">அனைத்தும் இந்தத் தொலைபேசியிலேயே இருக்கும். கணக்கு இல்லை, சேவையகம் இல்லை, பகுப்பாய்வு இல்லை.</string>
     <string name="about_disclaimer">அதிகாரப்பூர்வ செயலி அல்ல</string>
     <string name="about_disclaimer_desc">RideLink ஒரு தனிப்பட்ட திட்டமாகும், இது TVS Motor Company உடன் இணைக்கப்படவில்லை அல்லது அங்கீகரிக்கப்படவில்லை.</string>
     <string name="about_developer">டெவலப்பர்</string>

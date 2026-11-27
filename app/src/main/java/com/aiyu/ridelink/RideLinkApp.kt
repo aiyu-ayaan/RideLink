@@ -4,6 +4,8 @@ import android.app.Application
 import android.content.Context
 import android.content.res.Configuration
 import com.aiyu.ridelink.core.analytics.RideRecorder
+import com.aiyu.ridelink.core.backup.BackupRepository
+import com.aiyu.ridelink.core.account.UsageStats
 import com.aiyu.ridelink.core.care.CareMonitor
 import com.aiyu.ridelink.core.phone.RideCheckIn
 import com.aiyu.ridelink.core.settings.AppLocale
@@ -17,6 +19,8 @@ class RideLinkApp : Application() {
     @Inject lateinit var care: CareMonitor
     @Inject lateinit var careNotifier: CareNotifier
     @Inject lateinit var checkIn: RideCheckIn
+    @Inject lateinit var backup: BackupRepository
+    @Inject lateinit var usageStats: UsageStats
 
     override fun attachBaseContext(base: Context) {
         super.attachBaseContext(AppLocale.wrap(base))
@@ -35,5 +39,8 @@ class RideLinkApp : Application() {
         careNotifier.start()
         care.start()
         checkIn.start()
+        // Cloud backup job (WorkManager) follows the frequency setting and Google sign-in.
+        backup.startScheduling()
+        usageStats.start()
     }
 }

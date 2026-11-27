@@ -35,3 +35,6 @@ __pycache__/
 # OS files
 .DS_Store
 Thumbs.db
+
+# Firebase config names the project; CI writes it from the GOOGLE_SERVICES_JSON secret
+google-services.json

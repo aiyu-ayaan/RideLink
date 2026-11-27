@@ -5,6 +5,10 @@ import android.content.Context
 import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
+import com.aiyu.ridelink.core.backup.Row
+import com.aiyu.ridelink.core.backup.columns
+import com.aiyu.ridelink.core.backup.insertRow
+import com.aiyu.ridelink.core.backup.rows
 import com.aiyu.ridelink.core.settings.SettingsRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
@@ -20,6 +24,9 @@ import kotlinx.coroutines.withContext
 import java.time.LocalDate
 import javax.inject.Inject
 import javax.inject.Singleton
+
+/** care.db for the cloud backup: fuel log (without local ids), care items and last readings, every bike. */
+data class CareRows(val fills: List<Row>, val items: List<Row>, val readings: List<Row>)
 
 /** Last odometer and fuel bars the display reported for a bike, kept so the next connect can spot a refuel. */
 data class BikeReading(val odometerTenths: Int?, val fuelBars: Int?, val t: Long)
@@ -90,6 +97,46 @@ class CareStore @Inject constructor(@ApplicationContext context: Context, settin
         val v = ContentValues().apply { put("bike", forBike); put("odo", r.odometerTenths); put("fuel", r.fuelBars); put("t", r.t) }
         db.writableDatabase.insertWithOnConflict(T_READINGS, null, v, SQLiteDatabase.CONFLICT_REPLACE)
         if (forBike == bike) _reading.value = r
+    }
+
+    suspend fun backupRows(): CareRows = withContext(Dispatchers.IO) {
+        val r = db.readableDatabase
+        CareRows(r.rows(T_FILLS, drop = setOf("id")), r.rows(T_ITEMS), r.rows(T_READINGS))
+    }
+
+    /** Swaps all of care.db for [rows] in one transaction (restore / merge from the cloud). */
+    suspend fun replaceAll(rows: CareRows) = withContext(Dispatchers.IO) {
+        val w = db.writableDatabase
+        w.beginTransaction()
+        try {
+            listOf(T_FILLS, T_ITEMS, T_READINGS).forEach { w.delete(it, null, null) }
+            val fillCols = w.columns(T_FILLS) - "id"
+            val itemCols = w.columns(T_ITEMS)
+            val readingCols = w.columns(T_READINGS)
+            rows.fills.forEach { w.insertRow(T_FILLS, it, fillCols) }
+            rows.items.forEach { w.insertRow(T_ITEMS, it, itemCols) }
+            rows.readings.forEach { w.insertRow(T_READINGS, it, readingCols) }
+            w.setTransactionSuccessful()
+        } finally {
+            w.endTransaction()
+        }
+        reload()
+    }
+
+    /** Re-pair: fuel log, care items and last reading of [from] move to [to]; [to]'s own items and reading give way. */
+    suspend fun reassignBike(from: String, to: String) = withContext(Dispatchers.IO) {
+        val w = db.writableDatabase
+        w.beginTransaction()
+        try {
+            val args = arrayOf(to, from)
+            w.execSQL("UPDATE $T_FILLS SET bike = ? WHERE bike = ?", args)
+            w.execSQL("UPDATE OR REPLACE $T_ITEMS SET bike = ? WHERE bike = ?", args)
+            w.execSQL("UPDATE OR REPLACE $T_READINGS SET bike = ? WHERE bike = ?", args)
+            w.setTransactionSuccessful()
+        } finally {
+            w.endTransaction()
+        }
+        reload()
     }
 
     suspend fun readingOf(forBike: String): BikeReading? = withContext(Dispatchers.IO) { loadReading(forBike) }

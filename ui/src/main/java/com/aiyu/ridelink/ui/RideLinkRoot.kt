@@ -57,6 +57,10 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.aiyu.ridelink.core.ble.LinkState
 import com.aiyu.ridelink.ui.about.AboutScreen
+import com.aiyu.ridelink.ui.account.AccountViewModel
+import com.aiyu.ridelink.ui.account.WelcomeScreen
+import com.aiyu.ridelink.ui.backup.BackupScreen
+import com.aiyu.ridelink.ui.backup.BackupViewModel
 import com.aiyu.ridelink.ui.about.AcknowledgementsScreen
 import com.aiyu.ridelink.ui.analytics.AnalyticsScreen
 import com.aiyu.ridelink.ui.analytics.RideDetailScreen
@@ -84,7 +88,7 @@ private val tabs = listOf(
 )
 
 /** Screens opened on top of the tabs. Console is a developer option (Settings → Developer options). */
-private enum class Page { Console, Updates, About, Acknowledgements, Care, History }
+private enum class Page { Console, Updates, About, Acknowledgements, Care, History, Backup }
 
 /** Stack entry prefix for a Settings section page, e.g. "settings:SCOOTER". */
 private const val SETTINGS = "settings:"
@@ -92,8 +96,30 @@ private const val SETTINGS = "settings:"
 /** Stack entry prefix for a ride's detail page, e.g. "ride:42". */
 private const val RIDE = "ride:"
 
+/** The welcome screen (optional Google sign-in) on a fresh install, then the app. */
 @Composable
 fun RideLinkRoot(onConnect: () -> Unit, onDisconnect: () -> Unit) {
+    val account: AccountViewModel = hiltViewModel()
+    val welcome by account.showWelcome.collectAsStateWithLifecycle()
+    val motion = MaterialTheme.motionScheme
+    AnimatedContent(
+        welcome,
+        transitionSpec = {
+            (fadeIn(motion.defaultEffectsSpec()) + scaleIn(motion.defaultSpatialSpec(), initialScale = 0.94f)) togetherWith fadeOut(motion.fastEffectsSpec())
+        },
+        label = "welcome",
+    ) { show ->
+        when (show) {
+            // DataStore has not answered yet: the splash exit covers this frame.
+            null -> Surface(Modifier.fillMaxSize()) {}
+            true -> WelcomeScreen(account)
+            false -> RideLinkApp(onConnect, onDisconnect)
+        }
+    }
+}
+
+@Composable
+private fun RideLinkApp(onConnect: () -> Unit, onDisconnect: () -> Unit) {
     val vm: MainViewModel = hiltViewModel()
     val updates: UpdateViewModel = hiltViewModel()
     var tab by rememberSaveable { mutableIntStateOf(0) }
@@ -101,6 +127,18 @@ fun RideLinkRoot(onConnect: () -> Unit, onDisconnect: () -> Unit) {
     var stack by rememberSaveable { mutableStateOf(listOf<String>()) }
     val push = { p: String -> stack = stack + p }
     val pop = { stack = stack.dropLast(1) }
+
+    // A fresh install signed in to an account with a backup: open the restore offer once, as WhatsApp does.
+    val backup: BackupViewModel = hiltViewModel()
+    val backupStatus by backup.status.collectAsStateWithLifecycle()
+    var offeredRestore by rememberSaveable { mutableStateOf<Long?>(null) }
+    LaunchedEffect(backupStatus.conflict) {
+        val c = backupStatus.conflict ?: return@LaunchedEffect
+        if (c.phoneEmpty && offeredRestore != c.cloudAt && stack.lastOrNull() != Page.Backup.name) {
+            offeredRestore = c.cloudAt
+            push(Page.Backup.name)
+        }
+    }
 
     // Predictive back: the system gesture seeks the page transition, so the page underneath shows while swiping;
     // release commits, a cancelled swipe springs back. Taps on Back buttons animate the same transition.
@@ -152,6 +190,7 @@ fun RideLinkRoot(onConnect: () -> Unit, onDisconnect: () -> Unit) {
                 onOpenConsole = { push(Page.Console.name) },
                 onOpenUpdates = { push(Page.Updates.name) },
                 onOpenAbout = { push(Page.About.name) },
+                onOpenBackup = { push(Page.Backup.name) },
             )
         }
         // AnimatedContent drops a page's composition when it leaves; the holder keeps its scroll state for the way back.
@@ -177,6 +216,7 @@ fun RideLinkRoot(onConnect: () -> Unit, onDisconnect: () -> Unit) {
                             Page.Acknowledgements -> AcknowledgementsScreen(onBack = pop)
                             Page.Care -> CareScreen(onBack = pop)
                             Page.History -> RideHistoryScreen(onBack = pop, onOpenRide = { push(RIDE + it) })
+                            Page.Backup -> BackupScreen(onBack = pop)
                         }
                     }
                 }

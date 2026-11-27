@@ -1,5 +1,27 @@
 package com.aiyu.ridelink.ui.settings
 
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.Alignment
+import androidx.compose.material.icons.rounded.AccountCircle
+import androidx.compose.material.icons.automirrored.rounded.Logout
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.aiyu.ridelink.ui.account.AccountViewModel
+import com.aiyu.ridelink.ui.account.AccountDialog
+import com.aiyu.ridelink.ui.account.GoogleSignInButton
+import com.aiyu.ridelink.ui.account.LoopMark
+import com.aiyu.ridelink.ui.account.ProfileAvatar
+import com.aiyu.ridelink.ui.backup.BackupViewModel
+import com.aiyu.ridelink.ui.backup.when_
+import com.aiyu.ridelink.ui.backup.ConfirmDialog
+import com.aiyu.ridelink.core.backup.BackupMode
+import androidx.compose.material.icons.rounded.CloudUpload
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
@@ -89,6 +111,7 @@ import androidx.compose.material.icons.rounded.SystemUpdate
 import androidx.compose.material.icons.rounded.Terminal
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.BluetoothSearching
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material3.Icon
 import com.aiyu.ridelink.core.notify.MessageAlert
@@ -133,8 +156,16 @@ fun SettingsScreen(
     onOpenConsole: () -> Unit,
     onOpenUpdates: () -> Unit,
     onOpenAbout: () -> Unit,
+    onOpenBackup: () -> Unit,
+    accounts: AccountViewModel = hiltViewModel(),
+    backups: BackupViewModel = hiltViewModel(),
 ) {
+    val backupStatus by backups.status.collectAsStateWithLifecycle()
+    var deleteCloud by remember { mutableStateOf(false) }
+    var accountDialog by remember { mutableStateOf(false) }
     val s by vm.settings.collectAsStateWithLifecycle()
+    val signedIn by accounts.account.collectAsStateWithLifecycle()
+    val photo by accounts.photo.collectAsStateWithLifecycle()
     val detected by vm.detected.collectAsStateWithLifecycle()
     val telemetry by vm.telemetry.collectAsStateWithLifecycle()
     var rider by remember(s.riderName) { mutableStateOf(s.riderName) }
@@ -163,6 +194,8 @@ fun SettingsScreen(
     val demoNav by vm.demoNav.collectAsStateWithLifecycle()
     val bluetoothOk = remember(refresh) { context.hasBluetooth() }
     var pairing by remember { mutableStateOf(false) }
+    // Saved scooter being re-paired: the next scooter picked takes over its address and history.
+    var repairing by remember { mutableStateOf<com.aiyu.ridelink.core.settings.Bike?>(null) }
     // Bumped after an export or delete so the saved-log summary re-reads the folder.
     var logTick by remember { mutableIntStateOf(0) }
     val exportLogs = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/plain")) { uri ->
@@ -190,6 +223,27 @@ fun SettingsScreen(
         },
     ) { padding ->
         val homeItems: LazyListScope.(SettingsSection?, (SettingsSection) -> Unit) -> Unit = { current, open ->
+                    if (accounts.available) item {
+                        Group {
+                            val a = signedIn
+                            LinkRow(
+                                null,
+                                a?.name ?: stringResource(R.string.settings_account),
+                                a?.email ?: stringResource(R.string.settings_account_signed_out),
+                                leading = {
+                                    if (a != null) ProfileAvatar(a, photo, 40.dp)
+                                    else Icon(Icons.Rounded.AccountCircle, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(40.dp))
+                                },
+                            ) { accountDialog = true }
+                            val backupLine = when {
+                                a == null -> stringResource(R.string.backup_row_desc)
+                                backupStatus.conflict != null -> stringResource(R.string.backup_row_action)
+                                backupStatus.deleted != null -> stringResource(R.string.backup_row_deleted)
+                                else -> backupStatus.lastAt?.let { stringResource(R.string.backup_row_last, when_(context, it)) } ?: stringResource(R.string.backup_row_never)
+                            }
+                            LinkRow(Icons.Rounded.CloudUpload, stringResource(R.string.backup_title), backupLine, onClick = onOpenBackup)
+                        }
+                    }
                     item { Section(R.string.settings_group_ride) }
                     item { SectionGroup(listOf(SettingsSection.SCOOTER, SettingsSection.DISPLAY_TEXT, SettingsSection.ON_DISPLAY, SettingsSection.CALLS, SettingsSection.IN_APP), current, open) }
                     item { Section(R.string.settings_about) }
@@ -327,6 +381,7 @@ fun SettingsScreen(
             }
                 }
                 SettingsSection.IN_APP -> {
+            item { SwitchRow(R.string.settings_usage_stats, R.string.settings_usage_stats_hint, s.usageStats, vm::setUsageStats) }
             item {
                 LanguageRow(
                     selectedTag = s.languageTag,
@@ -367,12 +422,17 @@ fun SettingsScreen(
                     supportingContent = { Text(if (active) stringResource(R.string.settings_bike_active, b.address) else b.address) },
                     leadingContent = { RadioButton(selected = active, onClick = null) },
                     trailingContent = {
+                        Row {
+                        IconButton(onClick = { repairing = b }, enabled = bluetoothOk) {
+                            Icon(Icons.AutoMirrored.Rounded.BluetoothSearching, contentDescription = stringResource(R.string.settings_repair_scooter, label))
+                        }
                         IconButton(onClick = { vm.remove(b) }) {
                             Icon(
                                 Icons.Rounded.Delete,
                                 contentDescription = stringResource(R.string.settings_remove_scooter, label),
                                 tint = MaterialTheme.colorScheme.error,
                             )
+                        }
                         }
                     },
                     modifier = Modifier.selectable(selected = active, role = Role.RadioButton) { vm.select(b) },
@@ -468,6 +528,29 @@ fun SettingsScreen(
     }
 
     if (pairing) PairSheet(vm) { pairing = false }
+    repairing?.let { old ->
+        PairSheet(
+            vm,
+            title = stringResource(R.string.repair_title, old.name ?: old.address),
+            hint = stringResource(R.string.repair_hint),
+            onPick = { vm.repair(old, it) },
+        ) { repairing = null }
+    }
+    if (accountDialog) AccountDialog(
+        accounts = accounts,
+        backupLine = when {
+            backupStatus.conflict != null -> stringResource(R.string.backup_row_action)
+            backupStatus.deleted != null -> stringResource(R.string.backup_row_deleted)
+            else -> backupStatus.lastAt?.let { stringResource(R.string.backup_row_last, when_(context, it)) } ?: stringResource(R.string.backup_row_never)
+        },
+        onOpenBackup = { accountDialog = false; onOpenBackup() },
+        onDeleteCloud = { accountDialog = false; deleteCloud = true },
+        onDismiss = { accountDialog = false },
+    )
+    if (deleteCloud) ConfirmDialog(BackupMode.DELETE_CLOUD, backupStatus, onDismiss = { deleteCloud = false }) {
+        backups.run(BackupMode.DELETE_CLOUD)
+        deleteCloud = false
+    }
 }
 
 /**
