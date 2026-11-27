@@ -228,8 +228,11 @@ another. The same pop-up carries "Missed call / name" (newest call-log entry mar
 "Food" or "Order" over "Notification" for Swiggy, Zomato, Blinkit, Zepto, Dunzo, Amazon and Flipkart (stock
 `N251HelperService.sendSocialmediaNotification`; stock only shows it on U445B/U566).
 During a route the turn resends (every 2.2 s on SmartXonnect, 2 s otherwise) replaced the pop-up and the caller
-name within a second, so RideLink holds the turn frames while a pop-up shows (6 s) or a call rings, then resends the
-current step at once. A RideLink choice, not taken from stock.
+name within a second, so RideLink holds the turn frames while a call rings, then resends the current step at once.
+A pop-up during a route alternates with the turn instead of holding it for 6 s: holding that long tripped the
+display's navigation watchdog (3.5-4 s without a turn) and ended the route (issue #16). RideLink sends the turn, then
+the pop-up lines once, waits until 3 s after that turn, and repeats twice, then resends the turn.
+A RideLink choice, not taken from stock.
 
 ### Screen switch, DID `0x4C` with a leading `00` (`BluetoothUtil.createTrafficSequenceCustomFrame`, `TrafficSequence`)
 `5B 4C 00 <id> <15 x 00> FF`. id: default `0x00`, weather `0x78`, cricket `0x79`, football `0x80`.

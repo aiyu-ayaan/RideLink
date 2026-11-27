@@ -248,14 +248,14 @@ class ClusterController @Inject constructor(
 
     /**
      * Shows [text] on custom line 1 (and [line2] on line 2) for [ms], then puts the rider's own lines back (or blanks
-     * them). A newer flash replaces the one showing. Skipped during a route unless [overNav]: on the SmartXonnect LCD
+     * them). A newer flash replaces the one showing. Skipped during a route: on the SmartXonnect LCD
      * the lines share the turn text area. SmartXonnect gets the pair 5 times, 300 / 100 ms apart, as stock
      * sendCustomData writes it.
      */
-    fun flashText(text: String, line2: String? = null, ms: Long = FLASH_MS, overNav: Boolean = false) {
+    fun flashText(text: String, line2: String? = null, ms: Long = FLASH_MS) {
         flashJob?.cancel()
         flashJob = scope.launch {
-            if (link.state.value !is LinkState.Ready || (_nav.value != null && !overNav)) return@launch
+            if (link.state.value !is LinkState.Ready || _nav.value != null) return@launch
             val until = System.currentTimeMillis() + ms + 2_000
             textHeldUntil = until
             val times = if (model(settings.current()).family == ClusterFamily.SMARTXONNECT && line2 != null) 5 else 1
@@ -299,18 +299,33 @@ class ClusterController @Inject constructor(
         if (!s.messageAlerts || !a.allowed(s.messageMuted, s.messageGroups) || link.state.value !is LinkState.Ready) return
         val (line1, line2) = a.lines(s.messageText)
         note("Message: ${a.app} / ${a.sender}")
-        // During a route the turn resends (every 800 ms on SmartXonnect) would cover the pop-up at once: hold them
-        // for the pop-up's time, then put the turn back.
-        val overNav = _nav.value != null
-        if (overNav) navPaused = true
-        try {
-            flashText(line1, line2, MESSAGE_FLASH_MS, overNav)
+        if (_nav.value == null) {
+            flashText(line1, line2, MESSAGE_FLASH_MS)
             flashJob?.join()
-        } finally {
-            if (overNav) {
-                navPaused = false
-                resendNav()
+            return
+        }
+        // During a route the turn resends would cover the pop-up at once, but holding them for the whole pop-up let
+        // the display's watchdog (3.5-4 s without a turn) end the route (issue #16). So the pop-up and the turn take
+        // turns: turn, pop-up until OVER_NAV_HOLD_MS after that turn, turn again, and the route never drops.
+        flashJob?.cancel()
+        navPaused = true
+        try {
+            repeat(OVER_NAV_ROUNDS) {
+                // A ringing call takes the display; the call code puts the turn back when it ends.
+                if (link.state.value !is LinkState.Ready || _caller.value != null && callState == CallState.RINGING) return
+                navLock.withLock { _nav.value?.let { sendNav(settings.current(), it) } } ?: return
+                send(ClusterProtocol.customLine1(line1))
+                if (line2 != null) {
+                    delay(300)
+                    send(ClusterProtocol.customLine2(line2))
+                }
+                delay((navSentAt + OVER_NAV_HOLD_MS - System.currentTimeMillis()).coerceAtLeast(0))
             }
+        } finally {
+            navPaused = false
+            sentLine1 = null
+            sentLine2 = null
+            resendNav()
         }
     }
 
@@ -1120,6 +1135,10 @@ class ClusterController @Inject constructor(
         const val RIDING_GAP_MS = 5 * 60_000L
         const val FLASH_MS = 10_000L
         const val MESSAGE_FLASH_MS = 6_000L
+        /** Pop-up time after each turn resend during a route: under the display's 3.5-4 s navigation watchdog. */
+        const val OVER_NAV_HOLD_MS = 3_000L
+        /** Two pop-up rounds over a route, about [MESSAGE_FLASH_MS] in all. */
+        const val OVER_NAV_ROUNDS = 2
         const val ALERT_QUEUE = 5
         const val CELL_REFRESH_MS = 10_000L
     }
