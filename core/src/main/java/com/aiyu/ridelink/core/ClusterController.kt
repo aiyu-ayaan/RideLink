@@ -306,20 +306,26 @@ class ClusterController @Inject constructor(
         }
         // During a route the turn resends would cover the pop-up at once, but holding them for the whole pop-up let
         // the display's watchdog (3.5-4 s without a turn) end the route (issue #16). So the pop-up and the turn take
-        // turns: turn, pop-up until OVER_NAV_HOLD_MS after that turn, turn again, and the route never drops.
+        // turns: turn, pop-up until the normal resend time after that turn, turn again, so the turn keeps its usual
+        // 2 s (SmartXonnect 2.2 s) rhythm and the route never drops.
         flashJob?.cancel()
         navPaused = true
         try {
             repeat(OVER_NAV_ROUNDS) {
                 // A ringing call takes the display; the call code puts the turn back when it ends.
                 if (link.state.value !is LinkState.Ready || _caller.value != null && callState == CallState.RINGING) return
+                val m = model(settings.current())
                 navLock.withLock { _nav.value?.let { sendNav(settings.current(), it) } } ?: return
-                send(ClusterProtocol.customLine1(line1))
-                if (line2 != null) {
-                    delay(300)
-                    send(ClusterProtocol.customLine2(line2))
+                // SmartXonnect gets the pair 5 times, 300 / 100 ms apart, as stock sendCustomData writes it (about 2 s).
+                repeat(if (m.family == ClusterFamily.SMARTXONNECT && line2 != null) 5 else 1) {
+                    send(ClusterProtocol.customLine1(line1))
+                    if (line2 != null) {
+                        delay(300)
+                        send(ClusterProtocol.customLine2(line2))
+                        delay(100)
+                    }
                 }
-                delay((navSentAt + OVER_NAV_HOLD_MS - System.currentTimeMillis()).coerceAtLeast(0))
+                delay((navSentAt + ClusterProtocol.navResendMs(m) - System.currentTimeMillis()).coerceAtLeast(0))
             }
         } finally {
             navPaused = false
@@ -1135,10 +1141,8 @@ class ClusterController @Inject constructor(
         const val RIDING_GAP_MS = 5 * 60_000L
         const val FLASH_MS = 10_000L
         const val MESSAGE_FLASH_MS = 6_000L
-        /** Pop-up time after each turn resend during a route: under the display's 3.5-4 s navigation watchdog. */
-        const val OVER_NAV_HOLD_MS = 3_000L
-        /** Two pop-up rounds over a route, about [MESSAGE_FLASH_MS] in all. */
-        const val OVER_NAV_ROUNDS = 2
+        /** Pop-up rounds over a route, one turn resend period each: about [MESSAGE_FLASH_MS] in all. */
+        const val OVER_NAV_ROUNDS = 3
         const val ALERT_QUEUE = 5
         const val CELL_REFRESH_MS = 10_000L
     }

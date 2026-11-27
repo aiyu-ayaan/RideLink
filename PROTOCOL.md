@@ -231,7 +231,8 @@ During a route the turn resends (every 2.2 s on SmartXonnect, 2 s otherwise) rep
 name within a second, so RideLink holds the turn frames while a call rings, then resends the current step at once.
 A pop-up during a route alternates with the turn instead of holding it for 6 s: holding that long tripped the
 display's navigation watchdog (3.5-4 s without a turn) and ended the route (issue #16). RideLink sends the turn, then
-the pop-up lines once, waits until 3 s after that turn, and repeats twice, then resends the turn.
+the pop-up lines (SmartXonnect: the pair 5 times, as `sendCustomData`), waits out the normal resend period after that
+turn (2.2 s SmartXonnect, 2 s otherwise), three rounds in all, then resends the turn.
 A RideLink choice, not taken from stock.
 
 ### Screen switch, DID `0x4C` with a leading `00` (`BluetoothUtil.createTrafficSequenceCustomFrame`, `TrafficSequence`)
