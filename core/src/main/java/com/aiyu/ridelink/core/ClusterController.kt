@@ -496,7 +496,9 @@ class ClusterController @Inject constructor(
         navKeepAlive = scope.launch {
             while (isActive) {
                 val every = ClusterProtocol.navResendMs(model(settings.current()))
-                delay(every)
+                // Wait from the last turn actually sent, not a fixed tick: a new Maps step just before a tick made it
+                // skip and wait a whole extra period, 4-5 s gaps the display's watchdog dropped navigation on (issue #16).
+                delay((navSentAt + every - System.currentTimeMillis()).coerceIn(NAV_KEEPALIVE_MIN_WAIT_MS, every))
                 val step = _nav.value ?: break
                 if (link.state.value !is LinkState.Ready || _arrowSweep.value || navHeld()) continue
                 if (System.currentTimeMillis() - navSentAt < every) continue
@@ -1099,6 +1101,8 @@ class ClusterController @Inject constructor(
     private companion object {
         const val LOG_SIZE = 300
         const val ACTIVE_CALL_MAX_MS = 3 * 60 * 60_000L
+        /** Keep-alive poll while turns are held (call, pop-up) or the link is down; never a busy loop. */
+        const val NAV_KEEPALIVE_MIN_WAIT_MS = 250L
         const val DEMO_STEP_MS = 1_500L
         const val DEMO_NAV_STEP_MS = 1_000L
         const val ARROW_CODE_MAX = 80
