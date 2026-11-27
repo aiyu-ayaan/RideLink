@@ -137,7 +137,7 @@ class ClusterController @Inject constructor(
         }
     }
 
-    /** Answered from the scooter button: keep the caller up for the rest of the call. */
+    /** Answered from the scooter button. */
     private fun onCallAnswered() = onCallActive(null)
 
     /**
@@ -147,17 +147,18 @@ class ClusterController @Inject constructor(
     @Volatile private var ringingCaller: String? = null
 
     /**
-     * A ringing call was answered (phone, WhatsApp, Instagram, Messenger): the caller frame keeps going every
-     * [ClusterProtocol.CALLER_REPEAT_MS] until the call ends, so the display's call indicator stays lit.
-     * Stock does the same on the vehicle types in PhoneStateReceiver.getVehicleTypeIdList (its 400 ms callTimer
-     * is only cancelled on IDLE). [name] null keeps the caller already shown. Turn frames wait, as while ringing.
-     * A call the rider dialled never rang, so it is ignored here.
+     * A ringing call was answered (phone, WhatsApp, Instagram, Messenger): the caller frames stop and the display gets
+     * the status frame, as when a call ends, so it leaves the incoming-call screen and the route comes back.
+     * Stock does this for every RideLink model: only the vehicle types in PhoneStateReceiver.getVehicleTypeIdList
+     * (none of ours) skip broadcastDisconnectCall on OFFHOOK. Repeating the caller frame for the whole call left the
+     * display on "Incoming" and held the turns until the call ended (issue #16).
+     * [caller] stays set for the app and the scooter's end-call button. A call the rider dialled never rang, so it is ignored.
      */
     fun onCallActive(name: String?) {
         val shown = name?.takeIf { it.isNotBlank() } ?: ringingCaller ?: return
         if (ringingCaller == null) return
         ringingCaller = shown
-        if (callState == CallState.ACCEPTED && callJob?.isActive == true && shown == _caller.value) return
+        if (callState == CallState.ACCEPTED && shown == _caller.value) return
         // Answered: not a missed call, so no auto-reply or missed-call pop-up when it ends.
         ringStartedAt = 0
         callJob?.cancel()
@@ -165,15 +166,21 @@ class ClusterController @Inject constructor(
             if (!settings.current().forwardCalls) return@launch
             _caller.value = shown
             callState = CallState.ACCEPTED
-            val frame = ClusterProtocol.caller(shown)
-            // Capped so a missed end event cannot keep the display on a call forever.
-            withTimeoutOrNull(ACTIVE_CALL_MAX_MS) {
-                while (isActive) {
-                    // Under navLock so a caller frame cannot land between the two frames of a turn (issue #12).
-                    navLock.withLock { send(frame) }
-                    delay(ClusterProtocol.CALLER_REPEAT_MS)
-                }
-            }
+            if (link.state.value !is LinkState.Ready) return@launch
+            val s = settings.current()
+            dropCallFromDisplay(model(s))
+            if (_nav.value != null) resendNav() else sendDisplayText(s, force = false)
+        }
+    }
+
+    /**
+     * Stock writes the status frame when a call is answered or ends, so the display drops the caller
+     * (SmartXonnect: three times, 100 ms apart, N109U347N251DataSenderToCluster.onDisconnectCall).
+     */
+    private suspend fun dropCallFromDisplay(m: ClusterModel) {
+        repeat(if (m.family == ClusterFamily.SMARTXONNECT) 3 else 1) {
+            if (it > 0) delay(100)
+            send(ClusterProtocol.status(m, phoneStatus(settings.current())))
         }
     }
 
@@ -241,14 +248,14 @@ class ClusterController @Inject constructor(
 
     /**
      * Shows [text] on custom line 1 (and [line2] on line 2) for [ms], then puts the rider's own lines back (or blanks
-     * them). A newer flash replaces the one showing. Skipped during a route unless [overNav]: on the SmartXonnect LCD
+     * them). A newer flash replaces the one showing. Skipped during a route: on the SmartXonnect LCD
      * the lines share the turn text area. SmartXonnect gets the pair 5 times, 300 / 100 ms apart, as stock
      * sendCustomData writes it.
      */
-    fun flashText(text: String, line2: String? = null, ms: Long = FLASH_MS, overNav: Boolean = false) {
+    fun flashText(text: String, line2: String? = null, ms: Long = FLASH_MS) {
         flashJob?.cancel()
         flashJob = scope.launch {
-            if (link.state.value !is LinkState.Ready || (_nav.value != null && !overNav)) return@launch
+            if (link.state.value !is LinkState.Ready || _nav.value != null) return@launch
             val until = System.currentTimeMillis() + ms + 2_000
             textHeldUntil = until
             val times = if (model(settings.current()).family == ClusterFamily.SMARTXONNECT && line2 != null) 5 else 1
@@ -292,18 +299,39 @@ class ClusterController @Inject constructor(
         if (!s.messageAlerts || !a.allowed(s.messageMuted, s.messageGroups) || link.state.value !is LinkState.Ready) return
         val (line1, line2) = a.lines(s.messageText)
         note("Message: ${a.app} / ${a.sender}")
-        // During a route the turn resends (every 800 ms on SmartXonnect) would cover the pop-up at once: hold them
-        // for the pop-up's time, then put the turn back.
-        val overNav = _nav.value != null
-        if (overNav) navPaused = true
-        try {
-            flashText(line1, line2, MESSAGE_FLASH_MS, overNav)
+        if (_nav.value == null) {
+            flashText(line1, line2, MESSAGE_FLASH_MS)
             flashJob?.join()
-        } finally {
-            if (overNav) {
-                navPaused = false
-                resendNav()
+            return
+        }
+        // During a route the turn resends would cover the pop-up at once, but holding them for the whole pop-up let
+        // the display's watchdog (3.5-4 s without a turn) end the route (issue #16). So the pop-up and the turn take
+        // turns: turn, pop-up until the normal resend time after that turn, turn again, so the turn keeps its usual
+        // 2 s (SmartXonnect 2.2 s) rhythm and the route never drops.
+        flashJob?.cancel()
+        navPaused = true
+        try {
+            repeat(OVER_NAV_ROUNDS) {
+                // A ringing call takes the display; the call code puts the turn back when it ends.
+                if (link.state.value !is LinkState.Ready || _caller.value != null && callState == CallState.RINGING) return
+                val m = model(settings.current())
+                navLock.withLock { _nav.value?.let { sendNav(settings.current(), it) } } ?: return
+                // SmartXonnect gets the pair 5 times, 300 / 100 ms apart, as stock sendCustomData writes it (about 2 s).
+                repeat(if (m.family == ClusterFamily.SMARTXONNECT && line2 != null) 5 else 1) {
+                    send(ClusterProtocol.customLine1(line1))
+                    if (line2 != null) {
+                        delay(300)
+                        send(ClusterProtocol.customLine2(line2))
+                        delay(100)
+                    }
+                }
+                delay((navSentAt + ClusterProtocol.navResendMs(m) - System.currentTimeMillis()).coerceAtLeast(0))
             }
+        } finally {
+            navPaused = false
+            sentLine1 = null
+            sentLine2 = null
+            resendNav()
         }
     }
 
@@ -311,10 +339,10 @@ class ClusterController @Inject constructor(
     @Volatile private var navPaused = false
 
     /**
-     * Turn frames wait while a pop-up or a ringing call is on the display: each resend replaces the text area, so
+     * Turn frames wait while a pop-up or a ringing call (not an answered one) is on the display: each resend replaces the text area, so
      * the caller name and messages vanished during a route. The step itself keeps updating and goes out afterwards.
      */
-    private fun navHeld() = navPaused || _caller.value != null
+    private fun navHeld() = navPaused || _caller.value != null && callState != CallState.ACCEPTED
 
     private suspend fun resendNav() {
         val step = _nav.value ?: return
@@ -496,7 +524,9 @@ class ClusterController @Inject constructor(
         navKeepAlive = scope.launch {
             while (isActive) {
                 val every = ClusterProtocol.navResendMs(model(settings.current()))
-                delay(every)
+                // Wait from the last turn actually sent, not a fixed tick: a new Maps step just before a tick made it
+                // skip and wait a whole extra period, 4-5 s gaps the display's watchdog dropped navigation on (issue #16).
+                delay((navSentAt + every - System.currentTimeMillis()).coerceIn(NAV_KEEPALIVE_MIN_WAIT_MS, every))
                 val step = _nav.value ?: break
                 if (link.state.value !is LinkState.Ready || _arrowSweep.value || navHeld()) continue
                 if (System.currentTimeMillis() - navSentAt < every) continue
@@ -705,6 +735,8 @@ class ClusterController @Inject constructor(
     }
 
     fun onIncomingCall(nameOrNumber: String) {
+        // A late "ringing" repost for the call just answered must not put it back on the display.
+        if (callState == CallState.ACCEPTED && _caller.value == nameOrNumber) return
         ringingCaller = nameOrNumber
         if (callJob?.isActive == true && _caller.value == nameOrNumber) return
         if (_caller.value == null) ringStartedAt = System.currentTimeMillis()
@@ -747,13 +779,8 @@ class ClusterController @Inject constructor(
         scope.launch {
             if (link.state.value is LinkState.Ready) {
                 val s = settings.current()
-                // Stock writes the status frame at once when a call ends, so the display drops the caller now
-                // (SmartXonnect: three times, 100 ms apart, N109U347N251DataSenderToCluster.onDisconnectCall).
                 val m = model(s)
-                repeat(if (m.family == ClusterFamily.SMARTXONNECT) 3 else 1) {
-                    if (it > 0) delay(100)
-                    send(ClusterProtocol.status(m, phoneStatus(s)))
-                }
+                dropCallFromDisplay(m)
                 if (s.ledClear && m.family == ClusterFamily.SMARTXONNECT) send(ClusterProtocol.clearCallLed(java.time.LocalDate.now()))
                 // The route was held while ringing; custom lines stay off during a route.
                 if (_nav.value != null) resendNav() else sendDisplayText(s, force = false)
@@ -1098,7 +1125,8 @@ class ClusterController @Inject constructor(
 
     private companion object {
         const val LOG_SIZE = 300
-        const val ACTIVE_CALL_MAX_MS = 3 * 60 * 60_000L
+        /** Keep-alive poll while turns are held (call, pop-up) or the link is down; never a busy loop. */
+        const val NAV_KEEPALIVE_MIN_WAIT_MS = 250L
         const val DEMO_STEP_MS = 1_500L
         const val DEMO_NAV_STEP_MS = 1_000L
         const val ARROW_CODE_MAX = 80
@@ -1113,6 +1141,8 @@ class ClusterController @Inject constructor(
         const val RIDING_GAP_MS = 5 * 60_000L
         const val FLASH_MS = 10_000L
         const val MESSAGE_FLASH_MS = 6_000L
+        /** Pop-up rounds over a route, one turn resend period each: about [MESSAGE_FLASH_MS] in all. */
+        const val OVER_NAV_ROUNDS = 3
         const val ALERT_QUEUE = 5
         const val CELL_REFRESH_MS = 10_000L
     }
