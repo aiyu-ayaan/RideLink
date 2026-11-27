@@ -6,7 +6,7 @@
 graph LR
     app[":app<br/>MainActivity, ConnectionPanelActivity, ClusterService,<br/>ConnectionTileService, RideNotificationListener,<br/>BootReceiver, NearbyReceiver"]
     ui[":ui<br/>Compose screens, theme, strings,<br/>MainViewModel"]
-    core[":core<br/>protocol, ble, ClusterController,<br/>nav + social parsers, weather, phone, settings,<br/>care (fuel log, service), check-in"]
+    core[":core<br/>protocol, ble, ClusterController,<br/>nav + social parsers, weather, phone, settings,<br/>care (fuel log, service), check-in,<br/>account (Firebase Auth), backup (Firestore + WorkManager)"]
     app --> ui
     app --> core
     ui --> core
@@ -94,13 +94,32 @@ Console -> Feature tests runs each of these paths without a scooter (Pretend rid
 ```mermaid
 graph TD
     Root[RideLinkRoot] --> Tabs[Ride / Analytics / Settings<br/>floating pill, hides on scroll]
-    Root --> Stack[page stack: settings:SECTION, ride:ID, Console, Updates, About, Acknowledgements, Care<br/>SeekableTransitionState + PredictiveBackHandler]
+    Root --> Stack[page stack: settings:SECTION, ride:ID, Console, Updates, About, Acknowledgements, Care, History, Backup<br/>SeekableTransitionState + PredictiveBackHandler]
     Root --> Host[UpdateHost sheet]
     Host --> U[AppUpdater: GitHub releases API -> RideLink-version.apk -> PackageInstaller session]
     U --> IR[UpdateInstallReceiver: confirm / failure reason]
     Settings[Settings -> Developer options] -->|developer mode| Console[Console page]
     Console --> LF[LogFile: files/logs, 7 days, export via SAF]
 ```
+
+## Cloud backup
+
+```mermaid
+graph LR
+    S[(rides.db / care.db / garage.db<br/>+ DataStore prefs)] -->|backupRows, exportPrefs| C[BackupCodec<br/>docs + content hash]
+    C --> R[BackupRepository.run mode]
+    W[BackupWorker<br/>WorkManager periodic or one-time] --> R
+    UI[BackupScreen<br/>Back up now, conflict choice] -->|enqueue mode| W
+    R -->|1 read: RideLink/uid summary| F[(Firestore<br/>RideLink/uid + rides, fills, care,<br/>readings, bikes, settings)]
+    R -->|batched writes of changed docs,<br/>then revision transaction| F
+    R <-->|path -> hash, uid, revision, status| B[(backup.db)]
+    R -->|USE_CLOUD / MERGE: replaceAll, importPrefs| S
+```
+
+Modes: `BACKUP` (incremental; stops with a `Conflict` when the cloud revision is not the one this phone wrote, or this
+phone never backed up to the account), `MERGE` (union, phone wins ties, prefs per key, newer reading), `USE_CLOUD`,
+`USE_PHONE` (mirror, deletes cloud-only docs), `DELETE_CLOUD`. Progress is a `StateFlow` in the singleton (worker and
+UI share the process); `queued` follows the unique `backup_now` work.
 
 ## Localization
 
@@ -120,6 +139,7 @@ graph TD
 | Current nav step, caller, speed, telemetry, weather, place, music, social counts, detected model, frame log, demo | `ClusterController` | `StateFlow`s |
 | Ride history (summaries + 5 s samples + Maps turns, per scooter) | `RideStore` (SQLite `rides.db`, v3) | `StateFlow<List<RideRecord>>` |
 | Google account (optional, for backups), welcome-screen gate | `AccountRepository` (Firebase Auth + Credential Manager), `Settings.welcomeDone` | `Flow<Account?>` |
+| Cloud backup status, progress, conflict, sync hashes | `BackupRepository` (Firestore, `backup.db`, WorkManager `backup_periodic` / `backup_now`) | `StateFlow<BackupStatus>`, `StateFlow<BackupProgress?>` |
 | Update check / download / install | `AppUpdater` | `StateFlow<UpdateState>` |
 | Saved Console log | `LogFile` (`files/logs`) | export to a file the rider picks |
 | Ride session lifetime | `ClusterService` (foreground, connectedDevice) | notification |

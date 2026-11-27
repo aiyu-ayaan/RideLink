@@ -16,6 +16,9 @@ import com.aiyu.ridelink.ui.account.AccountViewModel
 import com.aiyu.ridelink.ui.account.GoogleSignInButton
 import com.aiyu.ridelink.ui.account.LoopMark
 import com.aiyu.ridelink.ui.account.ProfileAvatar
+import com.aiyu.ridelink.ui.backup.BackupViewModel
+import com.aiyu.ridelink.ui.backup.when_
+import androidx.compose.material.icons.rounded.CloudUpload
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
@@ -149,8 +152,11 @@ fun SettingsScreen(
     onOpenConsole: () -> Unit,
     onOpenUpdates: () -> Unit,
     onOpenAbout: () -> Unit,
+    onOpenBackup: () -> Unit,
     accounts: AccountViewModel = hiltViewModel(),
+    backups: BackupViewModel = hiltViewModel(),
 ) {
+    val backupStatus by backups.status.collectAsStateWithLifecycle()
     val s by vm.settings.collectAsStateWithLifecycle()
     val signedIn by accounts.account.collectAsStateWithLifecycle()
     val photo by accounts.photo.collectAsStateWithLifecycle()
@@ -222,6 +228,12 @@ fun SettingsScreen(
                                     else Icon(Icons.Rounded.AccountCircle, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(40.dp))
                                 },
                             ) { open(SettingsSection.ACCOUNT) }
+                            val backupLine = when {
+                                a == null -> stringResource(R.string.backup_row_desc)
+                                backupStatus.conflict != null -> stringResource(R.string.backup_row_action)
+                                else -> backupStatus.lastAt?.let { stringResource(R.string.backup_row_last, when_(context, it)) } ?: stringResource(R.string.backup_row_never)
+                            }
+                            LinkRow(Icons.Rounded.CloudUpload, stringResource(R.string.backup_title), backupLine, onClick = onOpenBackup)
                         }
                     }
                     item { Section(R.string.settings_group_ride) }
@@ -270,6 +282,11 @@ fun SettingsScreen(
                     if (signedIn == null) {
                         GoogleSignInButton(accounts.busy, { accounts.signIn(context) })
                     } else {
+                        FilledTonalButton(onClick = onOpenBackup, modifier = Modifier.fillMaxWidth().heightIn(min = Dimens.minTouch)) {
+                            Icon(Icons.Rounded.CloudUpload, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
+                            Spacer(Modifier.width(ButtonDefaults.IconSpacing))
+                            Text(stringResource(R.string.backup_title))
+                        }
                         OutlinedButton(onClick = { accounts.signOut() }, modifier = Modifier.fillMaxWidth().heightIn(min = Dimens.minTouch)) {
                             Icon(Icons.AutoMirrored.Rounded.Logout, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
                             Spacer(Modifier.width(ButtonDefaults.IconSpacing))

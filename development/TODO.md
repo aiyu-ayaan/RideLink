@@ -76,3 +76,8 @@
 ## Later
 - [ ] Turn arrow fallback if a Maps update renames its `maneuver_*` drawables (Console note then says `0 Maps icons`)
 - [ ] Legacy Ntorq SmartXonnect (VehicleCode "9") uses separate code, not analysed
+- [x] Optional Google sign-in (Firebase Auth) with skippable welcome screen
+- [x] Firestore cloud backup: WorkManager schedule (manual/daily/weekly/monthly, Wi-Fi only), Back up now,
+      incremental by hash, conflict choice (merge / use cloud / use phone), restore, delete; Firebase Analytics on
+- [ ] Backup: test on two real phones (conflict, merge, restore on a fresh install) against the live rules
+- [ ] Backup: notify when a scheduled backup stops on a conflict (today it only shows in Settings -> Backup)

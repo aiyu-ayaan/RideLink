@@ -59,6 +59,7 @@ import com.aiyu.ridelink.core.ble.LinkState
 import com.aiyu.ridelink.ui.about.AboutScreen
 import com.aiyu.ridelink.ui.account.AccountViewModel
 import com.aiyu.ridelink.ui.account.WelcomeScreen
+import com.aiyu.ridelink.ui.backup.BackupScreen
 import com.aiyu.ridelink.ui.about.AcknowledgementsScreen
 import com.aiyu.ridelink.ui.analytics.AnalyticsScreen
 import com.aiyu.ridelink.ui.analytics.RideDetailScreen
@@ -86,7 +87,7 @@ private val tabs = listOf(
 )
 
 /** Screens opened on top of the tabs. Console is a developer option (Settings → Developer options). */
-private enum class Page { Console, Updates, About, Acknowledgements, Care, History }
+private enum class Page { Console, Updates, About, Acknowledgements, Care, History, Backup }
 
 /** Stack entry prefix for a Settings section page, e.g. "settings:SCOOTER". */
 private const val SETTINGS = "settings:"
@@ -176,6 +177,7 @@ private fun RideLinkApp(onConnect: () -> Unit, onDisconnect: () -> Unit) {
                 onOpenConsole = { push(Page.Console.name) },
                 onOpenUpdates = { push(Page.Updates.name) },
                 onOpenAbout = { push(Page.About.name) },
+                onOpenBackup = { push(Page.Backup.name) },
             )
         }
         // AnimatedContent drops a page's composition when it leaves; the holder keeps its scroll state for the way back.
@@ -201,6 +203,7 @@ private fun RideLinkApp(onConnect: () -> Unit, onDisconnect: () -> Unit) {
                             Page.Acknowledgements -> AcknowledgementsScreen(onBack = pop)
                             Page.Care -> CareScreen(onBack = pop)
                             Page.History -> RideHistoryScreen(onBack = pop, onOpenRide = { push(RIDE + it) })
+                            Page.Backup -> BackupScreen(onBack = pop)
                         }
                     }
                 }

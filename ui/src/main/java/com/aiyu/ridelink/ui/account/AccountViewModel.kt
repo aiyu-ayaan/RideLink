@@ -12,6 +12,8 @@ import androidx.lifecycle.viewModelScope
 import com.aiyu.ridelink.core.account.Account
 import com.aiyu.ridelink.core.account.AccountRepository
 import com.aiyu.ridelink.core.account.SignInResult
+import com.aiyu.ridelink.core.backup.BackupMode
+import com.aiyu.ridelink.core.backup.BackupRepository
 import com.aiyu.ridelink.core.settings.SettingsRepository
 import com.aiyu.ridelink.ui.R
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -29,6 +31,7 @@ import javax.inject.Inject
 class AccountViewModel @Inject constructor(
     private val accounts: AccountRepository,
     private val settings: SettingsRepository,
+    private val backup: BackupRepository,
 ) : ViewModel() {
     val available = accounts.available
 
@@ -58,7 +61,10 @@ class AccountViewModel @Inject constructor(
         busy = true
         error = null
         viewModelScope.launch {
-            error = when (accounts.signIn(activity)) {
+            val result = accounts.signIn(activity)
+            // First backup check right away: a new phone sees the restore offer without waiting for the schedule.
+            if (result == SignInResult.Done) backup.enqueue(BackupMode.BACKUP)
+            error = when (result) {
                 SignInResult.Done, SignInResult.Cancelled -> null
                 SignInResult.NoAccount -> R.string.account_err_no_account
                 is SignInResult.Failed -> R.string.account_err_failed

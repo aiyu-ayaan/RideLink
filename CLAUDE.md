@@ -26,6 +26,8 @@ Modules:
   `care/` (`CareMath` mileage + due status, `FuelWatch` refuel / low fuel, `CareMonitor`, `CareStore` care.db),
   `phone/RideCheckIn` (start/end SMS).
   `account/AccountRepository` (optional Google sign-in: Credential Manager bottom sheet -> Firebase Auth).
+  `backup/` (Firestore cloud backup: `BackupCodec` pure doc mapping + plans, `BackupRepository` engine + sync state
+  `backup.db` + WorkManager scheduling, `BackupWorker`). Firebase Analytics is on via the `core` dependency.
 - `ui` => all Compose screens, theme, and **all strings** (`ui/src/main/res/values/strings.xml`).
   `core` and `app` hold no user-facing strings; the app module reads them via `com.aiyu.ridelink.ui.R`.
 
@@ -68,6 +70,15 @@ Google sign-in (optional, for backups): fresh installs open `ui/account/WelcomeS
 Settings -> Google account signs in/out later. `app/google-services.json` is gitignored; CI writes it from the
 `GOOGLE_SERVICES_JSON` secret. The web client ID is `GOOGLE_WEB_CLIENT_ID` in gitignored `local.properties`
 (CI: same-named secret), compiled into `core` `BuildConfig`. Without it the build still works and sign-in is hidden (`AccountRepository.available`).
+Cloud backup (signed in only): everything lives under `RideLink/{uid}` in Firestore (`firestore.rules` at the repo root;
+paths are case-sensitive). Docs: `rides/{start ms}` (row + gzipped sample CSV blob + turns), `fills/{bike}_{t}`,
+`care/{bike}_{item}`, `readings/{bike}`, `bikes/{address}`, `settings/prefs` (typed DataStore values); the summary doc
+holds `revision`, `updatedAt`, `device`, `schema`, `counts`, `bytes`. Free Spark plan: a backup reads 1 doc and writes
+only changed docs (hashes in `backup.db`). A revision this phone did not write = conflict; the rider picks Merge
+(phone wins ties, prefs merge per key), Use cloud, or Use phone (Settings -> Backup). Schedule: `Settings.backupFrequency`
+(Manual/Daily/Weekly/Monthly) + `backupWifiOnly`; `BackupRepository.startScheduling()` from `RideLinkApp`.
+A new SQLite column is backed up automatically (rows are column maps); a new table or DataStore-only list needs a
+kind in `BackupCodec`. Bump `BackupCodec.SCHEMA` only for layout changes an older app cannot read.
 Error `[28444] Developer console is not set up correctly` = the package + SHA-1 has no Android OAuth client in project
 `monolith-664a6`.
 
