@@ -190,6 +190,17 @@ fun RideScreen(vm: MainViewModel, onConnect: () -> Unit, onDisconnect: () -> Uni
     val status: @Composable ColumnScope.() -> Unit = {
             HeroCard(link, paired, settings.deviceName, demo)
             if (paired) BikeChips(bikes, settings.deviceAddress, bluetoothOk, onSelect = vm::select, onAdd = { pairing = true })
+            // Searching for a while usually means the display was never put in pairing mode (issue #15).
+            var stuck by remember { mutableStateOf(false) }
+            LaunchedEffect(link is LinkState.Connecting) {
+                stuck = false
+                if (link is LinkState.Connecting) { kotlinx.coroutines.delay(STUCK_SEARCHING_MS); stuck = true }
+            }
+            AnimatedVisibility(stuck && !demo && bluetoothOk, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
+                PermissionCard(Icons.Rounded.Bluetooth, R.string.stuck_title, R.string.stuck_body, R.string.stuck_action, optional = true) {
+                    pairing = true
+                }
+            }
             AnimatedVisibility(nav != null || speed != null, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
                 RideDashboard(nav, speed)
             }
@@ -463,6 +474,9 @@ private fun BikeChips(bikes: List<Bike>, active: String?, bluetoothOk: Boolean, 
     }
 }
 
+/** Searching this long shows the pairing help card. */
+private const val STUCK_SEARCHING_MS = 20_000L
+
 @Composable
 internal fun PairSheet(vm: MainViewModel, onDone: () -> Unit) {
     val found by vm.found.collectAsStateWithLifecycle()
@@ -473,19 +487,23 @@ internal fun PairSheet(vm: MainViewModel, onDone: () -> Unit) {
     LaunchedEffect(scanning) { if (scanning) { kotlinx.coroutines.delay(15_000); vm.stopScan() } }
 
     ModalBottomSheet(onDismissRequest = onDone, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
-        Column(Modifier.padding(horizontal = Dimens.gutter)) {
-            Text(stringResource(R.string.pair_title), style = MaterialTheme.typography.headlineSmall)
-            Text(stringResource(R.string.pair_hint), color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(vertical = Dimens.sm))
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.heightIn(min = Dimens.minTouch)) {
-                if (scanning) {
-                    LoadingIndicator(Modifier.size(32.dp))
-                    Text(stringResource(R.string.pair_scanning), modifier = Modifier.padding(start = Dimens.sm))
-                } else {
-                    TextButton(onClick = vm::startScan) { Text(stringResource(R.string.pair_rescan)) }
+        // One list so the guide scrolls with the results on short screens.
+        LazyColumn(Modifier.padding(bottom = Dimens.xl)) {
+            item {
+                Column(Modifier.padding(horizontal = Dimens.gutter)) {
+                    Text(stringResource(R.string.pair_title), style = MaterialTheme.typography.headlineSmall)
+                    Text(stringResource(R.string.pair_hint), color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(vertical = Dimens.sm))
+                    PairingGuide()
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.heightIn(min = Dimens.minTouch).padding(top = Dimens.sm)) {
+                        if (scanning) {
+                            LoadingIndicator(Modifier.size(32.dp))
+                            Text(stringResource(R.string.pair_scanning), modifier = Modifier.padding(start = Dimens.sm))
+                        } else {
+                            TextButton(onClick = vm::startScan) { Text(stringResource(R.string.pair_rescan)) }
+                        }
+                    }
                 }
             }
-        }
-        LazyColumn(Modifier.padding(bottom = Dimens.xl)) {
             if (found.isEmpty() && !scanning) {
                 item { Text(stringResource(R.string.pair_none), modifier = Modifier.padding(Dimens.gutter)) }
             }
