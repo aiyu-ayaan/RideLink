@@ -69,7 +69,7 @@ class RideNotificationListener : NotificationListenerService() {
                 val incoming = isIncoming(n)
                 noteOnce("Call ${if (incoming) "ringing" else "not ringing"}: ${sbn.packageName} title=$title | text=$text")
                 // Any app's call (phone, WhatsApp, Instagram, Messenger, Telegram...): ringing shows the caller,
-                // answering keeps it up so the display's call indicator stays lit. A dialled call shows nothing.
+                // answering takes it off the display so the route comes back. A dialled call shows nothing.
                 if (incoming) controller.onIncomingCall(callerName(n) ?: return)
                 else controller.onCallActive(callerName(n))
             }

@@ -137,7 +137,7 @@ class ClusterController @Inject constructor(
         }
     }
 
-    /** Answered from the scooter button: keep the caller up for the rest of the call. */
+    /** Answered from the scooter button. */
     private fun onCallAnswered() = onCallActive(null)
 
     /**
@@ -147,17 +147,18 @@ class ClusterController @Inject constructor(
     @Volatile private var ringingCaller: String? = null
 
     /**
-     * A ringing call was answered (phone, WhatsApp, Instagram, Messenger): the caller frame keeps going every
-     * [ClusterProtocol.CALLER_REPEAT_MS] until the call ends, so the display's call indicator stays lit.
-     * Stock does the same on the vehicle types in PhoneStateReceiver.getVehicleTypeIdList (its 400 ms callTimer
-     * is only cancelled on IDLE). [name] null keeps the caller already shown. Turn frames wait, as while ringing.
-     * A call the rider dialled never rang, so it is ignored here.
+     * A ringing call was answered (phone, WhatsApp, Instagram, Messenger): the caller frames stop and the display gets
+     * the status frame, as when a call ends, so it leaves the incoming-call screen and the route comes back.
+     * Stock does this for every RideLink model: only the vehicle types in PhoneStateReceiver.getVehicleTypeIdList
+     * (none of ours) skip broadcastDisconnectCall on OFFHOOK. Repeating the caller frame for the whole call left the
+     * display on "Incoming" and held the turns until the call ended (issue #16).
+     * [caller] stays set for the app and the scooter's end-call button. A call the rider dialled never rang, so it is ignored.
      */
     fun onCallActive(name: String?) {
         val shown = name?.takeIf { it.isNotBlank() } ?: ringingCaller ?: return
         if (ringingCaller == null) return
         ringingCaller = shown
-        if (callState == CallState.ACCEPTED && callJob?.isActive == true && shown == _caller.value) return
+        if (callState == CallState.ACCEPTED && shown == _caller.value) return
         // Answered: not a missed call, so no auto-reply or missed-call pop-up when it ends.
         ringStartedAt = 0
         callJob?.cancel()
@@ -165,15 +166,21 @@ class ClusterController @Inject constructor(
             if (!settings.current().forwardCalls) return@launch
             _caller.value = shown
             callState = CallState.ACCEPTED
-            val frame = ClusterProtocol.caller(shown)
-            // Capped so a missed end event cannot keep the display on a call forever.
-            withTimeoutOrNull(ACTIVE_CALL_MAX_MS) {
-                while (isActive) {
-                    // Under navLock so a caller frame cannot land between the two frames of a turn (issue #12).
-                    navLock.withLock { send(frame) }
-                    delay(ClusterProtocol.CALLER_REPEAT_MS)
-                }
-            }
+            if (link.state.value !is LinkState.Ready) return@launch
+            val s = settings.current()
+            dropCallFromDisplay(model(s))
+            if (_nav.value != null) resendNav() else sendDisplayText(s, force = false)
+        }
+    }
+
+    /**
+     * Stock writes the status frame when a call is answered or ends, so the display drops the caller
+     * (SmartXonnect: three times, 100 ms apart, N109U347N251DataSenderToCluster.onDisconnectCall).
+     */
+    private suspend fun dropCallFromDisplay(m: ClusterModel) {
+        repeat(if (m.family == ClusterFamily.SMARTXONNECT) 3 else 1) {
+            if (it > 0) delay(100)
+            send(ClusterProtocol.status(m, phoneStatus(settings.current())))
         }
     }
 
@@ -311,10 +318,10 @@ class ClusterController @Inject constructor(
     @Volatile private var navPaused = false
 
     /**
-     * Turn frames wait while a pop-up or a ringing call is on the display: each resend replaces the text area, so
+     * Turn frames wait while a pop-up or a ringing call (not an answered one) is on the display: each resend replaces the text area, so
      * the caller name and messages vanished during a route. The step itself keeps updating and goes out afterwards.
      */
-    private fun navHeld() = navPaused || _caller.value != null
+    private fun navHeld() = navPaused || _caller.value != null && callState != CallState.ACCEPTED
 
     private suspend fun resendNav() {
         val step = _nav.value ?: return
@@ -707,6 +714,8 @@ class ClusterController @Inject constructor(
     }
 
     fun onIncomingCall(nameOrNumber: String) {
+        // A late "ringing" repost for the call just answered must not put it back on the display.
+        if (callState == CallState.ACCEPTED && _caller.value == nameOrNumber) return
         ringingCaller = nameOrNumber
         if (callJob?.isActive == true && _caller.value == nameOrNumber) return
         if (_caller.value == null) ringStartedAt = System.currentTimeMillis()
@@ -749,13 +758,8 @@ class ClusterController @Inject constructor(
         scope.launch {
             if (link.state.value is LinkState.Ready) {
                 val s = settings.current()
-                // Stock writes the status frame at once when a call ends, so the display drops the caller now
-                // (SmartXonnect: three times, 100 ms apart, N109U347N251DataSenderToCluster.onDisconnectCall).
                 val m = model(s)
-                repeat(if (m.family == ClusterFamily.SMARTXONNECT) 3 else 1) {
-                    if (it > 0) delay(100)
-                    send(ClusterProtocol.status(m, phoneStatus(s)))
-                }
+                dropCallFromDisplay(m)
                 if (s.ledClear && m.family == ClusterFamily.SMARTXONNECT) send(ClusterProtocol.clearCallLed(java.time.LocalDate.now()))
                 // The route was held while ringing; custom lines stay off during a route.
                 if (_nav.value != null) resendNav() else sendDisplayText(s, force = false)
@@ -1100,7 +1104,6 @@ class ClusterController @Inject constructor(
 
     private companion object {
         const val LOG_SIZE = 300
-        const val ACTIVE_CALL_MAX_MS = 3 * 60 * 60_000L
         /** Keep-alive poll while turns are held (call, pop-up) or the link is down; never a busy loop. */
         const val NAV_KEEPALIVE_MIN_WAIT_MS = 250L
         const val DEMO_STEP_MS = 1_500L
