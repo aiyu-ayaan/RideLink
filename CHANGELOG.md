@@ -2,24 +2,25 @@
 
 ## [1.1.0](https://github.com/aiyu-ayaan/RideLink/compare/v1.0.0...v1.1.0) (2026-11-27)
 
+### ☁️ Cloud backup, if you want it
+
+Sign in with Google and RideLink can back up your rides, fuel log, service records, scooters and settings, then bring them to a new phone. Signing in stays optional, and nothing is backed up until you do.
+
 ### Features
 
-* Add Google sign-in and Firestore cloud backup
+* **Google sign-in:** optional, with a welcome screen you can skip. The account opens as a Play Store style dialog
+* **Backup your way:** daily, weekly, monthly or only when you tap **Back up now**, in the background, with a Wi-Fi only option and a progress ring
+* **Nothing overwritten by surprise:** when the cloud and the phone differ, choose **Merge both**, **Use cloud backup** or **Keep this phone's data**, with counts and last backup time for each side
+* **Restore on a new phone:** the restore offer opens after sign-in and brings your saved scooters back
+* **Re-pair a scooter:** move its rides, fuel log and service records to a new Bluetooth address (Settings → Scooter)
+* **Delete cloud data:** removes the backup from the server only. Automatic backups pause on every phone until you tap **Back up now**
+* **Sign out** at any time. Your data stays on the phone
 
-### Other changes
+### Privacy
 
-* Fix(Backup) : Respect cloud deletion on every phone, restore scooters, fix release crash
-* Fix(Backup) : Offer restore on a fresh install and keep Analytics anonymous
-* Ui(Backup) : Add backup screen with progress, schedule and conflict choices
-* Core(Backup) : Add Firestore cloud backup with WorkManager and conflict choices
-* Build(Account) : Read the Google web client ID from local.properties
-* Feat(Account) : Add optional Google sign-in with a skippable welcome screen
-* Core(Nav) : Keep the pop-up turn rhythm at the resend period
-* Docs(Readme) : Add a direct APK download button
-* Ui(Pair) : Show how to put the display in pairing mode
-* Core(Nav) : Keep the route alive while a message pop-up shows
-* Core(Call) : Drop the caller from the display once a call is answered
-* Core(Nav) : Time turn resends from the last turn sent
+* **Anonymous usage statistics are now on by default** (Firebase Analytics, without the advertising ID, no ride data, names or numbers). Turn them off in **Settings → In the app → Usage statistics**
+* A cloud backup holds your rides, places, check-in contact number, birthday and parked spot. Only your Google account can read it
+* New backup and account text is in English for now
 
 ## [1.0.0](https://github.com/aiyu-ayaan/RideLink/compare/v0.2.1-alpha.13...v1.0.0) (2026-11-18)
 
