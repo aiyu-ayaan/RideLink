@@ -196,7 +196,6 @@
     <string name="analytics_sample">నమూనా</string>
     <string name="analytics_recording">ఈ రైడ్ రికార్డ్ అవుతోంది</string>
     <string name="analytics_empty_title">ఇంకా రైడ్‌లు లేవు</string>
-    <string name="analytics_empty_body">స్కూటర్ కనెక్ట్ అయినప్పుడు రైడ్‌లు వాటంతట అవే రికార్డ్ అవుతాయి: ప్రతి 5 సెకన్లకు ఓడోమీటర్ నుండి దూరం, వేగం, మైలేజ్ మరియు ఇంధనం. అంతా ఈ ఫోన్‌లోనే ఉంటుంది. ఈ స్క్రీన్‌ను ప్రివ్యూ చేయడానికి నమూనా రైడ్‌లను లోడ్ చేయండి; వాటికి లేబుల్ ఉంటుంది మరియు ఒక్క ట్యాప్‌తో తొలగించవచ్చు.</string>
     <string name="period_today">ఈరోజు</string>
     <string name="period_week">వారం</string>
     <string name="period_month">నెల</string>
@@ -262,7 +261,6 @@
     <string name="chart_ride_rpm">ఇంజిన్ RPM</string>
     <string name="chart_ride_range">మిగిలిన రేంజ్</string>
     <string name="settings_record_rides">విశ్లేషణ కోసం రైడ్‌లను రికార్డ్ చేయండి</string>
-    <string name="settings_record_rides_hint">కనెక్ట్ అయినప్పుడు ప్రతి 5 సెకన్లకు దూరం, వేగం, మైలేజ్ మరియు ఇంధనం. ఈ ఫోన్‌లోనే ఉంటుంది.</string>
 
     <!-- Navigation -->
     <string name="back">వెనుకకు</string>
@@ -329,7 +327,6 @@
     <string name="about_version">వెర్షన్ %1$s (%2$d)</string>
     <string name="about_updates_desc">కొత్త విడుదల కోసం తనిఖీ చేయండి</string>
     <string name="about_privacy">గోప్యత</string>
-    <string name="about_privacy_desc">అంతా ఈ ఫోన్‌లోనే ఉంటుంది. ఖాతా లేదు, సర్వర్ లేదు, విశ్లేషణలు లేవు.</string>
     <string name="about_disclaimer">అధికారిక యాప్ కాదు</string>
     <string name="about_disclaimer_desc">RideLink ఒక వ్యక్తిగత ప్రాజెక్ట్ మరియు TVS Motor Company తో అనుబంధించబడలేదు లేదా ఆమోదించబడలేదు.</string>
     <string name="about_developer">డెవలపర్</string>

@@ -60,6 +60,7 @@ import com.aiyu.ridelink.ui.about.AboutScreen
 import com.aiyu.ridelink.ui.account.AccountViewModel
 import com.aiyu.ridelink.ui.account.WelcomeScreen
 import com.aiyu.ridelink.ui.backup.BackupScreen
+import com.aiyu.ridelink.ui.backup.BackupViewModel
 import com.aiyu.ridelink.ui.about.AcknowledgementsScreen
 import com.aiyu.ridelink.ui.analytics.AnalyticsScreen
 import com.aiyu.ridelink.ui.analytics.RideDetailScreen
@@ -126,6 +127,18 @@ private fun RideLinkApp(onConnect: () -> Unit, onDisconnect: () -> Unit) {
     var stack by rememberSaveable { mutableStateOf(listOf<String>()) }
     val push = { p: String -> stack = stack + p }
     val pop = { stack = stack.dropLast(1) }
+
+    // A fresh install signed in to an account with a backup: open the restore offer once, as WhatsApp does.
+    val backup: BackupViewModel = hiltViewModel()
+    val backupStatus by backup.status.collectAsStateWithLifecycle()
+    var offeredRestore by rememberSaveable { mutableStateOf<Long?>(null) }
+    LaunchedEffect(backupStatus.conflict) {
+        val c = backupStatus.conflict ?: return@LaunchedEffect
+        if (c.phoneEmpty && offeredRestore != c.cloudAt && stack.lastOrNull() != Page.Backup.name) {
+            offeredRestore = c.cloudAt
+            push(Page.Backup.name)
+        }
+    }
 
     // Predictive back: the system gesture seeks the page transition, so the page underneath shows while swiping;
     // release commits, a cancelled swipe springs back. Taps on Back buttons animate the same transition.

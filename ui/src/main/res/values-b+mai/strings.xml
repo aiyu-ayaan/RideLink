@@ -196,7 +196,6 @@
     <string name="analytics_sample">नमूना</string>
     <string name="analytics_recording">ई राइड रिकॉर्ड भऽ रहल अछि</string>
     <string name="analytics_empty_title">एखन धरि कोनो राइड नहि</string>
-    <string name="analytics_empty_body">स्कूटर जुड़ल रहला पर राइड अपने आप रिकॉर्ड होइत अछि: प्रत्येक ५ सेकंड मे ओडोमीटर सँ दूरी, रफ्तार, माइलेज आ ईंधन। सब किछु एही फोन पर रहैत अछि। एहि स्क्रीन केँ देखबाक लेल नमूना राइड लोड करू; ई चिन्हित अछि आ एक टैप मे हटाएल जा सकैत अछि।</string>
     <string name="period_today">आइ</string>
     <string name="period_week">सप्ताह</string>
     <string name="period_month">महीना</string>
@@ -262,7 +261,6 @@
     <string name="chart_ride_rpm">इंजन RPM</string>
     <string name="chart_ride_range">बाँकी रेंज</string>
     <string name="settings_record_rides">विश्लेषण लेल राइड रिकॉर्ड करू</string>
-    <string name="settings_record_rides_hint">जुड़ल रहला पर प्रत्येक ५ सेकंड मे दूरी, रफ्तार, माइलेज आ ईंधन। एही फोन पर रहैत अछि।</string>
 
     <!-- Navigation -->
     <string name="back">पाछाँ</string>
@@ -329,7 +327,6 @@
     <string name="about_version">संस्करण %1$s (%2$d)</string>
     <string name="about_updates_desc">नव रिलीज़ जाँचू</string>
     <string name="about_privacy">गोपनीयता</string>
-    <string name="about_privacy_desc">सब किछु एही फोन पर रहैत अछि। कोनो खाता नहि, कोनो सर्वर नहि, कोनो विश्लेषण नहि।</string>
     <string name="about_disclaimer">आधिकारिक ऐप नहि अछि</string>
     <string name="about_disclaimer_desc">RideLink एकटा व्यक्तिगत परियोजना अछि आ TVS Motor Company सँ संबद्ध वा अनुमोदित नहि अछि।</string>
     <string name="about_developer">विकासकर्ता</string>

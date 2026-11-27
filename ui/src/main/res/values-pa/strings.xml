@@ -196,7 +196,6 @@
     <string name="analytics_sample">ਨਮੂਨਾ</string>
     <string name="analytics_recording">ਇਹ ਰਾਈਡ ਰਿਕਾਰਡ ਹੋ ਰਹੀ ਹੈ</string>
     <string name="analytics_empty_title">ਅਜੇ ਤੱਕ ਕੋਈ ਰਾਈਡ ਨਹੀਂ</string>
-    <string name="analytics_empty_body">ਜਦੋਂ ਸਕੂਟਰ ਕਨੈਕਟ ਹੁੰਦਾ ਹੈ ਤਾਂ ਰਾਈਡਾਂ ਆਪਣੇ ਆਪ ਰਿਕਾਰਡ ਹੁੰਦੀਆਂ ਹਨ: ਹਰ 5 ਸਕਿੰਟ ਵਿੱਚ ਓਡੋਮੀਟਰ ਤੋਂ ਦੂਰੀ, ਰਫ਼ਤਾਰ, ਮਾਈਲੇਜ ਅਤੇ ਬਾਲਣ। ਸਭ ਕੁਝ ਇਸ ਫ਼ੋਨ ਉੱਤੇ ਰਹਿੰਦਾ ਹੈ। ਇਸ ਸਕ੍ਰੀਨ ਦਾ ਪੂਰਵ-ਦਰਸ਼ਨ ਕਰਨ ਲਈ ਨਮੂਨਾ ਰਾਈਡਾਂ ਲੋਡ ਕਰੋ; ਇਹਨਾਂ ਉੱਤੇ ਲੇਬਲ ਲੱਗਾ ਹੁੰਦਾ ਹੈ ਅਤੇ ਇੱਕ ਟੈਪ ਵਿੱਚ ਹਟਾਇਆ ਜਾ ਸਕਦਾ ਹੈ।</string>
     <string name="period_today">ਅੱਜ</string>
     <string name="period_week">ਹਫ਼ਤਾ</string>
     <string name="period_month">ਮਹੀਨਾ</string>
@@ -262,7 +261,6 @@
     <string name="chart_ride_rpm">ਇੰਜਣ RPM</string>
     <string name="chart_ride_range">ਬਾਕੀ ਰੇਂਜ</string>
     <string name="settings_record_rides">ਵਿਸ਼ਲੇਸ਼ਣ ਲਈ ਰਾਈਡਾਂ ਰਿਕਾਰਡ ਕਰੋ</string>
-    <string name="settings_record_rides_hint">ਕਨੈਕਟ ਹੋਣ ਤੇ ਹਰ 5 ਸਕਿੰਟ ਵਿੱਚ ਦੂਰੀ, ਰਫ਼ਤਾਰ, ਮਾਈਲੇਜ ਅਤੇ ਬਾਲਣ। ਇਸ ਫ਼ੋਨ ਉੱਤੇ ਰਹਿੰਦਾ ਹੈ।</string>
 
     <!-- Navigation -->
     <string name="back">ਪਿੱਛੇ</string>
@@ -329,7 +327,6 @@
     <string name="about_version">ਵਰਜਨ %1$s (%2$d)</string>
     <string name="about_updates_desc">ਨਵੇਂ ਰੀਲੀਜ਼ ਦੀ ਜਾਂਚ ਕਰੋ</string>
     <string name="about_privacy">ਗੋਪਨੀਯਤਾ</string>
-    <string name="about_privacy_desc">ਸਭ ਕੁਝ ਇਸ ਫ਼ੋਨ ਉੱਤੇ ਰਹਿੰਦਾ ਹੈ। ਕੋਈ ਖਾਤਾ ਨਹੀਂ, ਕੋਈ ਸਰਵਰ ਨਹੀਂ, ਕੋਈ ਵਿਸ਼ਲੇਸ਼ਣ ਨਹੀਂ।</string>
     <string name="about_disclaimer">ਅਧਿਕਾਰਤ ਐਪ ਨਹੀਂ</string>
     <string name="about_disclaimer_desc">RideLink ਇੱਕ ਨਿੱਜੀ ਪ੍ਰੋਜੈਕਟ ਹੈ ਅਤੇ TVS Motor Company ਨਾਲ ਜੁੜਿਆ ਜਾਂ ਉਸ ਵੱਲੋਂ ਸਮਰਥਿਤ ਨਹੀਂ ਹੈ।</string>
     <string name="about_developer">ਡਿਵੈਲਪਰ</string>

@@ -196,7 +196,6 @@
     <string name="analytics_sample">نمونہ</string>
     <string name="analytics_recording">یہ سواری ریکارڈ ہو رہی ہے</string>
     <string name="analytics_empty_title">ابھی تک کوئی سواری نہیں</string>
-    <string name="analytics_empty_body">اسکوٹر منسلک رہنے کے دوران سواریاں خود بخود ریکارڈ ہوتی ہیں: ہر 5 سیکنڈ میں اوڈومیٹر سے فاصلہ، رفتار، مائلیج اور ایندھن۔ سب کچھ اسی فون پر رہتا ہے۔ اس اسکرین کا پیش نظارہ دیکھنے کے لیے نمونہ سواریاں لوڈ کریں؛ ان پر لیبل لگا ہوتا ہے اور ایک ٹیپ میں ہٹائی جا سکتی ہیں۔</string>
     <string name="period_today">آج</string>
     <string name="period_week">ہفتہ</string>
     <string name="period_month">مہینہ</string>
@@ -262,7 +261,6 @@
     <string name="chart_ride_rpm">انجن RPM</string>
     <string name="chart_ride_range">باقی رینج</string>
     <string name="settings_record_rides">تجزیات کے لیے سواریاں ریکارڈ کریں</string>
-    <string name="settings_record_rides_hint">منسلک رہتے ہوئے ہر 5 سیکنڈ میں فاصلہ، رفتار، مائلیج اور ایندھن۔ اسی فون پر رہتا ہے۔</string>
 
     <!-- Navigation -->
     <string name="back">واپس</string>
@@ -329,7 +327,6 @@
     <string name="about_version">ورژن %1$s (%2$d)</string>
     <string name="about_updates_desc">نئی ریلیز چیک کریں</string>
     <string name="about_privacy">رازداری</string>
-    <string name="about_privacy_desc">سب کچھ اسی فون پر رہتا ہے۔ کوئی اکاؤنٹ نہیں، کوئی سرور نہیں، کوئی تجزیات نہیں۔</string>
     <string name="about_disclaimer">آفیشل ایپ نہیں ہے</string>
     <string name="about_disclaimer_desc">RideLink ایک ذاتی پروجیکٹ ہے اور TVS Motor Company سے وابستہ یا منظور شدہ نہیں ہے۔</string>
     <string name="about_developer">ڈویلپر</string>

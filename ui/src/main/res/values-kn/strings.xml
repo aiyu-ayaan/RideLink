@@ -196,7 +196,6 @@
     <string name="analytics_sample">ಮಾದರಿ</string>
     <string name="analytics_recording">ಈ ರೈಡ್ ರೆಕಾರ್ಡ್ ಆಗುತ್ತಿದೆ</string>
     <string name="analytics_empty_title">ಇನ್ನೂ ಯಾವುದೇ ರೈಡ್‌ಗಳಿಲ್ಲ</string>
-    <string name="analytics_empty_body">ಸ್ಕೂಟರ್ ಸಂಪರ್ಕಗೊಂಡಿರುವಾಗ ರೈಡ್‌ಗಳು ತಾವಾಗಿಯೇ ರೆಕಾರ್ಡ್ ಆಗುತ್ತವೆ: ಪ್ರತಿ 5 ಸೆಕೆಂಡ್‌ಗೆ ಓಡೋಮೀಟರ್‌ನಿಂದ ದೂರ, ವೇಗ, ಮೈಲೇಜ್ ಮತ್ತು ಇಂಧನ. ಎಲ್ಲವೂ ಈ ಫೋನ್‌ನಲ್ಲಿಯೇ ಇರುತ್ತದೆ. ಈ ಪರದೆಯನ್ನು ಪೂರ್ವವೀಕ್ಷಿಸಲು ಮಾದರಿ ರೈಡ್‌ಗಳನ್ನು ಲೋಡ್ ಮಾಡಿ; ಅವುಗಳನ್ನು ಲೇಬಲ್ ಮಾಡಲಾಗಿದೆ ಮತ್ತು ಒಂದೇ ಟ್ಯಾಪ್‌ನಲ್ಲಿ ತೆಗೆದುಹಾಕಬಹುದು.</string>
     <string name="period_today">ಇಂದು</string>
     <string name="period_week">ವಾರ</string>
     <string name="period_month">ತಿಂಗಳು</string>
@@ -262,7 +261,6 @@
     <string name="chart_ride_rpm">ಎಂಜಿನ್ RPM</string>
     <string name="chart_ride_range">ಉಳಿದ ರೇಂಜ್</string>
     <string name="settings_record_rides">ವಿಶ್ಲೇಷಣೆಗಾಗಿ ರೈಡ್‌ಗಳನ್ನು ರೆಕಾರ್ಡ್ ಮಾಡಿ</string>
-    <string name="settings_record_rides_hint">ಸಂಪರ್ಕಗೊಂಡಿರುವಾಗ ಪ್ರತಿ 5 ಸೆಕೆಂಡ್‌ಗೆ ದೂರ, ವೇಗ, ಮೈಲೇಜ್ ಮತ್ತು ಇಂಧನ. ಈ ಫೋನ್‌ನಲ್ಲಿಯೇ ಇರುತ್ತದೆ.</string>
 
     <!-- Navigation -->
     <string name="back">ಹಿಂದೆ</string>
@@ -329,7 +327,6 @@
     <string name="about_version">ಆವೃತ್ತಿ %1$s (%2$d)</string>
     <string name="about_updates_desc">ಹೊಸ ಬಿಡುಗಡೆಗಾಗಿ ಪರಿಶೀಲಿಸಿ</string>
     <string name="about_privacy">ಗೌಪ್ಯತೆ</string>
-    <string name="about_privacy_desc">ಎಲ್ಲವೂ ಈ ಫೋನ್‌ನಲ್ಲಿಯೇ ಇರುತ್ತದೆ. ಯಾವುದೇ ಖಾತೆ ಇಲ್ಲ, ಸರ್ವರ್ ಇಲ್ಲ, ವಿಶ್ಲೇಷಣೆ ಇಲ್ಲ.</string>
     <string name="about_disclaimer">ಅಧಿಕೃತ ಆ್ಯಪ್ ಅಲ್ಲ</string>
     <string name="about_disclaimer_desc">RideLink ಒಂದು ವೈಯಕ್ತಿಕ ಯೋಜನೆಯಾಗಿದ್ದು, TVS Motor Company ಯೊಂದಿಗೆ ಸಂಯೋಜಿತವಾಗಿಲ್ಲ ಅಥವಾ ಅದರಿಂದ ಅನುಮೋದಿಸಲ್ಪಟ್ಟಿಲ್ಲ.</string>
     <string name="about_developer">ಡೆವಲಪರ್</string>

@@ -196,7 +196,6 @@
     <string name="analytics_sample">নমুনা</string>
     <string name="analytics_recording">এই রাইডটি রেকর্ড হচ্ছে</string>
     <string name="analytics_empty_title">এখনও কোনো রাইড নেই</string>
-    <string name="analytics_empty_body">স্কুটার সংযুক্ত থাকা অবস্থায় রাইড নিজে থেকেই রেকর্ড হয়: প্রতি 5 সেকেন্ডে ওডোমিটার থেকে দূরত্ব, গতি, মাইলেজ এবং জ্বালানি। সবকিছু এই ফোনেই থাকে। এই স্ক্রিনটি প্রিভিউ করতে নমুনা রাইড লোড করুন; সেগুলোতে লেবেল থাকে এবং এক ট্যাপে সরানো যায়।</string>
     <string name="period_today">আজ</string>
     <string name="period_week">সপ্তাহ</string>
     <string name="period_month">মাস</string>
@@ -262,7 +261,6 @@
     <string name="chart_ride_rpm">ইঞ্জিন RPM</string>
     <string name="chart_ride_range">বাকি রেঞ্জ</string>
     <string name="settings_record_rides">বিশ্লেষণের জন্য রাইড রেকর্ড করুন</string>
-    <string name="settings_record_rides_hint">সংযুক্ত থাকা অবস্থায় প্রতি 5 সেকেন্ডে দূরত্ব, গতি, মাইলেজ এবং জ্বালানি। এই ফোনেই থাকে।</string>
 
     <!-- Navigation -->
     <string name="back">ফিরে যান</string>
@@ -329,7 +327,6 @@
     <string name="about_version">সংস্করণ %1$s (%2$d)</string>
     <string name="about_updates_desc">নতুন রিলিজ পরীক্ষা করুন</string>
     <string name="about_privacy">গোপনীয়তা</string>
-    <string name="about_privacy_desc">সবকিছু এই ফোনেই থাকে। কোনো অ্যাকাউন্ট নেই, সার্ভার নেই, অ্যানালিটিক্স নেই।</string>
     <string name="about_disclaimer">অফিশিয়াল অ্যাপ নয়</string>
     <string name="about_disclaimer_desc">RideLink একটি ব্যক্তিগত প্রকল্প এবং TVS Motor Company-র সাথে যুক্ত বা অনুমোদিত নয়।</string>
     <string name="about_developer">ডেভেলপার</string>

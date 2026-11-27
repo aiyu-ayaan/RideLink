@@ -196,7 +196,6 @@
     <string name="analytics_sample">निदर्शनम्</string>
     <string name="analytics_recording">इयं यात्रा अभिलेख्यते</string>
     <string name="analytics_empty_title">अद्यावधि कापि यात्रा नास्ति</string>
-    <string name="analytics_empty_body">स्कूटरे संयोजिते सति यात्राः स्वयमेव अभिलेख्यन्ते: प्रति ५ क्षणेषु दूरमापकात् दूरता, वेगः, इन्धनक्षमता, इन्धनं च। सर्वम् अस्मिन्नेव दूरभाषे तिष्ठति। एतत् पटलं पूर्वदर्शयितुं निदर्शनयात्राः आरोपयतु; ताः अङ्किताः सन्ति एकेन स्पर्शेन अपसारयितुं शक्याश्च।</string>
     <string name="period_today">अद्य</string>
     <string name="period_week">सप्ताहः</string>
     <string name="period_month">मासः</string>
@@ -262,7 +261,6 @@
     <string name="chart_ride_rpm">यन्त्र RPM</string>
     <string name="chart_ride_range">अवशिष्टः परिधिः</string>
     <string name="settings_record_rides">विश्लेषणाय यात्राः अभिलेखयतु</string>
-    <string name="settings_record_rides_hint">संयोजने सति प्रति ५ क्षणेषु दूरता, वेगः, इन्धनक्षमता, इन्धनं च। अस्मिन्नेव दूरभाषे तिष्ठति।</string>
 
     <!-- Navigation -->
     <string name="back">पृष्ठतः</string>
@@ -329,7 +327,6 @@
     <string name="about_version">संस्करणम् %1$s (%2$d)</string>
     <string name="about_updates_desc">नूतनं प्रकाशनं परीक्षताम्</string>
     <string name="about_privacy">गोपनीयता</string>
-    <string name="about_privacy_desc">सर्वम् अस्मिन् दूरभाषे तिष्ठति। न लेखा, न सर्वरः, न विश्लेषणम्।</string>
     <string name="about_disclaimer">न आधिकारिकः अनुप्रयोगः</string>
     <string name="about_disclaimer_desc">RideLink एकः व्यक्तिगतः प्रकल्पः अस्ति तथा TVS Motor Company इत्यनेन सह न सम्बद्धः न वा अनुमोदितः।</string>
     <string name="about_developer">विकासकः</string>

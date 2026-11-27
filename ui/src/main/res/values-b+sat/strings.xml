@@ -196,7 +196,6 @@
     <string name="analytics_sample">ᱱᱟᱢᱩᱱᱟ</string>
     <string name="analytics_recording">ᱱᱚᱣᱟ ᱨᱟᱭᱤᱰ ᱨᱮᱠᱚᱨᱰ ᱠᱟᱱᱟ</string>
     <string name="analytics_empty_title">ᱱᱤᱛ ᱦᱟᱹᱵᱤᱡ ᱡᱟᱦᱟᱸᱱ ᱨᱟᱭᱤᱰ ᱵᱟᱹᱱᱩᱜᱼᱟ</string>
-    <string name="analytics_empty_body">ᱥᱠᱩᱴᱟᱨ ᱡᱚᱲᱟᱣ ᱛᱟᱦᱮᱸᱱ ᱚᱠᱛᱚ ᱨᱟᱭᱤᱰ ᱟᱡ ᱛᱮᱜᱮ ᱨᱮᱠᱚᱨᱰᱚᱜᱼᱟ: ᱡᱚᱛᱚ 5 ᱥᱮᱠᱮᱱᱰ ᱨᱮ ᱳᱰᱚᱢᱤᱴᱟᱨ ᱠᱷᱚᱱ ᱥᱟᱺᱜᱤᱧ, ᱨᱟᱯᱷᱛᱟᱨ, ᱢᱟᱭᱞᱮᱡᱽ ᱟᱨ ᱥᱩᱱᱩᱢ. ᱡᱚᱛᱚ ᱱᱚᱣᱟ ᱯᱷᱚᱱ ᱨᱮ ᱛᱟᱦᱮᱸᱱᱟ. ᱱᱚᱣᱟ ᱥᱠᱨᱤᱱ ᱧᱮᱞ ᱞᱟᱹᱜᱤᱫ ᱱᱟᱢᱩᱱᱟ ᱨᱟᱭᱤᱰ ᱞᱚᱰ ᱢᱮ; ᱚᱱᱟ ᱠᱚᱨᱮ ᱞᱮᱵᱮᱞ ᱞᱟᱜᱟᱣ ᱟᱠᱟᱱᱟ ᱟᱨ ᱢᱤᱫ ᱴᱮᱯ ᱛᱮ ᱚᱪᱚᱜ ᱜᱟᱱᱚᱜᱼᱟ.</string>
     <string name="period_today">ᱛᱮᱦᱮᱧ</string>
     <string name="period_week">ᱦᱟᱯᱛᱟ</string>
     <string name="period_month">ᱪᱟᱸᱫᱚ</string>
@@ -262,7 +261,6 @@
     <string name="chart_ride_rpm">ᱤᱱᱡᱤᱱ RPM</string>
     <string name="chart_ride_range">ᱥᱟᱨᱮᱡ ᱨᱮᱱᱡᱽ</string>
     <string name="settings_record_rides">ᱵᱤᱥᱞᱮᱥᱚᱱ ᱞᱟᱹᱜᱤᱫ ᱨᱟᱭᱤᱰ ᱨᱮᱠᱚᱨᱰ ᱢᱮ</string>
-    <string name="settings_record_rides_hint">ᱡᱚᱲᱟᱣ ᱛᱟᱦᱮᱸᱱ ᱚᱠᱛᱚ ᱡᱚᱛᱚ 5 ᱥᱮᱠᱮᱱᱰ ᱨᱮ ᱥᱟᱺᱜᱤᱧ, ᱨᱟᱯᱷᱛᱟᱨ, ᱢᱟᱭᱞᱮᱡᱽ ᱟᱨ ᱥᱩᱱᱩᱢ. ᱱᱚᱣᱟ ᱯᱷᱚᱱ ᱨᱮ ᱛᱟᱦᱮᱸᱱᱟ.</string>
 
     <!-- Navigation -->
     <string name="back">ᱛᱟᱭᱚᱢ</string>
@@ -329,7 +327,6 @@
     <string name="about_version">ᱵᱷᱟᱨᱥᱚᱱ %1$s (%2$d)</string>
     <string name="about_updates_desc">ᱱᱟᱣᱟ ᱨᱤᱞᱤᱡᱽ ᱞᱟᱹᱜᱤᱫ ᱛᱩᱱᱠᱷᱤ ᱢᱮ</string>
     <string name="about_privacy">ᱱᱤᱡᱮᱨᱟᱜ</string>
-    <string name="about_privacy_desc">ᱡᱚᱛᱚ ᱱᱚᱣᱟ ᱯᱷᱚᱱ ᱨᱮ ᱛᱟᱦᱮᱸᱱᱟ. ᱡᱟᱦᱟᱸᱱ ᱮᱠᱟᱣᱩᱱᱴ ᱵᱟᱹᱱᱩᱜᱼᱟ, ᱥᱟᱨᱵᱷᱟᱨ ᱵᱟᱹᱱᱩᱜᱼᱟ, ᱮᱱᱟᱞᱤᱴᱤᱠᱥ ᱵᱟᱹᱱᱩᱜᱼᱟ.</string>
     <string name="about_disclaimer">ᱥᱚᱨᱠᱟᱨᱤ ᱮᱯ ᱫᱚ ᱵᱟᱝ ᱠᱟᱱᱟ</string>
     <string name="about_disclaimer_desc">RideLink ᱫᱚ ᱢᱤᱫ ᱱᱤᱡᱮᱨᱟᱜ ᱯᱨᱚᱡᱮᱠᱴ ᱠᱟᱱᱟ ᱟᱨ TVS Motor Company ᱥᱟᱶ ᱡᱚᱲᱟᱣ ᱟᱨᱵᱟᱝ ᱚᱱᱟ ᱦᱚᱛᱮᱛᱮ ᱢᱚᱱᱡᱩᱨ ᱟᱠᱟᱱ ᱫᱚ ᱵᱟᱝ ᱠᱟᱱᱟ.</string>
     <string name="about_developer">ᱰᱮᱵᱷᱮᱞᱚᱯᱟᱨ</string>

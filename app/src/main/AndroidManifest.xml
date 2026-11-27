@@ -50,6 +50,9 @@
         <package android:name="com.google.android.apps.maps" />
     </queries>
 
+    <!-- Firebase Analytics stays anonymous: no advertising ID. -->
+    <uses-permission android:name="com.google.android.gms.permission.AD_ID" tools:node="remove" />
+
     <application
         android:name=".RideLinkApp"
         android:allowBackup="false"
@@ -60,6 +63,7 @@
         android:roundIcon="@mipmap/ic_launcher"
         android:supportsRtl="true"
         android:theme="@style/Theme.RideLink">
+        <meta-data android:name="google_analytics_adid_collection_enabled" android:value="false" />
 
         <activity
             android:name=".MainActivity"

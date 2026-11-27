@@ -196,7 +196,6 @@
     <string name="analytics_sample">नुमुना</string>
     <string name="analytics_recording">बे राइडखौ रेकर्ड खालामगासिनो दं</string>
     <string name="analytics_empty_title">दासिम जेबो राइड गैया</string>
-    <string name="analytics_empty_body">स्कुटारा नांजाबना थानाय समाव राइडफोरा गावनो-गाव रेकर्ड जायो: मोनफ्रोम 5 सेकेन्दआव अद’मिटारनिफ्राय जानथाय, गोख्रैथि, माइलेज आरो थाव. गासैबो बे फनाव थायो. बे स्क्रिनखौ नुफुंनो थाखाय नुमुना राइडफोरखौ लद खालाम; बेफोराव लेबेल होनाय दं आरो मोनसे टेपावनो बोखोनो हायो.</string>
     <string name="period_today">दिनै</string>
     <string name="period_week">सप्ताह</string>
     <string name="period_month">दान</string>
@@ -262,7 +261,6 @@
     <string name="chart_ride_rpm">इनजिन RPM</string>
     <string name="chart_ride_range">थानाय रेन्ज</string>
     <string name="settings_record_rides">बिजिरनायनि थाखाय राइडफोरखौ रेकर्ड खालाम</string>
-    <string name="settings_record_rides_hint">नांजाबना थानाय समाव मोनफ्रोम 5 सेकेन्दआव जानथाय, गोख्रैथि, माइलेज आरो थाव. बे फनाव थायो.</string>
 
     <!-- Navigation -->
     <string name="back">उनथिं</string>
@@ -329,7 +327,6 @@
     <string name="about_version">भार्सन %1$s (%2$d)</string>
     <string name="about_updates_desc">गोदान रिलिजनि थाखाय आनजाद नाय</string>
     <string name="about_privacy">गोथारथि</string>
-    <string name="about_privacy_desc">गासैबो बे फनाव थायो. जेबो एकाउन्त गैया, जेबो सार्भार गैया, जेबो एनालितिक्स गैया.</string>
     <string name="about_disclaimer">अफिसियेल एप नङा</string>
     <string name="about_disclaimer_desc">RideLink आ मोनसे गावनि प्रजेक्ट आरो बेयो TVS Motor Company जों नांजाबनाय एबा बेनि गनायथि मोननाय नङा.</string>
     <string name="about_developer">देभेलपार</string>

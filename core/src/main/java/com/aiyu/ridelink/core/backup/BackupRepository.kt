@@ -242,6 +242,8 @@ class BackupRepository @Inject constructor(
             net { root.delete().await() }
             saveSync(null, 0, emptyMap())
             update { BackupStatus() }
+            // Otherwise the next scheduled run would upload everything again.
+            settings.setBackupFrequency(BackupFrequency.MANUAL)
             return BackupOutcome.Done
         }
 

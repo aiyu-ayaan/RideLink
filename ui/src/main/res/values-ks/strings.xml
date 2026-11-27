@@ -196,7 +196,6 @@
     <string name="analytics_sample">نمونہٕ</string>
     <string name="analytics_recording">یہِ سوارِ رِکارڈ گژھان چھِ</string>
     <string name="analytics_empty_title">وُنیُک تام کانٛہہ سوارِ چھَنہٕ</string>
-    <string name="analytics_empty_body">سکوٗٹر جُڑِتھ آسنہٕ دوران سوارِ پانہٕ رِکارڈ گژھان: ہر 5 سیکنڈن منٛز اوڈومیٖٹر پؠٹھ فٲصلہٕ، رفتار، مائلیج تہٕ تیٖل۔ سٲری کینٛہہ یَتھ فونَس پؠٹھ روزان۔ یہِ سکرین وُچھنہٕ خٲطرٕ نمونہٕ سوارِ لوڈ کٔرِو؛ یِم لیبل کٔرِتھ چھِ تہٕ اَکہِ ٹیپَس منٛز ہَٹاونہٕ یِوان۔</string>
     <string name="period_today">اَز</string>
     <string name="period_week">ہفتہٕ</string>
     <string name="period_month">رؠتھ</string>
@@ -262,7 +261,6 @@
     <string name="chart_ride_rpm">اِنجن RPM</string>
     <string name="chart_ride_range">باقی رینج</string>
     <string name="settings_record_rides">تجزیہٕ خٲطرٕ سوارِ رِکارڈ کٔرِو</string>
-    <string name="settings_record_rides_hint">جُڑِتھ آسنہٕ دوران ہر 5 سیکنڈن منٛز فٲصلہٕ، رفتار، مائلیج تہٕ تیٖل۔ یَتھ فونَس پؠٹھ روزان۔</string>
 
     <!-- Navigation -->
     <string name="back">پَتھ</string>
@@ -329,7 +327,6 @@
     <string name="about_version">وَرزن %1$s (%2$d)</string>
     <string name="about_updates_desc">نٔو رِلیٖز چیک کٔرِو</string>
     <string name="about_privacy">رازداري</string>
-    <string name="about_privacy_desc">سٲری کینٛہہ یَتھ فونَس پؠٹھ روزان۔ نہٕ اَکاوٗنٹ، نہٕ سَرور، نہٕ تجزیہٕ۔</string>
     <string name="about_disclaimer">سَرکٲری ایپ چھَنہٕ</string>
     <string name="about_disclaimer_desc">RideLink چھُ اکھ ذٲتی پراجیکٹ تہٕ TVS Motor Company سۭتؠ وابَستہٕ یا مَنظوٗر شُدٕ چھُنہٕ۔</string>
     <string name="about_developer">ڈِویلپر</string>

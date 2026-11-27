@@ -196,7 +196,6 @@
     <string name="analytics_sample">নমুনা</string>
     <string name="analytics_recording">এই ৰাইড ৰেকৰ্ড হৈ আছে</string>
     <string name="analytics_empty_title">এতিয়ালৈকে কোনো ৰਾਈড নাই</string>
-    <string name="analytics_empty_body">স্কুটাৰ সংযুক্ত হৈ থকা অৱস্থাত ৰাইডবোৰ নিজেই ৰেকৰ্ড হয়: প্ৰতি 5 চেকেণ্ডত অ\'ড\'মিটাৰৰ পৰা দূৰত্ব, বেগ, মাইলেজ আৰু ইন্ধন। সকলোবোৰ এই ফোনতে থাকে। এই স্ক্ৰীণখন চাবলৈ নਮুনা ৰাইড ল\'ড কৰক; সেইবোৰত লেবেল থাকে আৰু এটা টেপতে আঁতৰাব পাৰি।</string>
     <string name="period_today">আজি</string>
     <string name="period_week">সপ্তাহ</string>
     <string name="period_month">মাহ</string>
@@ -262,7 +261,6 @@
     <string name="chart_ride_rpm">ইঞ্জিন RPM</string>
     <string name="chart_ride_range">বাকী ৰেঞ্জ</string>
     <string name="settings_record_rides">বিশ্লেষণৰ বাবে ৰাইড ৰেকৰ্ড কৰক</string>
-    <string name="settings_record_rides_hint">সংযুক্ত হৈ থাকোঁতে প্ৰতি 5 চেকেণ্ডত দূৰত্ব, বেগ, মাইলেজ আৰু ইন্ধন। এই ফোনতে থাকে।</string>
 
     <!-- Navigation -->
     <string name="back">পিছলৈ</string>
@@ -329,7 +327,6 @@
     <string name="about_version">সংস্কৰণ %1$s (%2$d)</string>
     <string name="about_updates_desc">নতুন ৰিলিজ চাওক</string>
     <string name="about_privacy">গোপনীয়তা</string>
-    <string name="about_privacy_desc">সকলোবোৰ এই ফোনতে থাকে। কোনো একাউণ্ট নাই, চাৰ্ভাৰ নাই, এনালিটিক্স নাই।</string>
     <string name="about_disclaimer">অফিচিয়েল এপ নহয়</string>
     <string name="about_disclaimer_desc">RideLink এটা ব্যক্তিগত প্ৰকল্প আৰু TVS Motor Company ৰ সৈতে জড়িত বা অনুমোদিত নহয়।</string>
     <string name="about_developer">ডেভেলপাৰ</string>

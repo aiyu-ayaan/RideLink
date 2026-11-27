@@ -196,7 +196,6 @@
     <string name="analytics_sample">ନମୁନା</string>
     <string name="analytics_recording">ଏହି ରାଇଡ୍ ରେକର୍ଡ ହେଉଛି</string>
     <string name="analytics_empty_title">ଏପର୍ଯ୍ୟନ୍ତ କୌଣସି ରାଇଡ୍ ନାହିଁ</string>
-    <string name="analytics_empty_body">ସ୍କୁଟର ସଂଯୁକ୍ତ ଥିବାବେଳେ ରାଇଡ୍ ଆପେ ରେକର୍ଡ ହୁଏ: ପ୍ରତି 5 ସେକେଣ୍ଡରେ ଓଡୋମିଟରରୁ ଦୂରତା, ବେଗ, ମାଇଲେଜ୍ ଏବଂ ଇନ୍ଧନ। ସବୁକିଛି ଏହି ଫୋନ୍‌ରେ ରହେ। ଏହି ସ୍କ୍ରିନ୍ ପୂର୍ବାବଲୋକନ କରିବାକୁ ନମୁନା ରାଇଡ୍ ଲୋଡ୍ କରନ୍ତୁ; ସେଗୁଡ଼ିକ ଲେବଲ୍ ହୋଇଛି ଏବଂ ଗୋଟିଏ ଟ୍ୟାପ୍‌ରେ ହଟାଯାଇପାରିବ।</string>
     <string name="period_today">ଆଜି</string>
     <string name="period_week">ସପ୍ତାହ</string>
     <string name="period_month">ମାସ</string>
@@ -262,7 +261,6 @@
     <string name="chart_ride_rpm">ଇଞ୍ଜିନ୍ RPM</string>
     <string name="chart_ride_range">ବାକି ରେଞ୍ଜ</string>
     <string name="settings_record_rides">ବିଶ୍ଳେଷଣ ପାଇଁ ରାଇଡ୍ ରେକର୍ଡ କରନ୍ତୁ</string>
-    <string name="settings_record_rides_hint">ସଂଯୁକ୍ତ ଥିବାବେଳେ ପ୍ରତି 5 ସେକେଣ୍ଡରେ ଦୂରତା, ବେଗ, ମାଇଲେଜ୍ ଏବଂ ଇନ୍ଧନ। ଏହି ଫୋନ୍‌ରେ ରହେ।</string>
 
     <!-- Navigation -->
     <string name="back">ପଛକୁ</string>
@@ -329,7 +327,6 @@
     <string name="about_version">ସଂସ୍କରଣ %1$s (%2$d)</string>
     <string name="about_updates_desc">ନୂଆ ରିଲିଜ୍ ପାଇଁ ଯାଞ୍ଚ କରନ୍ତୁ</string>
     <string name="about_privacy">ଗୋପନୀୟତା</string>
-    <string name="about_privacy_desc">ସବୁକିଛି ଏହି ଫୋନ୍‌ରେ ରହେ। କୌଣସି ଆକାଉଣ୍ଟ୍ ନାହିଁ, ସର୍ଭର୍ ନାହିଁ, ଆନାଲିଟିକ୍ସ ନାହିଁ।</string>
     <string name="about_disclaimer">ଅଫିସିଆଲ୍ ଆପ୍ ନୁହେଁ</string>
     <string name="about_disclaimer_desc">RideLink ଏକ ବ୍ୟକ୍ତିଗତ ପ୍ରୋଜେକ୍ଟ୍ ଏବଂ TVS Motor Company ସହିତ ଜଡ଼ିତ କିମ୍ବା ଅନୁମୋଦିତ ନୁହେଁ।</string>
     <string name="about_developer">ଡେଭଲପର୍</string>

@@ -196,7 +196,6 @@
     <string name="analytics_sample">नमूना</string>
     <string name="analytics_recording">इस राइड गी रिकार्ड करै करदा</string>
     <string name="analytics_empty_title">अजें कोई राइड नेईं</string>
-    <string name="analytics_empty_body">जदूं स्कूटर जुड़या होंदा ऐ तां राइडां अपने आप रिकार्ड होंदियां न: ओडोमीटर थमां फासला, रफ्तार, माइलेज ते तेल हर 5 सैकंटै च. सब किश इस फोन पर गै रौहंदा ऐ. इस स्क्रीन गी दिक्खने लेई नमूना राइडां लोड करो; उनें पर लेबल लग्गे दा ऐ ते इक टैप च हटाए जाई सकदे न.</string>
     <string name="period_today">अज्ज</string>
     <string name="period_week">हफ्ता</string>
     <string name="period_month">म्हीना</string>
@@ -262,7 +261,6 @@
     <string name="chart_ride_rpm">इंजन RPM</string>
     <string name="chart_ride_range">बाकी रेंज</string>
     <string name="settings_record_rides">विश्लेषण लेई राइडां रिकार्ड करो</string>
-    <string name="settings_record_rides_hint">जुड़े दे होई हर 5 सैकंटै च फासला, रफ्तार, माइलेज ते तेल. इस फोन पर गै रौहंदा ऐ.</string>
 
     <!-- Navigation -->
     <string name="back">पिच्छें</string>
@@ -329,7 +327,6 @@
     <string name="about_version">वर्जन %1$s (%2$d)</string>
     <string name="about_updates_desc">नमें वर्जन लेई जांचो</string>
     <string name="about_privacy">निजता</string>
-    <string name="about_privacy_desc">सब किश इस फोन पर गै रौहंदा ऐ. कोई खाता नेईं, कोई सर्वर नेईं, कोई एनालिटिक्स नेईं.</string>
     <string name="about_disclaimer">कोई सरकारी ऐप नेईं</string>
     <string name="about_disclaimer_desc">RideLink इक निजी प्रोजेक्ट ऐ ते TVS Motor Company कन्नै जुड़या जां उस आसेआ मंजूर नेईं ऐ.</string>
     <string name="about_developer">डेवलपर</string>

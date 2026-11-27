@@ -635,7 +635,7 @@
     <string name="backup_confirm_phone_title">Replace the cloud backup?</string>
     <string name="backup_confirm_phone_body">The cloud backup (%1$d rides, %2$d fuel stops) is replaced by this phone\'s %3$d rides and %4$d fuel stops. Rides only in the cloud are deleted.</string>
     <string name="backup_confirm_delete_title">Delete the cloud backup?</string>
-    <string name="backup_confirm_delete_body">The backup in your Google account is deleted. Everything on this phone stays.</string>
+    <string name="backup_confirm_delete_body">The backup in your Google account is deleted. Everything on this phone stays, and automatic backup is turned off.</string>
     <string name="backup_replace">Replace</string>
     <string name="backup_delete">Delete</string>
     <string name="backup_auto">Automatic backup</string>
