@@ -123,6 +123,22 @@ class CareStore @Inject constructor(@ApplicationContext context: Context, settin
         reload()
     }
 
+    /** Re-pair: fuel log, care items and last reading of [from] move to [to]; [to]'s own items and reading give way. */
+    suspend fun reassignBike(from: String, to: String) = withContext(Dispatchers.IO) {
+        val w = db.writableDatabase
+        w.beginTransaction()
+        try {
+            val args = arrayOf(to, from)
+            w.execSQL("UPDATE $T_FILLS SET bike = ? WHERE bike = ?", args)
+            w.execSQL("UPDATE OR REPLACE $T_ITEMS SET bike = ? WHERE bike = ?", args)
+            w.execSQL("UPDATE OR REPLACE $T_READINGS SET bike = ? WHERE bike = ?", args)
+            w.setTransactionSuccessful()
+        } finally {
+            w.endTransaction()
+        }
+        reload()
+    }
+
     suspend fun readingOf(forBike: String): BikeReading? = withContext(Dispatchers.IO) { loadReading(forBike) }
 
     private fun loadReading(forBike: String): BikeReading? =

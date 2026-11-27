@@ -13,6 +13,8 @@ import com.aiyu.ridelink.core.care.CareMonitor
 import com.aiyu.ridelink.core.phone.RideCheckIn
 import com.aiyu.ridelink.core.settings.Bike
 import com.aiyu.ridelink.core.settings.GarageStore
+import com.aiyu.ridelink.core.analytics.RideStore
+import com.aiyu.ridelink.core.care.CareStore
 import com.aiyu.ridelink.core.settings.Settings
 import com.aiyu.ridelink.core.settings.SettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -30,6 +32,8 @@ class MainViewModel @Inject constructor(
     private val logFile: LogFile,
     private val care: CareMonitor,
     private val checkIn: RideCheckIn,
+    private val rides: RideStore,
+    private val careStore: CareStore,
 ) : ViewModel() {
     val settings = repo.settings.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), Settings())
     val linkState = link.state
@@ -66,6 +70,23 @@ class MainViewModel @Inject constructor(
             ?: Bike(cluster.address, cluster.name, model = null)
         garage.add(bike)
         activate(bike)
+    }
+
+    /**
+     * Re-pair a saved scooter (after a restore, or a new display): its rides, fuel log, care records, parked spot and
+     * active selection move to the address just found, so the history stays with the scooter.
+     */
+    fun repair(old: Bike, cluster: FoundCluster) = viewModelScope.launch {
+        link.stopScan()
+        val active = repo.current().deviceAddress == old.address
+        if (active) controller.stopForBikeSwitch()
+        garage.readdress(old.address, old.copy(address = cluster.address, name = cluster.name))
+        if (old.address != cluster.address) {
+            rides.reassignBike(old.address, cluster.address)
+            careStore.reassignBike(old.address, cluster.address)
+        }
+        repo.readdressBike(old.address, cluster.address, cluster.name)
+        if (active) userStopped = false
     }
 
     /** Switches to another saved scooter; AutoConnect connects to it once the old link is idle. */
@@ -133,6 +154,7 @@ class MainViewModel @Inject constructor(
     fun setVoiceButton(on: Boolean) = viewModelScope.launch { repo.setVoiceButton(on) }
     fun setShowRideData(on: Boolean) = viewModelScope.launch { repo.setShowRideData(on) }
     fun setShowVehicle(on: Boolean) = viewModelScope.launch { repo.setShowVehicle(on) }
+    fun setUsageStats(on: Boolean) = viewModelScope.launch { repo.setUsageStats(on) }
     fun setRecordRides(on: Boolean) = viewModelScope.launch { repo.setRecordRides(on) }
     fun setLanguageTag(tag: String?) = viewModelScope.launch { repo.setLanguageTag(tag) }
     fun setOverSpeedAlert(on: Boolean) = viewModelScope.launch { repo.setOverSpeedAlert(on) }

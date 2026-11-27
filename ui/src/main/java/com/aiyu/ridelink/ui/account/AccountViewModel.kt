@@ -63,7 +63,7 @@ class AccountViewModel @Inject constructor(
         viewModelScope.launch {
             val result = accounts.signIn(activity)
             // First backup check right away: a new phone sees the restore offer without waiting for the schedule.
-            if (result == SignInResult.Done) backup.enqueue(BackupMode.BACKUP)
+            if (result == SignInResult.Done) backup.enqueue(BackupMode.BACKUP, byRider = false)
             error = when (result) {
                 SignInResult.Done, SignInResult.Cancelled -> null
                 SignInResult.NoAccount -> R.string.account_err_no_account

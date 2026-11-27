@@ -64,6 +64,20 @@ class GarageStore @Inject constructor(@ApplicationContext context: Context, sett
         reload()
     }
 
+    /** Re-pair: the saved scooter at [from] becomes [to], keeping its model and place in the list. */
+    suspend fun readdress(from: String, to: Bike) = withContext(Dispatchers.IO) {
+        val w = db.writableDatabase
+        w.beginTransaction()
+        try {
+            if (from != to.address) w.delete(T_BIKES, "address = ?", arrayOf(to.address))
+            w.update(T_BIKES, ContentValues().apply { put("address", to.address); put("name", to.name) }, "address = ?", arrayOf(from))
+            w.setTransactionSuccessful()
+        } finally {
+            w.endTransaction()
+        }
+        reload()
+    }
+
     /** garage.db rows for the cloud backup. */
     suspend fun backupRows(): List<Row> = withContext(Dispatchers.IO) { db.readableDatabase.rows(T_BIKES) }
 

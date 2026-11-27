@@ -624,6 +624,8 @@
     <string name="backup_conflict_device_unknown">another phone</string>
     <string name="backup_col_phone">This phone</string>
     <string name="backup_col_cloud">Cloud</string>
+    <string name="backup_col_last">Last backup</string>
+    <string name="backup_never">Never</string>
     <string name="backup_restore">Restore</string>
     <string name="backup_start_fresh">Start fresh</string>
     <string name="backup_merge">Merge both</string>
@@ -635,7 +637,7 @@
     <string name="backup_confirm_phone_title">Replace the cloud backup?</string>
     <string name="backup_confirm_phone_body">The cloud backup (%1$d rides, %2$d fuel stops) is replaced by this phone\'s %3$d rides and %4$d fuel stops. Rides only in the cloud are deleted.</string>
     <string name="backup_confirm_delete_title">Delete the cloud backup?</string>
-    <string name="backup_confirm_delete_body">The backup in your Google account is deleted. Everything on this phone stays, and automatic backup is turned off.</string>
+    <string name="backup_confirm_delete_body">The backup in your Google account is deleted. Everything on this phone stays. Automatic backups on every phone signed in to this account pause until someone taps Back up now.</string>
     <string name="backup_replace">Replace</string>
     <string name="backup_delete">Delete</string>
     <string name="backup_auto">Automatic backup</string>
@@ -658,5 +660,19 @@
     <string name="backup_restore_now_desc">Replace this phone\'s data with the cloud backup</string>
     <string name="backup_delete_cloud">Delete cloud backup</string>
     <string name="backup_delete_cloud_desc">This phone keeps everything</string>
+    <string name="backup_state_deleted">Cloud backup deleted</string>
+    <string name="backup_deleted_body">Deleted from %1$s, %2$s. Automatic backups are paused on every phone until you tap Back up now.</string>
+    <string name="backup_row_deleted">Cloud backup deleted</string>
+    <string name="backup_sign_out">Sign out</string>
+    <string name="backup_sign_out_desc">Backups stop. Data on this phone and in the cloud stays</string>
+    <string name="settings_repair_scooter">Re-pair %1$s</string>
+    <string name="repair_title">Re-pair %1$s</string>
+    <string name="repair_hint">Turn the scooter on and pick it below. Its rides, fuel log and service records move to it, also when its Bluetooth address changed.</string>
+    <string name="settings_usage_stats">Usage statistics</string>
+    <string name="settings_usage_stats_hint">Send anonymous app usage (Firebase Analytics). No ride data, names or numbers.</string>
+    <string name="account_close">Close</string>
+    <string name="account_manage_backup">Manage backup</string>
+    <string name="account_delete_cloud">Delete cloud data</string>
+    <string name="account_delete_cloud_desc">Removes your RideLink backup from the server. This phone and your Google account are not touched.</string>
     <string name="backup_privacy">Only you can read your backup: it sits under your Google account in RideLink\'s Firebase project. Demo rides and this phone\'s update and log settings are not backed up.</string>
 </resources>

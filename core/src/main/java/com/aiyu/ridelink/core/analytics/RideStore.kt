@@ -126,6 +126,12 @@ class RideStore @Inject constructor(@ApplicationContext context: Context) {
         if (n > 0) reload()
     }
 
+    /** Re-pair: the rides of the scooter at [from] now belong to [to] (same scooter, new Bluetooth address). */
+    suspend fun reassignBike(from: String, to: String) = withContext(Dispatchers.IO) {
+        db.writableDatabase.update(T_RIDES, ContentValues().apply { put("bike", to) }, "bike = ?", arrayOf(from))
+        reload()
+    }
+
     /** Removes sample and demo-ride data only; real rides stay. */
     suspend fun deleteDemo() = withContext(Dispatchers.IO) {
         db.writableDatabase.delete(T_TURNS, "ride IN (SELECT id FROM $T_RIDES WHERE demo = 1)", null)

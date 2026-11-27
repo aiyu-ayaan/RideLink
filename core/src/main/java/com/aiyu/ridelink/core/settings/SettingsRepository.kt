@@ -118,6 +118,8 @@ data class Settings(
     val backupFrequency: BackupFrequency = BackupFrequency.WEEKLY,
     /** Automatic backups wait for an unmetered network (Wi-Fi). "Back up now" uses any network. */
     val backupWifiOnly: Boolean = false,
+    /** Anonymous usage statistics through Firebase Analytics (no ride data, names or numbers). */
+    val usageStats: Boolean = true,
 ) {
     companion object {
         val BRIGHTNESS_RANGE = 2..5
@@ -194,6 +196,7 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
         val welcomeDone = booleanPreferencesKey("welcome_done")
         val backupFrequency = stringPreferencesKey("backup_frequency")
         val backupWifiOnly = booleanPreferencesKey("backup_wifi_only")
+        val usageStats = booleanPreferencesKey("usage_stats")
     }
 
     /** Keys that describe this phone, not the rider: never sent to or restored from the cloud backup. */
@@ -262,6 +265,7 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
             welcomeDone = p[K.welcomeDone] ?: (p[K.address] != null),
             backupFrequency = p[K.backupFrequency]?.let { runCatching { BackupFrequency.valueOf(it) }.getOrNull() } ?: BackupFrequency.WEEKLY,
             backupWifiOnly = p[K.backupWifiOnly] ?: false,
+            usageStats = p[K.usageStats] ?: true,
         )
     }
 
@@ -337,6 +341,14 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
         }
     }
     suspend fun setBackupFrequency(f: BackupFrequency) { context.store.edit { it[K.backupFrequency] = f.name } }
+    /** Re-pair: the active scooter and the parked spot follow the scooter to its new address. */
+    suspend fun readdressBike(from: String, to: String, name: String?) {
+        context.store.edit {
+            if (it[K.address] == from) { it[K.address] = to; if (name == null) it.remove(K.name) else it[K.name] = name }
+            if (it[K.parkedBike] == from) it[K.parkedBike] = to
+        }
+    }
+    suspend fun setUsageStats(on: Boolean) { context.store.edit { it[K.usageStats] = on } }
     suspend fun setBackupWifiOnly(on: Boolean) { context.store.edit { it[K.backupWifiOnly] = on } }
 
     /** Every saved preference the backup carries, by DataStore key name (Boolean, Int, Long, Double, String or Set<String>). */

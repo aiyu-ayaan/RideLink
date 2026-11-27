@@ -14,7 +14,9 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import androidx.work.workDataOf
+import com.aiyu.ridelink.core.ClusterController
 import com.aiyu.ridelink.core.account.AccountRepository
+import com.aiyu.ridelink.core.protocol.ClusterModel
 import com.aiyu.ridelink.core.analytics.RideStore
 import com.aiyu.ridelink.core.care.CareStore
 import com.aiyu.ridelink.core.settings.BackupFrequency
@@ -101,10 +103,16 @@ data class BackupStatus(
     val error: BackupError? = null,
     val errorAt: Long? = null,
     val conflict: Conflict? = null,
+    /** The cloud backup was deleted (from this or another phone); scheduled backups wait for "Back up now". */
+    val deleted: CloudDeleted? = null,
 )
+
+data class CloudDeleted(val at: Long, val device: String?)
 
 sealed interface BackupOutcome {
     data object Done : BackupOutcome
+    /** A scheduled or sign-in backup found the deletion marker and uploaded nothing. */
+    data class Deleted(val deleted: CloudDeleted) : BackupOutcome
     data class NeedsChoice(val conflict: Conflict) : BackupOutcome
     data class Failed(val error: BackupError) : BackupOutcome
 }
@@ -127,6 +135,7 @@ class BackupRepository @Inject constructor(
     private val rides: RideStore,
     private val care: CareStore,
     private val garage: GarageStore,
+    private val controller: ClusterController,
 ) {
     private val db = Helper(context)
     private val mutex = Mutex()
@@ -189,12 +198,15 @@ class BackupRepository @Inject constructor(
         work.enqueueUniquePeriodicWork(PERIODIC, ExistingPeriodicWorkPolicy.UPDATE, request)
     }
 
-    /** "Back up now" and the conflict choices: runs in WorkManager as soon as there is any network, also after leaving the app. */
-    fun enqueue(mode: BackupMode) {
+    /**
+     * "Back up now" and the conflict choices: runs in WorkManager as soon as there is any network, also after leaving the app.
+     * [byRider] false (the check after sign-in) behaves like a scheduled run: it never brings back a deleted backup.
+     */
+    fun enqueue(mode: BackupMode, byRider: Boolean = true) {
         if (!available) return
         val request = OneTimeWorkRequestBuilder<BackupWorker>()
             .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
-            .setInputData(workDataOf(BackupWorker.MODE to mode.name))
+            .setInputData(workDataOf(BackupWorker.MODE to mode.name, BackupWorker.BY_RIDER to byRider))
             .build()
         // A choice replaces a queued plain backup; a second tap on "Back up now" does not restart a running one.
         work.enqueueUniqueWork(NOW, if (mode == BackupMode.BACKUP) ExistingWorkPolicy.KEEP else ExistingWorkPolicy.REPLACE, request)
@@ -202,11 +214,17 @@ class BackupRepository @Inject constructor(
 
     // ---- the run
 
-    suspend fun run(mode: BackupMode): BackupOutcome = mutex.withLock {
+    /** [byRider]: the rider tapped it. Only then does a backup start again after the cloud backup was deleted. */
+    suspend fun run(mode: BackupMode, byRider: Boolean = false): BackupOutcome = mutex.withLock {
         val uid = accounts.current()?.uid ?: return@withLock fail(BackupError.SIGNED_OUT)
         try {
-            val outcome = withContext(Dispatchers.IO) { runSignedIn(uid, mode) }
-            if (outcome is BackupOutcome.NeedsChoice) update { it.copy(conflict = outcome.conflict, error = null) }
+            val outcome = withContext(Dispatchers.IO) { runSignedIn(uid, mode, byRider) }
+            android.util.Log.i("RideLink", "Backup $mode byRider=$byRider -> ${when (outcome) { BackupOutcome.Done -> "done"; is BackupOutcome.NeedsChoice -> "needs choice"; is BackupOutcome.Deleted -> "cloud deleted"; is BackupOutcome.Failed -> "failed" }}")
+            when (outcome) {
+                is BackupOutcome.NeedsChoice -> update { it.copy(conflict = outcome.conflict, error = null) }
+                is BackupOutcome.Deleted -> update { BackupStatus(deleted = outcome.deleted) }
+                else -> Unit
+            }
             outcome
         } catch (e: TimeoutCancellationException) {
             fail(BackupError.OFFLINE)
@@ -224,12 +242,13 @@ class BackupRepository @Inject constructor(
         }
     }
 
-    private suspend fun runSignedIn(uid: String, mode: BackupMode): BackupOutcome {
+    private suspend fun runSignedIn(uid: String, mode: BackupMode, byRider: Boolean): BackupOutcome {
         val root = firestore.collection(COLLECTION).document(uid)
         _progress.value = BackupProgress(BackupPhase.CHECKING)
         val meta = net { root.get(Source.SERVER).await() }
         val cloudRev = if (meta.exists()) meta.getLong(F_REVISION) ?: 0L else null
         val state = loadSync()
+        val deleted = meta.exists() && meta.getBoolean(F_DELETED) == true
         // Replacing the cloud (or deleting it) is fine; reading or adding to a newer layout is not.
         if (meta.exists() && (meta.getLong(F_SCHEMA) ?: 0L) > BackupCodec.SCHEMA && mode != BackupMode.USE_PHONE && mode != BackupMode.DELETE_CLOUD) {
             throw NewerSchema()
@@ -239,12 +258,23 @@ class BackupRepository @Inject constructor(
             val cloud = download(root)
             _progress.value = BackupProgress(BackupPhase.DELETING, 0, cloud.size)
             write(root, BackupPlan(emptyList(), cloud.keys.toList()), BackupPhase.DELETING)
-            net { root.delete().await() }
+            // The summary stays as a deletion marker, so another phone's scheduled backup does not quietly upload everything
+            // again; only "Back up now" (on any phone) starts a new backup and replaces the marker.
+            val now = System.currentTimeMillis()
+            val device = deviceName()
+            net {
+                root.set(mapOf(F_REVISION to (cloudRev ?: 0L) + 1, F_DELETED to true, F_UPDATED to now, F_DEVICE to device, F_SCHEMA to BackupCodec.SCHEMA.toLong())).await()
+            }
             saveSync(null, 0, emptyMap())
-            update { BackupStatus() }
-            // Otherwise the next scheduled run would upload everything again.
-            settings.setBackupFrequency(BackupFrequency.MANUAL)
+            update { BackupStatus(deleted = CloudDeleted(now, device)) }
             return BackupOutcome.Done
+        }
+
+        if (deleted) {
+            when {
+                mode == BackupMode.MERGE || mode == BackupMode.USE_CLOUD -> throw NoBackup()
+                mode == BackupMode.BACKUP && !byRider -> return BackupOutcome.Deleted(CloudDeleted(meta.getLong(F_UPDATED) ?: 0L, meta.getString(F_DEVICE)))
+            }
         }
 
         _progress.value = BackupProgress(BackupPhase.READING_PHONE)
@@ -255,8 +285,8 @@ class BackupRepository @Inject constructor(
             BackupMode.BACKUP -> {
                 target = local
                 plan = when {
-                    // Nothing in the cloud yet, or the backup was deleted: upload everything.
-                    cloudRev == null -> BackupCodec.mirror(local, emptyMap())
+                    // Nothing in the cloud yet, or the rider starts again after a deletion: upload everything.
+                    cloudRev == null || deleted -> BackupCodec.mirror(local, emptyMap())
                     state.uid == uid && cloudRev == state.revision -> BackupCodec.incremental(local, state.hashes)
                     else -> return BackupOutcome.NeedsChoice(
                         Conflict(
@@ -305,7 +335,7 @@ class BackupRepository @Inject constructor(
                     tx.set(
                         root,
                         mapOf(
-                            F_REVISION to next, F_UPDATED to now, F_DEVICE to "${Build.MANUFACTURER} ${Build.MODEL}",
+                            F_REVISION to next, F_UPDATED to now, F_DEVICE to deviceName(),
                             F_SCHEMA to BackupCodec.SCHEMA.toLong(), F_COUNTS to counts, F_BYTES to sizes.values.sum(),
                         ),
                     )
@@ -323,10 +353,20 @@ class BackupRepository @Inject constructor(
 
     private suspend fun restore(docs: Collection<BackupDoc>) {
         val d = BackupCodec.local(docs)
+        val before = settings.current().deviceAddress
         rides.replaceAll(d.rides)
         care.replaceAll(d.care)
         garage.replaceAll(d.bikes)
         d.prefs?.let { settings.importPrefs(it) }
+        // The paired scooters come back with the one that was selected. When that one is not among them (or none was
+        // selected), the first restored scooter becomes the active one, so AutoConnect connects to it right away.
+        val selected = settings.current().deviceAddress
+        if (d.bikes.none { it["address"] == selected }) d.bikes.firstOrNull()?.let { b ->
+            settings.setModel((b["model"] as? String)?.let { runCatching { ClusterModel.valueOf(it) }.getOrNull() })
+            settings.setDevice(b["address"] as? String, b["name"] as? String)
+        }
+        // Like switching scooters in Settings: end the old session so the new one connects.
+        if (before != null && before != settings.current().deviceAddress) controller.stopForBikeSwitch()
     }
 
     /** Every backup document of this account. One read per document: only for the rider's conflict choices. */
@@ -358,6 +398,8 @@ class BackupRepository @Inject constructor(
             _progress.value = BackupProgress(phase, done, ops.size)
         }
     }
+
+    private fun deviceName() = "${Build.MANUFACTURER} ${Build.MODEL}"
 
     private fun classify(e: Throwable): BackupError {
         val chain = generateSequence(e) { it.cause }
@@ -427,6 +469,7 @@ class BackupRepository @Inject constructor(
         put("counts", JSONObject(s.counts))
         s.error?.let { put("error", it.name) }
         s.errorAt?.let { put("errorAt", it) }
+        s.deleted?.let { d -> put("deleted", JSONObject().apply { put("at", d.at); d.device?.let { put("device", it) } }) }
         s.conflict?.let { c ->
             put(
                 "conflict",
@@ -446,6 +489,7 @@ class BackupRepository @Inject constructor(
             counts = counts(j.optJSONObject("counts")),
             error = j.optString("error").takeIf { it.isNotEmpty() }?.let { runCatching { BackupError.valueOf(it) }.getOrNull() },
             errorAt = j.optLong("errorAt").takeIf { j.has("errorAt") },
+            deleted = j.optJSONObject("deleted")?.let { d -> CloudDeleted(d.optLong("at"), d.optString("device").takeIf { it.isNotEmpty() }) },
             conflict = j.optJSONObject("conflict")?.let { c ->
                 Conflict(
                     firstLink = c.optBoolean("firstLink"),
@@ -484,6 +528,8 @@ class BackupRepository @Inject constructor(
         private const val F_SCHEMA = "schema"
         private const val F_COUNTS = "counts"
         private const val F_BYTES = "bytes"
+        /** Set on the summary by "Delete cloud backup"; the next full backup's summary write drops it. */
+        private const val F_DELETED = "deleted"
         private const val T_SYNCED = "synced"
         private const val T_META = "meta"
         private const val KEY_UID = "uid"

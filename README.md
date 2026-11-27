@@ -192,8 +192,8 @@ The repository includes desktop Python test utilities (requires BlueZ on Linux, 
 
 ## Privacy & ethics
 
-- **Usage statistics**: Builds with Firebase configured send anonymous usage statistics through Firebase Analytics (app opens, screens, sessions). RideLink logs no ride data, names, numbers or locations to it.
-- **Cloud backup is opt-in**: Nothing is backed up until you sign in with Google. The backup lives at `RideLink/{your uid}` in Firestore, readable only by your account (see [`firestore.rules`](firestore.rules)). It holds your rides (routes, speeds, places), fuel log, care records, scooters and settings, including the check-in contact number, birthday and last parked spot. *Delete cloud backup* in Settings → Backup removes it.
+- **Usage statistics**: Builds with Firebase configured send anonymous usage statistics through Firebase Analytics (app opens, screens, sessions), without the advertising ID. RideLink logs no ride data, names, numbers or locations to it. Turn it off in **Settings → In the app → Usage statistics**.
+- **Cloud backup is opt-in**: Nothing is backed up until you sign in with Google. The backup lives at `RideLink/{your uid}` in Firestore, readable only by your account (see [`firestore.rules`](firestore.rules)). It holds your rides (routes, speeds, places), fuel log, care records, scooters and settings, including the check-in contact number, birthday and last parked spot. *Delete cloud data* (Google account dialog or Settings → Backup) removes it from the server only; other phones on the same account stop backing up automatically until someone taps *Back up now*. After a restore, *Settings → Scooter → Re-pair* moves a scooter's history to its new Bluetooth address if it changed.
 - **Personal use project**: RideLink is an independent project and is not affiliated with, endorsed by, or connected to TVS Motor Company. No proprietary TVS code or assets are distributed.
 
 ## Related docs

@@ -79,5 +79,8 @@
 - [x] Optional Google sign-in (Firebase Auth) with skippable welcome screen
 - [x] Firestore cloud backup: WorkManager schedule (manual/daily/weekly/monthly, Wi-Fi only), Back up now,
       incremental by hash, conflict choice (merge / use cloud / use phone), restore, delete; Firebase Analytics on
+- [x] Backup tested on a phone (seeded data): first backup, no-op, incremental, changed-elsewhere conflict + merge,
+      fresh-install restore, use phone, use cloud, delete + marker, sign-in check respects marker, release build
+- [x] Re-pair a saved scooter (history follows the new address), Play Store style account dialog, usage statistics switch
 - [ ] Backup: test on two real phones (conflict, merge, restore on a fresh install) against the live rules
 - [ ] Backup: notify when a scheduled backup stops on a conflict (today it only shows in Settings -> Backup)

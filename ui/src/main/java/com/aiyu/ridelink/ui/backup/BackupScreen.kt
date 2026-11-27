@@ -23,6 +23,7 @@ import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.Logout
 import androidx.compose.material.icons.rounded.Build
 import androidx.compose.material.icons.rounded.CloudDone
 import androidx.compose.material.icons.rounded.CloudDownload
@@ -149,7 +150,7 @@ fun BackupScreen(onBack: () -> Unit, vm: BackupViewModel = hiltViewModel(), acco
                         Text(stringResource(R.string.backup_now))
                     }
                 }
-                status.conflict?.takeIf { !busy }?.let { c -> item { ConflictCard(context, c, onChoose = { mode -> if (mode == BackupMode.MERGE || (mode == BackupMode.USE_CLOUD && c.phoneEmpty)) vm.run(mode) else confirm = mode }) } }
+                status.conflict?.takeIf { !busy }?.let { c -> item { ConflictCard(context, c, status.lastAt, onChoose = { mode -> if (mode == BackupMode.MERGE || (mode == BackupMode.USE_CLOUD && c.phoneEmpty)) vm.run(mode) else confirm = mode }) } }
             }
         }
         val options: LazyListScope.() -> Unit = {
@@ -176,25 +177,30 @@ fun BackupScreen(onBack: () -> Unit, vm: BackupViewModel = hiltViewModel(), acco
                 }
                 item { Header(R.string.backup_contents) }
                 item { Contents(status) }
-                if (status.lastAt != null || status.conflict != null) {
-                    item { Header(R.string.backup_manage) }
-                    item {
-                        Group {
-                            ListItem(
+                item { Header(R.string.backup_manage) }
+                item {
+                    Group {
+                        if (status.lastAt != null || status.conflict != null) ListItem(
                                 headlineContent = { Text(stringResource(R.string.backup_restore_now)) },
                                 supportingContent = { Text(stringResource(R.string.backup_restore_now_desc)) },
                                 leadingContent = { Icon(Icons.Rounded.CloudDownload, contentDescription = null) },
                                 colors = groupItemColors(),
                                 modifier = Modifier.clickable(enabled = !busy, role = Role.Button) { confirm = BackupMode.USE_CLOUD },
                             )
-                            ListItem(
+                        if (status.deleted == null) ListItem(
                                 headlineContent = { Text(stringResource(R.string.backup_delete_cloud), color = MaterialTheme.colorScheme.error) },
                                 supportingContent = { Text(stringResource(R.string.backup_delete_cloud_desc)) },
                                 leadingContent = { Icon(Icons.Rounded.DeleteForever, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
                                 colors = groupItemColors(),
                                 modifier = Modifier.clickable(enabled = !busy, role = Role.Button) { confirm = BackupMode.DELETE_CLOUD },
                             )
-                        }
+                        ListItem(
+                            headlineContent = { Text(stringResource(R.string.backup_sign_out)) },
+                            supportingContent = { Text(stringResource(R.string.backup_sign_out_desc)) },
+                            leadingContent = { Icon(Icons.AutoMirrored.Rounded.Logout, contentDescription = null) },
+                            colors = groupItemColors(),
+                            modifier = Modifier.clickable(role = Role.Button) { accounts.signOut() },
+                        )
                     }
                 }
             }
@@ -239,6 +245,7 @@ private fun Hero(status: BackupStatus, progress: BackupProgress?, queued: Boolea
         running || queued -> HeroState.RUNNING
         status.conflict != null -> HeroState.CONFLICT
         status.error != null -> HeroState.FAILED
+        status.deleted != null -> HeroState.DELETED
         status.lastAt != null -> HeroState.DONE
         else -> HeroState.NEVER
     }
@@ -278,6 +285,7 @@ private fun Hero(status: BackupStatus, progress: BackupProgress?, queued: Boolea
             HeroState.CONFLICT -> stringResource(R.string.backup_state_conflict)
             HeroState.FAILED -> stringResource(R.string.backup_state_failed)
             HeroState.DONE -> stringResource(R.string.backup_state_done)
+            HeroState.DELETED -> stringResource(R.string.backup_state_deleted)
             HeroState.NEVER -> stringResource(R.string.backup_state_never)
             HeroState.OFF -> stringResource(R.string.backup_signed_out_title)
         }
@@ -295,6 +303,14 @@ private fun Hero(status: BackupStatus, progress: BackupProgress?, queued: Boolea
             )
         }
         if (state == HeroState.FAILED) status.error?.let { ErrorText(stringResource(it.label), center = true) }
+        if (state == HeroState.DELETED) status.deleted?.let { d ->
+            Text(
+                stringResource(R.string.backup_deleted_body, d.device ?: stringResource(R.string.backup_conflict_device_unknown), when_(LocalContext.current, d.at)),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+            )
+        }
     }
 }
 
@@ -304,6 +320,7 @@ private enum class HeroState(val icon: ImageVector) {
     CONFLICT(Icons.Rounded.SyncProblem),
     FAILED(Icons.Rounded.SyncProblem),
     DONE(Icons.Rounded.CloudDone),
+    DELETED(Icons.Rounded.CloudOff),
     NEVER(Icons.Rounded.CloudUpload),
 }
 
@@ -324,7 +341,7 @@ internal fun when_(context: Context, at: Long): String =
     DateUtils.getRelativeDateTimeString(context, at, DateUtils.DAY_IN_MILLIS, DateUtils.WEEK_IN_MILLIS, DateUtils.FORMAT_ABBREV_MONTH).toString()
 
 @Composable
-private fun ConflictCard(context: Context, c: Conflict, onChoose: (BackupMode) -> Unit) {
+private fun ConflictCard(context: Context, c: Conflict, phoneLastAt: Long?, onChoose: (BackupMode) -> Unit) {
     val device = c.cloudDevice ?: stringResource(R.string.backup_conflict_device_unknown)
     val date = when_(context, c.cloudAt)
     Card(
@@ -343,7 +360,7 @@ private fun ConflictCard(context: Context, c: Conflict, onChoose: (BackupMode) -
                 if (c.phoneEmpty) stringResource(R.string.backup_conflict_restore_body, device, date) else stringResource(R.string.backup_conflict_body, device, date),
                 style = MaterialTheme.typography.bodyMedium,
             )
-            CompareTable(c)
+            CompareTable(c, phoneLastAt?.let { when_(context, it) } ?: stringResource(R.string.backup_never), date)
             if (c.phoneEmpty) {
                 Button(onClick = { onChoose(BackupMode.USE_CLOUD) }, modifier = Modifier.fillMaxWidth().heightIn(min = Dimens.minTouch)) {
                     Text(stringResource(R.string.backup_restore))
@@ -369,7 +386,7 @@ private fun ConflictCard(context: Context, c: Conflict, onChoose: (BackupMode) -
 
 /** What each side holds, so the rider sees what a choice keeps. */
 @Composable
-private fun CompareTable(c: Conflict) {
+private fun CompareTable(c: Conflict, phoneTime: String, cloudTime: String) {
     val rows = listOf(
         R.string.backup_kind_rides to BackupCodec.RIDES,
         R.string.backup_kind_fills to BackupCodec.FILLS,
@@ -387,6 +404,12 @@ private fun CompareTable(c: Conflict) {
                 Text("${c.phoneCounts[kind] ?: 0}", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f), textAlign = TextAlign.End)
                 Text("${c.cloudCounts[kind] ?: 0}", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f), textAlign = TextAlign.End)
             }
+        }
+        // When each side last backed up, so the rider can tell which copy is newer.
+        Row {
+            Text(stringResource(R.string.backup_col_last), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1.4f))
+            Text(phoneTime, style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f), textAlign = TextAlign.End)
+            Text(cloudTime, style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f), textAlign = TextAlign.End)
         }
     }
 }
@@ -442,7 +465,7 @@ private fun FrequencyDialog(current: BackupFrequency, onDismiss: () -> Unit, onP
 
 /** Confirm for the choices that throw data away, with the counts each side holds. */
 @Composable
-private fun ConfirmDialog(mode: BackupMode, status: BackupStatus, onDismiss: () -> Unit, onConfirm: () -> Unit) {
+internal fun ConfirmDialog(mode: BackupMode, status: BackupStatus, onDismiss: () -> Unit, onConfirm: () -> Unit) {
     val c = status.conflict
     // Without a pending conflict, the last backup's counts stand for the cloud and are the best guess for the phone.
     val cloud = c?.cloudCounts ?: status.counts

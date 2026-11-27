@@ -77,6 +77,13 @@ holds `revision`, `updatedAt`, `device`, `schema`, `counts`, `bytes`. Free Spark
 only changed docs (hashes in `backup.db`). A revision this phone did not write = conflict; the rider picks Merge
 (phone wins ties, prefs merge per key), Use cloud, or Use phone (Settings -> Backup). Schedule: `Settings.backupFrequency`
 (Manual/Daily/Weekly/Monthly) + `backupWifiOnly`; `BackupRepository.startScheduling()` from `RideLinkApp`.
+Delete cloud backup leaves the summary as a marker (`deleted: true`): scheduled and sign-in runs (`byRider = false`)
+stop there on every phone; only "Back up now" starts again. Restore/merge selects the first restored scooter when the
+backed-up selection is missing. Settings -> Scooter -> Re-pair moves a saved scooter's rides, fuel log, care records,
+parked spot and selection to the address picked (`MainViewModel.repair`). The Google account opens as a Play Store style
+dialog (`ui/account/AccountDialog`), with Manage backup, Delete cloud data (Firestore only) and Sign out.
+Analytics follows `Settings.usageStats` (In the app -> Usage statistics, on by default) via `account/UsageStats`.
+Release builds keep Room's `_Impl` constructors (`app/proguard-rules.pro`): WorkManager crashes at startup without it.
 A new SQLite column is backed up automatically (rows are column maps); a new table or DataStore-only list needs a
 kind in `BackupCodec`. Bump `BackupCodec.SCHEMA` only for layout changes an older app cannot read.
 Error `[28444] Developer console is not set up correctly` = the package + SHA-1 has no Android OAuth client in project
