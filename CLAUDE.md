@@ -66,7 +66,8 @@ Modules:
 
 Google sign-in (optional, for backups): fresh installs open `ui/account/WelcomeScreen` (skippable, `Settings.welcomeDone`);
 Settings -> Google account signs in/out later. `app/google-services.json` is gitignored; CI writes it from the
-`GOOGLE_SERVICES_JSON` secret. Without it the build still works and sign-in is hidden (`AccountRepository.available`).
+`GOOGLE_SERVICES_JSON` secret. The web client ID is `GOOGLE_WEB_CLIENT_ID` in gitignored `local.properties`
+(CI: same-named secret), compiled into `core` `BuildConfig`. Without it the build still works and sign-in is hidden (`AccountRepository.available`).
 Error `[28444] Developer console is not set up correctly` = the package + SHA-1 has no Android OAuth client in project
 `monolith-664a6`.
 

@@ -1,6 +1,7 @@
 package com.aiyu.ridelink.core.account
 
 import android.content.Context
+import com.aiyu.ridelink.core.BuildConfig
 import androidx.credentials.ClearCredentialStateRequest
 import androidx.credentials.CredentialManager
 import androidx.credentials.CredentialOption
@@ -47,8 +48,8 @@ sealed interface SignInResult {
  */
 @Singleton
 class AccountRepository @Inject constructor(@ApplicationContext private val context: Context) {
-    /** False in a build without google-services.json (forks, CI without the secret): sign-in is hidden. */
-    val available: Boolean = FirebaseApp.getApps(context).isNotEmpty()
+    /** False in a build without google-services.json or GOOGLE_WEB_CLIENT_ID (forks, CI without secrets): sign-in is hidden. */
+    val available: Boolean = WEB_CLIENT_ID.isNotBlank() && FirebaseApp.getApps(context).isNotEmpty()
 
     private val auth by lazy { FirebaseAuth.getInstance() }
 
@@ -123,8 +124,8 @@ class AccountRepository @Inject constructor(@ApplicationContext private val cont
     )
 
     companion object {
-        /** Web OAuth client of Firebase project monolith-664a6; public by design (it is in every ID token). */
-        const val WEB_CLIENT_ID = "276587551218-7324808td4o7ak83p82vauoj0tbnkdom.apps.googleusercontent.com"
+        /** Web OAuth client of the Firebase project, from local.properties / the CI secret (core/build.gradle.kts). */
+        private const val WEB_CLIENT_ID = BuildConfig.GOOGLE_WEB_CLIENT_ID
 
         private val SIZE_SUFFIX = Regex("=s\\d+(-c)?$")
 

@@ -1,8 +1,17 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
 }
+
+// Google sign-in web client ID: env var (CI secret) wins over gitignored local.properties. Blank = sign-in hidden.
+val localProps = Properties().apply {
+    rootProject.file("local.properties").takeIf { it.exists() }?.inputStream()?.use(::load)
+}
+val webClientId = System.getenv("GOOGLE_WEB_CLIENT_ID")?.takeIf { it.isNotBlank() }
+    ?: localProps.getProperty("GOOGLE_WEB_CLIENT_ID")?.trim().orEmpty()
 
 android {
     namespace = "com.aiyu.ridelink.core"
@@ -10,6 +19,11 @@ android {
 
     defaultConfig {
         minSdk = 26
+        buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"$webClientId\"")
+    }
+
+    buildFeatures {
+        buildConfig = true
     }
 
     compileOptions {

@@ -351,9 +351,10 @@ jobs:
       - name: Firebase config
         env:
           GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+          GOOGLE_WEB_CLIENT_ID: ${{ secrets.GOOGLE_WEB_CLIENT_ID }}
         run: |
-          if [ -z "$GOOGLE_SERVICES_JSON" ]; then
-            echo "::error::Add the GOOGLE_SERVICES_JSON secret (contents of app/google-services.json)."
+          if [ -z "$GOOGLE_SERVICES_JSON" ] || [ -z "$GOOGLE_WEB_CLIENT_ID" ]; then
+            echo "::error::Add the GOOGLE_SERVICES_JSON (contents of app/google-services.json) and GOOGLE_WEB_CLIENT_ID secrets."
             exit 1
           fi
           printf '%s' "$GOOGLE_SERVICES_JSON" > app/google-services.json
@@ -363,6 +364,7 @@ jobs:
 
       - name: Build APK
         env:
+          GOOGLE_WEB_CLIENT_ID: ${{ secrets.GOOGLE_WEB_CLIENT_ID }}
           ANDROID_KEYSTORE_FILE: ${{ steps.keystore.outputs.path }}
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
