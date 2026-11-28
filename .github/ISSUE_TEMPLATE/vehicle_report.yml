@@ -54,7 +54,17 @@ body:
     id: ridelink_model
     attributes:
       label: Model chosen in RideLink (Settings)
-      options: [Auto, Ntorq 125 SmartXonnect, Ntorq XT / U577 premium, Ntorq U716 / U577 base, 2025+ Ntorq, Other, Not available]
+      options:
+        - Auto (recommended)
+        - Ntorq 125 SmartXonnect LCD (Race XP, Marvel)
+        - Ntorq 125 (U716)
+        - Ntorq, LCD (U577 base)
+        - Ntorq XT, TFT (U577 premium)
+        - Ntorq 125, 2025+ (U812)
+        - Ntorq 125 Standard, 2025+ (N251)
+        - Ntorq 125 Race, 2025+ (U458)
+        - Ntorq 125 Super Squad, 2025+ (U377)
+        - My vehicle is not in the list
     validations:
       required: true
   - type: input
