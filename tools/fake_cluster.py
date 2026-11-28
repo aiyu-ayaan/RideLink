@@ -50,6 +50,18 @@ TEXT_DIDS = {
 }
 
 
+# (phone -> display key, display -> phone key) per --model; PROTOCOL.md "Frame obfuscation".
+XOR_KEYS = {"plain": (None, None), "u716": (0xEB, None), "u577p": (0xEA, 0xEA)}
+TX_KEY = RX_KEY = None  # set from --model in main()
+
+
+def xor(frame, key):
+    """XOR bytes 2..n-2 (start byte, DID and trailing FF stay plain); its own inverse."""
+    if key is None or len(frame) < 4:
+        return frame
+    return frame[:2] + bytes(b ^ key for b in frame[2:-1]) + frame[-1:]
+
+
 def ascii_payload(b):
     return bytes(x for x in b if x not in (0x00, 0xFF)).decode("utf-8", "replace")
 
@@ -199,8 +211,10 @@ class WriteChar(Characteristic):
 
     @dbus.service.method(GATT_CHRC, in_signature="aya{sv}")
     def WriteValue(self, value, options):
-        frame = bytes(value)
-        self.logger.log(f"RX {frame.hex(' ')}  | {decode(frame)}")
+        wire = bytes(value)
+        frame = xor(wire, TX_KEY)
+        extra = f"  (wire {wire.hex(' ')})" if frame != wire else ""
+        self.logger.log(f"RX {frame.hex(' ')}  | {decode(frame)}{extra}")
 
 
 class NotifyChar(Characteristic):
@@ -220,7 +234,8 @@ class NotifyChar(Characteristic):
         self.logger.log("phone unsubscribed from notifications")
 
     def push(self, frame):
-        self.value = [dbus.Byte(b) for b in frame]
+        # Typed frames are plain; the display's key applies on the air.
+        self.value = [dbus.Byte(b) for b in xor(frame, RX_KEY)]
         if not self.notifying:
             self.logger.log("cannot send: phone not subscribed")
             return
@@ -265,7 +280,11 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--adapter", default="hci0")
     ap.add_argument("--name", default="TVSBT01", help="must contain 'TVS' and not 'HUD'; keep short")
+    ap.add_argument("--model", choices=sorted(XOR_KEYS), default="plain",
+                    help="frame XOR to emulate: u716 (phone->display 0xEB), u577p (0xEA both ways)")
     args = ap.parse_args()
+    global TX_KEY, RX_KEY
+    TX_KEY, RX_KEY = XOR_KEYS[args.model]
 
     dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
     bus = dbus.SystemBus()
