@@ -9,19 +9,20 @@ The NTORQ 125 variants. See the [supported scooters table](../README.md#supporte
 
 ## Not supported yet
 
-The notes come from static analysis recorded in [`PROTOCOL.md`](../PROTOCOL.md). None of them is confirmed on a real
-vehicle, and an empty analysis does not mean the vehicle works differently.
+The notes come from static analysis of the official app. None of them is confirmed on a real vehicle.
 
 | Vehicle | What is known so far |
 |---|---|
-| NTORQ 150 | Nothing recorded. |
-| Raider ([#19](https://github.com/aiyu-ayaan/RideLink/issues/19)) | Same GATT service and name filter as NTORQ. Status frame tail differs. The navigation-on byte in the control frame is 1/0 (running/stopped) instead of 0/`FF`. Artist text uses DID `0x65`; music checksum behaviour differs. |
-| Apache | Same GATT service as NTORQ. Music checksum behaviour differs. |
-| Ronin | Nothing recorded. |
-| Jupiter (U279, U566, U745) | Same family as the 2025+ NTORQ (status frame and receiver). U566 uses MTU 515. U279 has find-my-vehicle. |
+| NTORQ 150 | Not in the TVS Connect version analysed; needs a newer one. |
+| Raider ([#19](https://github.com/aiyu-ayaan/RideLink/issues/19)) | SmartXonnect-style navigation with its own arrow table. TFT and LCD clusters are told apart by the model code the display sends. Older cluster firmware obfuscates frames. Status frame, gear and trip data mapped. |
+| Apache | RR310, RTR 310, RTR 4V and basic Apache codes mapped. Frames are obfuscated per model. Gear, ride mode, range and lap timer data mapped. |
+| Ronin | Mapped. Frames are always obfuscated. Status and navigation frames recorded. |
+| Jupiter (U279, U566, U745) | Same family as the 2025+ NTORQ (status frame and receiver). U566 uses MTU 515. U279 has find-my-vehicle. Arrow tables still to record. |
 | Zest 110 (U714) | Jupiter family. Overspeed byte is 70. |
-| iQube (U467 family) | MTU 141. The stock scan accepts names containing `TVSiQUBE`. Receives SMS sender frames. |
-| U388 display family | Needs a user ID frame (`5B 22`) after connecting. Receives SMS sender frames. |
+| iQube | Status frame, battery % and range mapped. Fuel features would be hidden. |
+| U388 and TVS X | Not planned: the display requires an account-bound security handshake. |
+
+Detailed research notes live in the maintainer's development docs.
 
 ## Report your vehicle
 
@@ -36,12 +37,6 @@ Remove names, phone numbers, locations and Bluetooth addresses from the log befo
 
 ## Adding a vehicle
 
-1. Record every byte layout in `PROTOCOL.md`, with the stock-app class it came from.
-2. Add the model to `ClusterModel` (and a `ClusterFamily` if no existing one fits) in
-   `core/.../protocol/ClusterModel.kt`. Check `pictogram`, `weatherIcon`, `hasTft`, `hasLocation`, `hasMusic` and
-   `detect`.
-3. Update the frame builders in `ClusterProtocol` and the parsers in `DisplayTelemetry`.
-4. Check the connection: the scan name filter and MTU in `core/.../ble/ClusterLink.kt`.
-5. Add the model label in `SettingsScreen` and its string in `ui/src/main/res/values*/strings.xml`.
-6. Add byte-exact tests to `ClusterProtocolTest`, then run `./gradlew :core:testDebugUnitTest`.
-7. Move the vehicle to the README table. Mark it tested only after a rider confirms it on the real vehicle.
+Follow the phased plan in `development/docs/vehicles/IMPLEMENTATION_PLAN.md`. In short: every byte layout goes into
+`PROTOCOL.md` with byte-exact tests in `ClusterProtocolTest`, each model gets capability flags so only supported
+features show, and a vehicle is marked tested only after a rider confirms it on the real vehicle.

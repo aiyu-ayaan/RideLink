@@ -73,8 +73,21 @@
 - [ ] Capture the display's incoming frames to refine Auto detection (U716 vs U577 base)
 - [ ] Check whether the display needs Bluetooth bonding
 
+## All TVS vehicles (issue #20; research in `development/docs/vehicles/`, plan in `IMPLEMENTATION_PLAN.md`)
+- [x] Research TVS Connect 8.13.2 for every vehicle family: ids, stacks, encryption, frames, feature matrix (2026-11-29)
+- [ ] P0 Phase 0: XOR frames for U716 (TX 0xEB) and U577 premium (TX/RX 0xEA); stock does it, RideLink sends plain (`vehicles/NTORQ.md`)
+- [ ] P0 Vehicle 8 `N251Spp` and non-TI vehicle 9 clusters use classic Bluetooth SPP for data (found by BLE scan, then RFCOMM); possible cause of issue #15 "detected but keeps searching" (research `SppSendDataToCluster` first)
+- [ ] Phase 1: multi-family foundation: new `ClusterFamily` values, capability flags, detect() limited to Ntorq, service found by `5352`/`5354` chars, per-model MTU / write type
+- [ ] Phase 2: Raider (issue #19): firmware-date XOR 0xED, status frame, Raider pictogram table, TFT/LCD from `5A 11` [9]
+- [ ] Phase 3: Apache (RR310, RTR 310, U449/U469, U796/U797, N597) and Ronin: XOR 0xEA/0xEB, checksum nav, gear / mode / range / laps
+- [ ] Phase 4: Jupiter U279/U566/U745, Zest U714, legacy Jupiter U408/U532 (first record their pictogram tables)
+- [ ] Phase 5: iQube family: battery %, range, trip A/B; hide fuel features for EVs
+- [ ] Research gaps: Raider trip A/B DID, Raider call-status byte values, legacy RR310 / RTR 310 status bytes 15/16/18, Ronin RX DID mapping (`U368ClusterDataManager`), Jupiter / EV pictogram tables
+- [ ] Collect `5A 11` [9] model codes from rider logs (only 0xE3 = Raider LCD is known)
+- [ ] NTORQ 150: not in 8.13.2; needs a newer TVS Connect APK
+- [ ] U388 and TVS X: blocked by the access-control challenge; say so in the README (no plan)
+
 ## Later
-- [ ] Support more TVS vehicles: Raider, Apache, Ronin, Jupiter, Zest, iQube, NTORQ 150, U388 (issue #20, `docs/VEHICLE_SUPPORT.md`)
 - [ ] Turn arrow fallback if a Maps update renames its `maneuver_*` drawables (Console note then says `0 Maps icons`)
 - [ ] Legacy Ntorq SmartXonnect (VehicleCode "9") uses separate code, not analysed
 - [x] Optional Google sign-in (Firebase Auth) with skippable welcome screen

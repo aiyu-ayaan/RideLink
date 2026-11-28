@@ -179,3 +179,6 @@ Error `[28444] Developer console is not set up correctly` = the package + SHA-1 
 - `development/docs/ARCHITECTURE.md` — module and data-flow diagrams.
 - `development/docs/DESIGN_SYSTEM.md` — color, shape, motion, layout rules.
 - `development/TODO.md` — open work.
+- `development/docs/vehicles/` — research for every other TVS vehicle (Raider, Ronin, Apache, Jupiter, Zest, iQube):
+  ids, stock stacks, frame XOR, layouts, feature matrix and the phased `IMPLEMENTATION_PLAN.md`. Relevant decompiled
+  packages are kept in gitignored `jadx/src-8.13.2/`.
