@@ -191,9 +191,9 @@
       themeToggle.setAttribute("title", label);
     }
 
-    if (heroPreviewImg) {
-      heroPreviewImg.src = effectiveDark ? "screenshots/ride-dark.png" : "screenshots/ride-light.png";
-    }
+    document.querySelectorAll("img[data-light-src][data-dark-src]").forEach((img) => {
+      img.src = effectiveDark ? img.dataset.darkSrc : img.dataset.lightSrc;
+    });
     if (persist) {
       try {
         localStorage.setItem(STORAGE_THEME_KEY, currentThemeMode);

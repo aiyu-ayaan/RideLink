@@ -53,7 +53,6 @@
     "image": "https://aiyu-ayaan.github.io/RideLink/screenshots/ride-light.png",
     "screenshot": [
       "https://aiyu-ayaan.github.io/RideLink/screenshots/ride-light.png",
-      "https://aiyu-ayaan.github.io/RideLink/screenshots/ride-dark.png",
       "https://aiyu-ayaan.github.io/RideLink/screenshots/analytics.png",
       "https://aiyu-ayaan.github.io/RideLink/screenshots/care.png",
       "https://aiyu-ayaan.github.io/RideLink/screenshots/garage.png",
@@ -175,7 +174,7 @@
               <span>v1.1.0</span>
             </div>
             <div class="hero-phone-frame">
-              <img id="hero-preview-img" src="screenshots/ride-light.png" alt="RideLink Ride screen showing live telemetry, turn-by-turn navigation, and SmartXonnect controls in light mode" width="1080" height="2400">
+              <img id="hero-preview-img" src="screenshots/ride-light.png" data-light-src="screenshots/ride-light.png" data-dark-src="screenshots/ride-dark.png" alt="RideLink Ride screen showing live telemetry, turn-by-turn navigation, and SmartXonnect controls" width="1080" height="2400">
             </div>
           </div>
         </div>
@@ -313,8 +312,7 @@
           </div>
 
           <div class="screenshot-tabs" role="tablist" aria-label="App screenshots">
-            <button class="tab-btn" type="button" role="tab" aria-selected="true" data-screen="ride-light" data-i18n="screen.rideLight.label">Ride · Light</button>
-            <button class="tab-btn" type="button" role="tab" aria-selected="false" data-screen="ride-dark" data-i18n="screen.rideDark.label">Ride · Dark</button>
+            <button class="tab-btn" type="button" role="tab" aria-selected="true" data-screen="ride" data-i18n="screen.ride.label">Ride</button>
             <button class="tab-btn" type="button" role="tab" aria-selected="false" data-screen="analytics" data-i18n="screen.analytics.label">Analytics</button>
             <button class="tab-btn" type="button" role="tab" aria-selected="false" data-screen="care" data-i18n="screen.care.label">Fuel &amp; Care</button>
             <button class="tab-btn" type="button" role="tab" aria-selected="false" data-screen="garage" data-i18n="screen.garage.label">Garage</button>
@@ -326,53 +324,48 @@
           </div>
 
           <div class="screenshots-gallery">
-            <figure class="screen-item is-active" data-screen="ride-light">
-              <img src="screenshots/ride-light.png" alt="RideLink Ride screen in light theme showing turn-by-turn navigation, scooter chips, and live telemetry" loading="lazy" width="1080" height="2400">
-              <figcaption data-i18n="screen.rideLight.caption">Live ride screen with navigation &amp; telemetry (light)</figcaption>
-            </figure>
-
-            <figure class="screen-item" data-screen="ride-dark">
-              <img src="screenshots/ride-dark.png" alt="RideLink Ride screen in dark theme for night riding" loading="lazy" width="1080" height="2400">
-              <figcaption data-i18n="screen.rideDark.caption">High-contrast dark theme for night riding</figcaption>
+            <figure class="screen-item is-active" data-screen="ride">
+              <img src="screenshots/ride-light.png" data-light-src="screenshots/ride-light.png" data-dark-src="screenshots/ride-dark.png" alt="RideLink Ride screen showing turn-by-turn navigation, scooter chips, and live telemetry" loading="lazy" width="1080" height="2400">
+              <figcaption data-i18n="screen.ride.caption">Live ride screen with navigation &amp; telemetry</figcaption>
             </figure>
 
             <figure class="screen-item" data-screen="analytics">
-              <img src="screenshots/analytics.png" alt="RideLink Analytics screen showing monthly ride summary, distance bar chart, and sample rides" loading="lazy" width="1080" height="2400">
+              <img src="screenshots/analytics.png" data-light-src="screenshots/analytics.png" data-dark-src="screenshots/analytics-dark.png" alt="RideLink Analytics screen showing monthly ride summary, distance bar chart, and sample rides" loading="lazy" width="1080" height="2400">
               <figcaption data-i18n="screen.analytics.caption">Ride history, monthly charts, and CSV export</figcaption>
             </figure>
 
             <figure class="screen-item" data-screen="care">
-              <img src="screenshots/care.png" alt="RideLink Fuel and Service Care screen showing full-to-full mileage, cost per km, and fuel log" loading="lazy" width="1080" height="2400">
+              <img src="screenshots/care.png" data-light-src="screenshots/care.png" data-dark-src="screenshots/care-dark.png" alt="RideLink Fuel and Service Care screen showing full-to-full mileage, cost per km, and fuel log" loading="lazy" width="1080" height="2400">
               <figcaption data-i18n="screen.care.caption">Full-to-full mileage, ₹/km cost, and service care</figcaption>
             </figure>
 
             <figure class="screen-item" data-screen="garage">
-              <img src="screenshots/garage.png" alt="RideLink Garage screen showing multi-scooter switcher and cluster model picker" loading="lazy" width="1080" height="2400">
+              <img src="screenshots/garage.png" data-light-src="screenshots/garage.png" data-dark-src="screenshots/garage-dark.png" alt="RideLink Garage screen showing multi-scooter switcher and cluster model picker" loading="lazy" width="1080" height="2400">
               <figcaption data-i18n="screen.garage.caption">Multi-scooter garage and cluster model picker</figcaption>
             </figure>
 
             <figure class="screen-item" data-screen="welcome">
-              <img src="screenshots/welcome.png" alt="RideLink Welcome screen with optional Google sign-in and Skip for now button" loading="lazy" width="1080" height="2400">
+              <img src="screenshots/welcome.png" data-light-src="screenshots/welcome.png" data-dark-src="screenshots/welcome-dark.png" alt="RideLink Welcome screen with optional Google sign-in and Skip for now button" loading="lazy" width="1080" height="2400">
               <figcaption data-i18n="screen.welcome.caption">Optional sign-in — skip anytime and ride local-first</figcaption>
             </figure>
 
             <figure class="screen-item" data-screen="backup">
-              <img src="screenshots/backup.png" alt="RideLink Cloud Backup screen for optional Google Drive and Firestore sync" loading="lazy" width="1080" height="2400">
+              <img src="screenshots/backup.png" data-light-src="screenshots/backup.png" data-dark-src="screenshots/backup-dark.png" alt="RideLink Cloud Backup screen for optional Google Drive and Firestore sync" loading="lazy" width="1080" height="2400">
               <figcaption data-i18n="screen.backup.caption">Optional Google Firestore cloud backup &amp; sync</figcaption>
             </figure>
 
             <figure class="screen-item" data-screen="settings">
-              <img src="screenshots/settings.png" alt="RideLink Settings screen showing account, backup, ride sections, updates, and about" loading="lazy" width="1080" height="2400">
+              <img src="screenshots/settings.png" data-light-src="screenshots/settings.png" data-dark-src="screenshots/settings-dark.png" alt="RideLink Settings screen showing account, backup, ride sections, updates, and about" loading="lazy" width="1080" height="2400">
               <figcaption data-i18n="screen.settings.caption">Ride settings, backup, and updater channels</figcaption>
             </figure>
 
             <figure class="screen-item" data-screen="languages">
-              <img src="screenshots/languages.png" alt="RideLink in-app Language picker showing English and 22 Scheduled Indian Languages" loading="lazy" width="1080" height="2400">
+              <img src="screenshots/languages.png" data-light-src="screenshots/languages.png" data-dark-src="screenshots/languages-dark.png" alt="RideLink in-app Language picker showing English and 22 Scheduled Indian Languages" loading="lazy" width="1080" height="2400">
               <figcaption data-i18n="screen.languages.caption">In-app picker for 23 languages in native scripts</figcaption>
             </figure>
 
             <figure class="screen-item" data-screen="console">
-              <img src="screenshots/console.png" alt="RideLink Developer Console showing live BLE frame logs, demo ride, and arrow sweeps" loading="lazy" width="1080" height="2400">
+              <img src="screenshots/console.png" data-light-src="screenshots/console.png" data-dark-src="screenshots/console-dark.png" alt="RideLink Developer Console showing live BLE frame logs, demo ride, and arrow sweeps" loading="lazy" width="1080" height="2400">
               <figcaption data-i18n="screen.console.caption">Live BLE frame log, demo ride, and arrow sweeps</figcaption>
             </figure>
           </div>
