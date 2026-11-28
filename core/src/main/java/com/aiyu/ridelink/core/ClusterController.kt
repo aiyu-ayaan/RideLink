@@ -29,6 +29,7 @@ import com.aiyu.ridelink.core.phone.MissedCalls
 import com.aiyu.ridelink.core.phone.RejectMessage
 import com.aiyu.ridelink.core.protocol.CallButton
 import com.aiyu.ridelink.core.protocol.DisplayTelemetry
+import com.aiyu.ridelink.core.protocol.FrameCrypto
 import com.aiyu.ridelink.core.protocol.FrameDecoder
 import com.aiyu.ridelink.core.settings.GarageStore
 import com.aiyu.ridelink.core.settings.SettingsRepository
@@ -195,6 +196,13 @@ class ClusterController @Inject constructor(
      */
     private fun model(s: Settings) =
         _detected.value?.takeIf { it.family == ClusterFamily.SMARTXONNECT } ?: s.model ?: _detected.value ?: ClusterModel.DEFAULT
+
+    /**
+     * The rider's model pick, the only source of the [FrameCrypto] keys. Cached because every frame needs it.
+     * shortcut: Auto never XORs: detect() cannot tell U716 / U577 base / U577 premium apart, and a wrong key blanks
+     * the display; detect from the RX payload (premium XORs it with 0xEA) once a capture confirms the bytes.
+     */
+    @Volatile private var picked: ClusterModel? = null
 
     @Volatile private var lastMovingAt = 0L
 
@@ -981,7 +989,10 @@ class ClusterController @Inject constructor(
         }
     }
 
-    private suspend fun send(frame: ByteArray): Boolean = link.send(frame).also { log(frame, it) }
+    private suspend fun send(frame: ByteArray): Boolean {
+        val wire = FrameCrypto.xor(frame, picked?.txXor)
+        return link.send(wire).also { log(frame, it, wire = wire) }
+    }
 
     /** Console line for a phone-side event (raw Maps / call notification), so "Copy log" shows what the app saw. */
     fun note(text: String) {
@@ -990,13 +1001,16 @@ class ClusterController @Inject constructor(
         logFile.write(line.line())
     }
 
-    private fun log(frame: ByteArray, ok: Boolean, rx: Boolean = false) {
+    /** [frame] is the plain frame; [wire] the bytes on the air when [FrameCrypto] changed them. */
+    private fun log(frame: ByteArray, ok: Boolean, rx: Boolean = false, wire: ByteArray = frame) {
+        val hex = { b: ByteArray -> b.joinToString(" ") { "%02x".format(it) } }
+        val decoded = FrameDecoder.decode(frame)
         val line = FrameLog(
             LocalDateTime.now().toLocalTime().withNano(0).toString(),
-            frame.joinToString(" ") { "%02x".format(it) },
+            hex(frame),
             ok,
             rx,
-            FrameDecoder.decode(frame),
+            if (wire === frame) decoded else listOfNotNull(decoded, "wire ${hex(wire)}").joinToString("  "),
         )
         _log.update { (listOf(line) + it).take(LOG_SIZE) }
         logFile.write(line.line())
@@ -1080,6 +1094,7 @@ class ClusterController @Inject constructor(
     // Last in the class on purpose: these coroutines start on another thread at once, so every field above must
     // already be initialised (an init block above repliedChats crashed the app on a fresh process start).
     init {
+        scope.launch { settings.settings.collect { picked = it.model } }
         // Last parked location: where the phone was when the scooter went away.
         scope.launch {
             var wasReady = false
@@ -1094,8 +1109,10 @@ class ClusterController @Inject constructor(
             }
         }
         scope.launch {
-            link.incoming.collect { frame ->
-                log(frame, ok = true, rx = true)
+            link.incoming.collect { raw ->
+                // XOR leaves bytes 0 and 1 plain, so detect() below reads either; everything else needs the plain frame.
+                val frame = FrameCrypto.xor(raw, picked?.rxXor)
+                log(frame, ok = true, rx = true, wire = raw)
                 ClusterModel.detect(frame)?.let { found ->
                     if (_detected.value != found) {
                         _detected.value = found

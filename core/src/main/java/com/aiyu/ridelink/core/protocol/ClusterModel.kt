@@ -43,12 +43,16 @@ enum class WeatherKind { CLEAR, CLEAR_NIGHT, CLOUDY, FOG, RAIN, SNOW, THUNDERSTO
     }
 }
 
-/** Supported scooters. [vehicleId] is the TVS account VehicleId. */
-enum class ClusterModel(val vehicleId: Int, val family: ClusterFamily) {
+/**
+ * Supported scooters. [vehicleId] is the TVS account VehicleId. [txXor] / [rxXor] are the [FrameCrypto] keys for
+ * frames sent to / received from the display, null when the display uses plain frames (stock
+ * BleEngine.writeCharacteristicToCentral and its receive switch, INVENTORY.md section 5).
+ */
+enum class ClusterModel(val vehicleId: Int, val family: ClusterFamily, val txXor: Int? = null, val rxXor: Int? = null) {
     NTORQ_SMARTXONNECT(9, ClusterFamily.SMARTXONNECT),
-    NTORQ_U716(34, ClusterFamily.NTORQ),
+    NTORQ_U716(34, ClusterFamily.NTORQ, txXor = 0xEB),
     NTORQ_U577_BASE(37, ClusterFamily.NTORQ),
-    NTORQ_U577_PREMIUM(38, ClusterFamily.NTORQ),
+    NTORQ_U577_PREMIUM(38, ClusterFamily.NTORQ, txXor = 0xEA, rxXor = 0xEA),
     NTORQ_U812(39, ClusterFamily.JUPITER),
     NTORQ_N251(43, ClusterFamily.JUPITER),
     NTORQ_U458(44, ClusterFamily.JUPITER),

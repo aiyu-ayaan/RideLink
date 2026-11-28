@@ -83,6 +83,43 @@ class ClusterProtocolTest {
         assertEquals(null, ClusterModel.detect(byteArrayOf(0x5A)))
     }
 
+    /** BluetoothUtil.encryptData: U716 frames go out with bytes 2..18 XORed with 0xEB; start, DID and FF stay plain. */
+    @Test fun u716StatusFrameIsXoredWithEb() {
+        val plain = ClusterProtocol.status(ClusterModel.NTORQ_U716, status)
+        assertEquals("5b 4a 35 ff 1e 00 09 05 07 00 00 04 04 0b 1a 00 00 00 ff ff", hex(plain))
+        assertEquals("5b 4a de 14 f5 eb e2 ee ec eb eb ef ef e0 f1 eb eb eb 14 ff", hex(FrameCrypto.xor(plain, ClusterModel.NTORQ_U716.txXor)))
+        assertNull(ClusterModel.NTORQ_U716.rxXor)
+    }
+
+    /** encryptDataU577Premium / decryptDataForNtorqU577: 0xEA both ways, and XOR undoes itself. */
+    @Test fun u577PremiumNavFrameIsXoredWithEa() {
+        val (_, control) = ClusterProtocol.navigation(
+            ClusterModel.NTORQ_U577_PREMIUM,
+            ClusterProtocol.NavStep(300, 600, 70_000, Maneuver.RIGHT, "Turn right"),
+        )
+        val wire = FrameCrypto.xor(control, ClusterModel.NTORQ_U577_PREMIUM.txXor)
+        assertEquals("5a 4e 01 2c 00 0a 01 11 70 10 01 00 00 00 00 00 00 00 00 ff", hex(control))
+        assertEquals("5a 4e eb c6 ea e0 eb fb 9a fa eb ea ea ea ea ea ea ea ea ff", hex(wire))
+        assertEquals(hex(control), hex(FrameCrypto.xor(wire, ClusterModel.NTORQ_U577_PREMIUM.rxXor)))
+    }
+
+    @Test fun plainModelsAndShortFramesAreNotXored() {
+        ClusterModel.entries.filter { it != ClusterModel.NTORQ_U716 && it != ClusterModel.NTORQ_U577_PREMIUM }.forEach {
+            assertNull(it.name, it.txXor)
+            assertNull(it.name, it.rxXor)
+        }
+        val short = byteArrayOf(0x5A, 0x29, 1)
+        assertTrue(short === FrameCrypto.xor(short, 0xEA))
+    }
+
+    /** The XOR never touches the start byte or DID, so detection works on still-encrypted frames. */
+    @Test fun detectIgnoresXor() {
+        val wifi = byteArrayOf(0x5A, 0x29, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xFF.toByte())
+        val wire = FrameCrypto.xor(wifi, 0xEA)
+        assertEquals("5a 29 eb ea ea ea ea ea ea ea ea ea ea ea ea ea ea ea ea ff", hex(wire))
+        assertEquals(ClusterModel.detect(wifi), ClusterModel.detect(wire))
+    }
+
     @Test fun speedFromSpeedometerFrame() {
         // ParsingMeta(start = 3) is 1-based: speed is index 2, odometer starts at index 3.
         assertEquals(62, ClusterProtocol.speedKmh(byteArrayOf(0x5A, 0x10, 62, 0, 0x30, 0x39)))

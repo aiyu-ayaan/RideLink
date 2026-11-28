@@ -199,6 +199,22 @@ A text frame loses its 17th character to the checksum, so music text is cut to 1
 Caller (`5B 43`), navigation, status, weather and location frames are written without it.
 Before RideLink sent the checksum, the display ignored the counts and music frames (no notification icons).
 
+### Frame obfuscation (`BleEngine.writeCharacteristicToCentral`, `BluetoothUtil.encryptData` / `encryptDataU577Premium` / `decryptDataForNtorqU577`)
+Two older Ntorq displays take every frame with bytes `2 .. n-2` XORed with one constant byte. The start byte, the
+DID and the trailing `FF` stay plain; a checksum in byte 18 is added first and then XORed with the rest.
+
+| Model | Phone -> display | Display -> phone |
+|---|---|---|
+| U716 (34) | XOR `0xEB` (`encryptData`) | plain |
+| U577 premium (38) | XOR `0xEA` (`encryptDataU577Premium`) | XOR `0xEA` (`decryptDataForNtorqU577`; also `NtorqClusterDataReceiver.parseData` for vehicle 38) |
+| U577 base (37), 2025+ Ntorq, SmartXonnect | plain | plain |
+
+Example, U716 status frame: plain `5B 4A 35 FF 1E 00 09 …` goes out as `5B 4A DE 14 F5 EB E2 …`. RideLink applies
+the transform in `ClusterController.send` (`FrameCrypto`) and decodes received frames before parsing them. The keys
+come only from the model picked in Settings: Auto stays plain, because detection cannot tell U716, U577 base and
+U577 premium apart (all three send `5A 29` / `5A 6B`). Other families (Apache, Ronin, iQube, old Raider firmware)
+use the same scheme with other keys: `development/docs/vehicles/INVENTORY.md`, section 5.
+
 ### Social unread counts, DID `0x9C` (`BleWriteSocialMediaNotificationDataSrcImpl`, `BluetoothUtil.getSocialMediaDataToWriteToCluster`)
 ```
 5B 9C
