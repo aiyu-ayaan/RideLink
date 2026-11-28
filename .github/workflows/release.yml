@@ -412,6 +412,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: master
+          token: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
 
       - uses: actions/setup-node@v4
         with:
@@ -452,6 +455,36 @@ jobs:
             Download `RideLink-${{ needs.merged.outputs.version }}.apk` and open it. Already installed?
             RideLink updates itself: **Settings → About → Updates**.
           files: artifacts/android/*
+
+      - name: Update docs/version.json
+        env:
+          VERSION: ${{ needs.merged.outputs.version }}
+        run: |
+          node -e '
+            const fs = require("fs");
+            const stat = fs.statSync("artifacts/android/RideLink.apk");
+            const mb = (stat.size / (1024 * 1024)).toFixed(1) + " MB";
+            const repo = process.env.GITHUB_REPOSITORY;
+            const version = process.env.VERSION;
+            const data = {
+              version,
+              tag: `v${version}`,
+              apkSizeBytes: stat.size,
+              apkSizeMb: mb,
+              releaseUrl: `https://github.com/${repo}/releases/tag/v${version}`,
+              downloadUrl: `https://github.com/${repo}/releases/latest/download/RideLink.apk`,
+              updatedAt: new Date().toISOString().replace(/\.\d{3}Z$/, "Z")
+            };
+            fs.writeFileSync("docs/version.json", JSON.stringify(data, null, 2) + "\n");
+          '
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add docs/version.json
+          if ! git diff --cached --quiet; then
+            git commit -m "chore(docs): update version.json to v${VERSION} [skip ci]"
+            git pull --rebase origin master || true
+            git push origin HEAD:master
+          fi
 
   # --- If any of that failed, leave nothing half-published -------------------
 

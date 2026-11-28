@@ -73,10 +73,15 @@ Other TVS vehicles (Raider, Apache, Ronin, Jupiter, iQube and more) are not supp
 
 ## Screenshots
 
-| Ride (Demo Mode) | Ride (Dark Theme) | Analytics | Settings | Developer Console |
+| Ride (Demo Mode) | Ride (Dark Theme) | Analytics | Fuel & Service | Garage & Model |
 |:---:|:---:|:---:|:---:|:---:|
-| <img src="docs/screenshots/ride-light.png" width="200" alt="Ride Screen with Live Demo Ride" /> | <img src="docs/screenshots/ride-dark.png" width="200" alt="Ride Screen Dark Theme" /> | <img src="docs/screenshots/analytics.png" width="200" alt="Analytics and Ride History" /> | <img src="docs/screenshots/settings.png" width="200" alt="Settings Screen" /> | <img src="docs/screenshots/console.png" width="200" alt="Developer Console" /> |
-| Active navigation turn, speed & live ride telemetry | Material 3 dark theme with scooter chips | Period stats, distance chart & ride records | Modular settings sections and scooter garage | Live BLE frame log & diagnostic test injection |
+| <img src="docs/screenshots/ride-light.png" width="180" alt="Ride Screen with Live Demo Ride" /> | <img src="docs/screenshots/ride-dark.png" width="180" alt="Ride Screen Dark Theme" /> | <img src="docs/screenshots/analytics.png" width="180" alt="Analytics and Ride History" /> | <img src="docs/screenshots/care.png" width="180" alt="Fuel and Service Care Screen" /> | <img src="docs/screenshots/garage.png" width="180" alt="Scooter Garage and Protocol Picker" /> |
+| Active navigation turn, speed & live telemetry | Material 3 dark theme with scooter chips | Period stats, distance chart & ride records | Full-to-full mileage, ₹/km & fuel log | Multi-scooter garage & cluster model picker |
+
+| Welcome & Sign-in | Cloud Backup | Settings | 23 Languages | Developer Console |
+|:---:|:---:|:---:|:---:|:---:|
+| <img src="docs/screenshots/welcome.png" width="180" alt="Welcome and Optional Google Sign-in" /> | <img src="docs/screenshots/backup.png" width="180" alt="Cloud Backup Screen" /> | <img src="docs/screenshots/settings.png" width="180" alt="Settings Screen" /> | <img src="docs/screenshots/languages.png" width="180" alt="Language Picker (23 Languages)" /> | <img src="docs/screenshots/console.png" width="180" alt="Developer Console" /> |
+| Optional Google sign-in or skip for local-only | Firestore backup for rides, care & scooters | Modular settings sections & account status | English + 22 Scheduled Indian Languages | Live BLE frame log & diagnostic test injection |
 
 ## How it works
 

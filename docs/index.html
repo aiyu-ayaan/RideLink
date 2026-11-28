@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RideLink — Your scooter display, without the account</title>
+  <meta name="description" content="RideLink is a private, local-first Android companion app for TVS SmartXonnect scooter displays. Turn-by-turn navigation, caller ID, live telemetry, fuel care, 23 languages, and optional cloud backup.">
+  <meta name="keywords" content="RideLink, TVS SmartXonnect, NTORQ 125, NTORQ Race XP, scooter companion app, Android BLE telemetry, turn-by-turn navigation, open source">
+  <meta name="theme-color" content="#B3261E">
+  <link rel="canonical" href="https://aiyu-ayaan.github.io/RideLink/">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="RideLink">
+  <meta property="og:title" content="RideLink — Your scooter display, without the account">
+  <meta property="og:description" content="Private, local-first Android companion app for TVS SmartXonnect scooter displays. Navigation, caller ID, live telemetry, fuel & service care, and 23 languages.">
+  <meta property="og:url" content="https://aiyu-ayaan.github.io/RideLink/">
+  <meta property="og:image" content="https://aiyu-ayaan.github.io/RideLink/screenshots/ride-light.png">
+  <meta property="og:image:alt" content="RideLink Android app ride dashboard showing live telemetry and SmartXonnect status">
+  <meta property="og:locale" content="en_US">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="RideLink — Your scooter display, without the account">
+  <meta name="twitter:description" content="Private, local-first Android companion app for TVS SmartXonnect scooter displays. Navigation, caller ID, live telemetry, and 23 languages.">
+  <meta name="twitter:image" content="https://aiyu-ayaan.github.io/RideLink/screenshots/ride-light.png">
+  <meta name="twitter:image:alt" content="RideLink Android app ride dashboard">
+
+  <!-- Icons -->
+  <link rel="icon" type="image/svg+xml" href="assets/ridelink-app-icon.svg">
+  <link rel="apple-touch-icon" href="assets/ridelink-app-icon.svg">
+
+  <!-- Typography: Roboto Flex & Roboto -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wdth,wght@8..144,100..115,400..800&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="styles.css">
+
+  <!-- JSON-LD SoftwareApplication Schema -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "RideLink",
+    "alternateName": "RideLink Companion",
+    "description": "A private, local-first Android companion app for TVS SmartXonnect scooter displays featuring turn-by-turn navigation, call control, live telemetry, ride analytics, fuel & service care, and 23 supported languages.",
+    "operatingSystem": "Android 8.0+",
+    "applicationCategory": "UtilitiesApplication",
+    "softwareVersion": "1.1.0",
+    "url": "https://aiyu-ayaan.github.io/RideLink/",
+    "downloadUrl": "https://github.com/aiyu-ayaan/RideLink/releases/latest/download/RideLink.apk",
+    "image": "https://aiyu-ayaan.github.io/RideLink/screenshots/ride-light.png",
+    "screenshot": [
+      "https://aiyu-ayaan.github.io/RideLink/screenshots/ride-light.png",
+      "https://aiyu-ayaan.github.io/RideLink/screenshots/ride-dark.png",
+      "https://aiyu-ayaan.github.io/RideLink/screenshots/analytics.png",
+      "https://aiyu-ayaan.github.io/RideLink/screenshots/care.png",
+      "https://aiyu-ayaan.github.io/RideLink/screenshots/garage.png",
+      "https://aiyu-ayaan.github.io/RideLink/screenshots/welcome.png",
+      "https://aiyu-ayaan.github.io/RideLink/screenshots/backup.png",
+      "https://aiyu-ayaan.github.io/RideLink/screenshots/settings.png",
+      "https://aiyu-ayaan.github.io/RideLink/screenshots/languages.png",
+      "https://aiyu-ayaan.github.io/RideLink/screenshots/console.png"
+    ],
+    "inLanguage": [
+      "en", "hi", "bn", "te", "mr", "ta", "ur", "gu", "kn", "ml", "or", "pa",
+      "as", "ks", "ne", "sd", "sa", "mai", "sat", "kok", "doi", "mni", "brx"
+    ],
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    },
+    "author": {
+      "@type": "Person",
+      "name": "aiyu-ayaan",
+      "url": "https://github.com/aiyu-ayaan"
+    },
+    "codeRepository": "https://github.com/aiyu-ayaan/RideLink"
+  }
+  </script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <nav class="nav-pill" aria-label="Primary">
+      <a class="brand-link" href="#top">
+        <img class="brand-icon" src="assets/ridelink-app-icon.svg" alt="RideLink logo" width="32" height="32">
+        <span>RideLink</span>
+      </a>
+
+      <ul class="nav-links">
+        <li><a href="#features" data-i18n="nav.features">Features</a></li>
+        <li><a href="#screenshots" data-i18n="nav.screenshots">Screenshots</a></li>
+        <li><a href="#scooters" data-i18n="nav.scooters">Scooters</a></li>
+        <li><a href="#languages" data-i18n="nav.languages">Languages</a></li>
+      </ul>
+
+      <div class="nav-actions">
+        <div class="lang-select-wrap">
+          <svg class="lang-select-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="2" y1="12" x2="22" y2="12"></line>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+          </svg>
+          <label for="lang-select" class="sr-only">Language</label>
+          <select id="lang-select" class="lang-select" aria-label="Select language"></select>
+          <svg class="lang-select-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
+
+        <button id="theme-toggle" class="icon-btn" type="button" aria-label="Theme: System" title="Theme: System">
+          <svg id="theme-icon-system" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="2" y="3" width="20" height="14" rx="2"></rect>
+            <line x1="8" y1="21" x2="16" y2="21"></line>
+            <line x1="12" y1="17" x2="12" y2="21"></line>
+          </svg>
+          <svg id="theme-icon-sun" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" hidden>
+            <circle cx="12" cy="12" r="4"></circle>
+            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path>
+          </svg>
+          <svg id="theme-icon-moon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" hidden>
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+        </button>
+
+        <a class="btn btn-primary btn-sm nav-cta" href="https://github.com/aiyu-ayaan/RideLink/releases/latest/download/RideLink.apk" data-i18n="nav.download">Download APK</a>
+      </div>
+    </nav>
+  </header>
+
+  <main id="main">
+    <!-- Hero -->
+    <section id="top" class="hero">
+      <div class="container hero-grid">
+        <div>
+          <div class="hero-badge">
+            <svg class="cookie-dot" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M12 1.5l2.6 2.1 3.3-.4 1.2 3.1 3.1 1.2-.4 3.3 2.1 2.6-2.1 2.6.4 3.3-3.1 1.2-1.2 3.1-3.3-.4L12 22.5l-2.6-2.1-3.3.4-1.2-3.1-3.1-1.2.4-3.3L.1 12l2.1-2.6-.4-3.3 3.1-1.2 1.2-3.1 3.3.4L12 1.5z"/>
+            </svg>
+            <span data-i18n="hero.badge">v1.1.0 · Android 8.0+ · Local-first</span>
+          </div>
+
+          <h1 class="hero-title" data-i18n="hero.title">Your scooter display, without the account.</h1>
+          <p class="hero-subtitle" data-i18n="hero.subtitle">A private, local-first Android companion app for TVS SmartXonnect scooter displays. Turn-by-turn navigation, caller ID, live telemetry, fuel care, and optional cloud backup — zero forced logins.</p>
+
+          <div class="hero-actions">
+            <a class="btn btn-primary btn-lg" href="https://github.com/aiyu-ayaan/RideLink/releases/latest/download/RideLink.apk">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              <span data-i18n="hero.ctaPrimary">Download APK (v1.1.0)</span>
+            </a>
+            <a class="btn btn-tonal btn-lg" href="https://github.com/aiyu-ayaan/RideLink" target="_blank" rel="noopener noreferrer">
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.02 10.02 0 0 0 22 12.017C22 6.484 17.522 2 12 2z"/>
+              </svg>
+              <span data-i18n="hero.ctaSecondary">View on GitHub</span>
+            </a>
+          </div>
+          <p class="hero-meta" data-i18n="hero.meta">Direct APK · 5.5 MB · Source-available · No ads or tracking</p>
+        </div>
+
+        <div class="hero-visual">
+          <div class="hero-backdrop">
+            <div class="hero-cookie-accent" aria-hidden="true">
+              <svg class="cookie-bg" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 1l2.7 2.1 3.4-.3 1.2 3.2 3.2 1.2-.3 3.4L24 12l-1.8 2.8.3 3.4-3.2 1.2-1.2 3.2-3.4-.3L12 24l-2.7-2.1-3.4.3-1.2-3.2-3.2-1.2.3-3.4L0 12l1.8-2.8-.3-3.4 3.2-1.2 1.2-3.2 3.4.3L12 1z"/>
+              </svg>
+              <span>v1.1.0</span>
+            </div>
+            <div class="hero-phone-frame">
+              <img id="hero-preview-img" src="screenshots/ride-light.png" alt="RideLink Ride screen showing live telemetry, turn-by-turn navigation, and SmartXonnect controls in light mode" width="1080" height="2400">
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Highlights Strip -->
+    <section class="stats-strip" aria-label="Highlights">
+      <div class="container stats-grid">
+        <div class="stat-card">
+          <span class="stat-value" data-i18n="stat1.value">Local-First</span>
+          <span class="stat-label" data-i18n="stat1.label">Works offline with SQLite ride logs</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-value" data-i18n="stat2.value">23</span>
+          <span class="stat-label" data-i18n="stat2.label">English + 22 Indian languages</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-value" data-i18n="stat3.value">Zero Lock-In</span>
+          <span class="stat-label" data-i18n="stat3.label">Optional Google backup, never forced</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Features -->
+    <section id="features" class="section">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-eyebrow" data-i18n="features.eyebrow">Built for the ride</span>
+          <h2 class="section-title" data-i18n="features.title">Everything your cluster can do, unlocked.</h2>
+          <p class="section-subtitle" data-i18n="features.subtitle">From Google Maps arrows on your dash to full-to-full mileage tracking and handlebar call control.</p>
+        </div>
+
+        <div class="features-grid">
+          <article class="feature-card">
+            <div class="feature-icon-wrap" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="3 11 22 2 13 21 11 13 3 11"></polygon>
+              </svg>
+            </div>
+            <h3 data-i18n="feat.nav.title">Turn-by-Turn Navigation</h3>
+            <p data-i18n="feat.nav.desc">Reads Google Maps notifications and sends crisp arrow pictograms, distance, and street names straight to your scooter display.</p>
+          </article>
+
+          <article class="feature-card">
+            <div class="feature-icon-wrap" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+              </svg>
+            </div>
+            <h3 data-i18n="feat.calls.title">Handlebar Call Control</h3>
+            <p data-i18n="feat.calls.desc">See Caller ID on the cluster, accept or reject calls from the handlebar switch, and send missed-call auto-reply SMS templates.</p>
+          </article>
+
+          <article class="feature-card">
+            <div class="feature-icon-wrap" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 18V5l12-2v13"></path>
+                <circle cx="6" cy="18" r="3"></circle>
+                <circle cx="18" cy="16" r="3"></circle>
+              </svg>
+            </div>
+            <h3 data-i18n="feat.media.title">Media &amp; Smart Alerts</h3>
+            <p data-i18n="feat.media.desc">Display track title, artist, playback state, and volume on TFT clusters, plus WhatsApp, Facebook, Instagram, SMS, and delivery alerts.</p>
+          </article>
+
+          <article class="feature-card">
+            <div class="feature-icon-wrap" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 3v18h18"></path>
+                <path d="M18 17V9"></path>
+                <path d="M13 17V5"></path>
+                <path d="M8 17v-3"></path>
+              </svg>
+            </div>
+            <h3 data-i18n="feat.telemetry.title">Live Telemetry &amp; Ride Logs</h3>
+            <p data-i18n="feat.telemetry.desc">Track speed, trip, odometer, fuel, range, engine temperature, and MIL. Auto-records rides in SQLite with charts, CSV export, search, and starring.</p>
+          </article>
+
+          <article class="feature-card">
+            <div class="feature-icon-wrap" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 22h12"></path>
+                <path d="M4 9h10"></path>
+                <path d="M14 22V4a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v18"></path>
+                <path d="M14 13h2a2 2 0 0 1 2 2v2a2 2 0 0 0 2 2 2 2 0 0 0 2-2V9.83a2 2 0 0 0-.59-1.42L18 5"></path>
+              </svg>
+            </div>
+            <h3 data-i18n="feat.fuel.title">Fuel &amp; Service Care</h3>
+            <p data-i18n="feat.fuel.desc">Full-to-full mileage and ₹/km cost calculation, automatic refuel and low-fuel detection, plus service, insurance, and PUC reminders.</p>
+          </article>
+
+          <article class="feature-card">
+            <div class="feature-icon-wrap" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+              </svg>
+            </div>
+            <h3 data-i18n="feat.safety.title">Safety, Weather &amp; Race XP</h3>
+            <p data-i18n="feat.safety.desc">WhatsApp riding auto-reply, check-in SMS with Maps link, last-parked spot, keyless Open-Meteo weather/AQI, and Race XP stats, brightness &amp; CO₂.</p>
+          </article>
+
+          <article class="feature-card">
+            <div class="feature-icon-wrap" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path>
+              </svg>
+            </div>
+            <h3 data-i18n="feat.cloud.title">Optional Cloud Backup</h3>
+            <p data-i18n="feat.cloud.desc">Optional Google sign-in to Firestore with scheduled WorkManager sync, conflict resolution (Merge, Use cloud, Keep local), and multi-scooter garage.</p>
+          </article>
+
+          <article class="feature-card">
+            <div class="feature-icon-wrap" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="4 17 10 11 4 5"></polyline>
+                <line x1="12" y1="19" x2="20" y2="19"></line>
+              </svg>
+            </div>
+            <h3 data-i18n="feat.dev.title">Updater &amp; Developer Console</h3>
+            <p data-i18n="feat.dev.desc">In-app GitHub Releases updater (Stable, Beta, Alpha) and a live BLE frame log console with demo navigation and arrow/alert sweeps.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- Screenshots -->
+    <section id="screenshots" class="section">
+      <div class="container">
+        <div class="screenshots-section">
+          <div class="section-header">
+            <span class="section-eyebrow" data-i18n="screens.eyebrow">Material 3 Expressive</span>
+            <h2 class="section-title" data-i18n="screens.title">Designed for quick glances.</h2>
+            <p class="section-subtitle" data-i18n="screens.subtitle">Adaptive light and dark themes with dynamic color, expressive shapes, and a layout built for both portrait and landscape.</p>
+          </div>
+
+          <div class="screenshot-tabs" role="tablist" aria-label="App screenshots">
+            <button class="tab-btn" type="button" role="tab" aria-selected="true" data-screen="ride-light" data-i18n="screen.rideLight.label">Ride · Light</button>
+            <button class="tab-btn" type="button" role="tab" aria-selected="false" data-screen="ride-dark" data-i18n="screen.rideDark.label">Ride · Dark</button>
+            <button class="tab-btn" type="button" role="tab" aria-selected="false" data-screen="analytics" data-i18n="screen.analytics.label">Analytics</button>
+            <button class="tab-btn" type="button" role="tab" aria-selected="false" data-screen="care" data-i18n="screen.care.label">Fuel &amp; Care</button>
+            <button class="tab-btn" type="button" role="tab" aria-selected="false" data-screen="garage" data-i18n="screen.garage.label">Garage</button>
+            <button class="tab-btn" type="button" role="tab" aria-selected="false" data-screen="welcome" data-i18n="screen.welcome.label">Welcome</button>
+            <button class="tab-btn" type="button" role="tab" aria-selected="false" data-screen="backup" data-i18n="screen.backup.label">Cloud Backup</button>
+            <button class="tab-btn" type="button" role="tab" aria-selected="false" data-screen="settings" data-i18n="screen.settings.label">Settings</button>
+            <button class="tab-btn" type="button" role="tab" aria-selected="false" data-screen="languages" data-i18n="screen.languages.label">Languages</button>
+            <button class="tab-btn" type="button" role="tab" aria-selected="false" data-screen="console" data-i18n="screen.console.label">Console</button>
+          </div>
+
+          <div class="screenshots-gallery">
+            <figure class="screen-item is-active" data-screen="ride-light">
+              <img src="screenshots/ride-light.png" alt="RideLink Ride screen in light theme showing turn-by-turn navigation, scooter chips, and live telemetry" loading="lazy" width="1080" height="2400">
+              <figcaption data-i18n="screen.rideLight.caption">Live ride screen with navigation &amp; telemetry (light)</figcaption>
+            </figure>
+
+            <figure class="screen-item" data-screen="ride-dark">
+              <img src="screenshots/ride-dark.png" alt="RideLink Ride screen in dark theme for night riding" loading="lazy" width="1080" height="2400">
+              <figcaption data-i18n="screen.rideDark.caption">High-contrast dark theme for night riding</figcaption>
+            </figure>
+
+            <figure class="screen-item" data-screen="analytics">
+              <img src="screenshots/analytics.png" alt="RideLink Analytics screen showing monthly ride summary, distance bar chart, and sample rides" loading="lazy" width="1080" height="2400">
+              <figcaption data-i18n="screen.analytics.caption">Ride history, monthly charts, and CSV export</figcaption>
+            </figure>
+
+            <figure class="screen-item" data-screen="care">
+              <img src="screenshots/care.png" alt="RideLink Fuel and Service Care screen showing full-to-full mileage, cost per km, and fuel log" loading="lazy" width="1080" height="2400">
+              <figcaption data-i18n="screen.care.caption">Full-to-full mileage, ₹/km cost, and service care</figcaption>
+            </figure>
+
+            <figure class="screen-item" data-screen="garage">
+              <img src="screenshots/garage.png" alt="RideLink Garage screen showing multi-scooter switcher and cluster model picker" loading="lazy" width="1080" height="2400">
+              <figcaption data-i18n="screen.garage.caption">Multi-scooter garage and cluster model picker</figcaption>
+            </figure>
+
+            <figure class="screen-item" data-screen="welcome">
+              <img src="screenshots/welcome.png" alt="RideLink Welcome screen with optional Google sign-in and Skip for now button" loading="lazy" width="1080" height="2400">
+              <figcaption data-i18n="screen.welcome.caption">Optional sign-in — skip anytime and ride local-first</figcaption>
+            </figure>
+
+            <figure class="screen-item" data-screen="backup">
+              <img src="screenshots/backup.png" alt="RideLink Cloud Backup screen for optional Google Drive and Firestore sync" loading="lazy" width="1080" height="2400">
+              <figcaption data-i18n="screen.backup.caption">Optional Google Firestore cloud backup &amp; sync</figcaption>
+            </figure>
+
+            <figure class="screen-item" data-screen="settings">
+              <img src="screenshots/settings.png" alt="RideLink Settings screen showing account, backup, ride sections, updates, and about" loading="lazy" width="1080" height="2400">
+              <figcaption data-i18n="screen.settings.caption">Ride settings, backup, and updater channels</figcaption>
+            </figure>
+
+            <figure class="screen-item" data-screen="languages">
+              <img src="screenshots/languages.png" alt="RideLink in-app Language picker showing English and 22 Scheduled Indian Languages" loading="lazy" width="1080" height="2400">
+              <figcaption data-i18n="screen.languages.caption">In-app picker for 23 languages in native scripts</figcaption>
+            </figure>
+
+            <figure class="screen-item" data-screen="console">
+              <img src="screenshots/console.png" alt="RideLink Developer Console showing live BLE frame logs, demo ride, and arrow sweeps" loading="lazy" width="1080" height="2400">
+              <figcaption data-i18n="screen.console.caption">Live BLE frame log, demo ride, and arrow sweeps</figcaption>
+            </figure>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Supported Scooters -->
+    <section id="scooters" class="section">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-eyebrow" data-i18n="scooters.eyebrow">Compatibility</span>
+          <h2 class="section-title" data-i18n="scooters.title">Supported Scooters</h2>
+          <p class="section-subtitle" data-i18n="scooters.subtitle">Tested on TVS NTORQ 125 Race XP and built for the NTORQ 125 SmartXonnect family.</p>
+        </div>
+
+        <div class="table-card">
+          <div class="table-scroll">
+            <table class="scooters-table">
+              <thead>
+                <tr>
+                  <th scope="col" data-i18n="scooters.colModel">Model</th>
+                  <th scope="col" data-i18n="scooters.colStatus">Status</th>
+                  <th scope="col" data-i18n="scooters.colNotes">Notes</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong data-i18n="scooters.row1.model">NTORQ 125 Race XP</strong></td>
+                  <td><span class="status-pill status-tested" data-i18n="scooters.row1.status">Tested</span></td>
+                  <td data-i18n="scooters.row1.notes">Full telemetry, Race XP stats, brightness, navigation &amp; alerts</td>
+                </tr>
+                <tr>
+                  <td><strong data-i18n="scooters.row2.model">NTORQ 125 Standard / Race / Super Squad / Marvel</strong></td>
+                  <td><span class="status-pill status-supported" data-i18n="scooters.row2.status">Supported</span></td>
+                  <td data-i18n="scooters.row2.notes">SmartXonnect LCD cluster navigation, calls, alerts &amp; ride logs</td>
+                </tr>
+                <tr>
+                  <td><strong data-i18n="scooters.row3.model">NTORQ 125 XT (TFT)</strong></td>
+                  <td><span class="status-pill status-supported" data-i18n="scooters.row3.status">Supported</span></td>
+                  <td data-i18n="scooters.row3.notes">TFT media metadata, playback, volume &amp; SmartXonnect features</td>
+                </tr>
+                <tr>
+                  <td><strong data-i18n="scooters.row4.model">U716 / U577 &amp; 2025+ NTORQ 125</strong></td>
+                  <td><span class="status-pill status-supported" data-i18n="scooters.row4.status">Supported</span></td>
+                  <td data-i18n="scooters.row4.notes">Updated 2025+ status frame and receiver support</td>
+                </tr>
+                <tr>
+                  <td><strong data-i18n="scooters.row5.model">NTORQ 150 &amp; other TVS models</strong></td>
+                  <td><span class="status-pill status-research" data-i18n="scooters.row5.status">Not yet</span></td>
+                  <td data-i18n="scooters.row5.notes">Under research — report your vehicle on GitHub</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <a class="inline-link" href="https://github.com/aiyu-ayaan/RideLink/blob/master/docs/VEHICLE_SUPPORT.md" target="_blank" rel="noopener noreferrer">
+          <span data-i18n="scooters.link">View full vehicle support roadmap</span>
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
+        </a>
+      </div>
+    </section>
+
+    <!-- Languages -->
+    <section id="languages" class="section">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-eyebrow" data-i18n="langs.eyebrow">Speak your language</span>
+          <h2 class="section-title" data-i18n="langs.title">23 Languages Supported</h2>
+          <p class="section-subtitle" data-i18n="langs.subtitle">English plus all 22 Scheduled Indian Languages — switch the website language below or inside Settings → In-App → Language.</p>
+        </div>
+
+        <div id="languages-grid" class="languages-grid" role="group" aria-label="Supported languages"></div>
+      </div>
+    </section>
+
+    <!-- Bottom CTA -->
+    <section class="section">
+      <div class="container">
+        <div class="cta-card">
+          <h2 data-i18n="cta.title">Ready to ride without an account?</h2>
+          <p data-i18n="cta.subtitle">Download RideLink v1.1.0 for Android 8.0+ directly from GitHub Releases.</p>
+          <div class="cta-buttons">
+            <a class="btn btn-on-red btn-lg" href="https://github.com/aiyu-ayaan/RideLink/releases/latest/download/RideLink.apk">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              <span data-i18n="cta.button">Download RideLink.apk</span>
+            </a>
+            <a class="btn btn-on-red-outline btn-lg" href="https://github.com/aiyu-ayaan/RideLink/releases" target="_blank" rel="noopener noreferrer" data-i18n="cta.releases">All releases &amp; changelog</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <p class="footer-disclaimer" data-i18n="footer.disclaimer">Independent source-available companion project. Not affiliated with, endorsed by, or sponsored by TVS Motor Company.</p>
+      <div class="footer-links">
+        <a href="https://github.com/aiyu-ayaan/RideLink" target="_blank" rel="noopener noreferrer" data-i18n="footer.repo">GitHub Repository</a>
+        <a href="https://github.com/aiyu-ayaan/RideLink/releases" target="_blank" rel="noopener noreferrer" data-i18n="footer.releases">Releases</a>
+        <a href="https://github.com/aiyu-ayaan/RideLink/blob/master/docs/VEHICLE_SUPPORT.md" target="_blank" rel="noopener noreferrer" data-i18n="footer.support">Vehicle Support</a>
+        <a href="https://github.com/aiyu-ayaan/RideLink/issues" target="_blank" rel="noopener noreferrer" data-i18n="footer.issues">Report an Issue</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="i18n.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
