@@ -180,7 +180,9 @@ Error `[28444] Developer console is not set up correctly` = the package + SHA-1 
 - `PROTOCOL.md` — recovered BLE protocol with sources.
 - `development/docs/ARCHITECTURE.md` — module and data-flow diagrams.
 - `development/docs/DESIGN_SYSTEM.md` — color, shape, motion, layout rules.
-- `development/TODO.md` — open work.
+- `development/TODO.md` — open work. Each open line ends with its issue number; the same work is on the public board
+  https://github.com/users/aiyu-ayaan/projects/4, grouped by vehicle under issue #20. Rules: "GitHub dev board" in
+  the global `CLAUDE.md`. Keep the line and the issue in step.
 - `development/docs/vehicles/` — research for every other TVS vehicle (Raider, Ronin, Apache, Jupiter, Zest, iQube):
   ids, stock stacks, frame XOR, layouts, feature matrix and the phased `IMPLEMENTATION_PLAN.md`. Relevant decompiled
   packages are kept in gitignored `jadx/src-8.13.2/`.
