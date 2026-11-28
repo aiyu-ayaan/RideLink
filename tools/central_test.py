@@ -14,6 +14,8 @@ import dbus
 import dbus.mainloop.glib
 from gi.repository import GLib
 
+from fake_cluster import XOR_KEYS, xor
+
 SERVICE = "5456534d-5647-5341-5342-454e544f5251"
 WRITE = "00005352-0000-1000-8000-00805f9b34fb"
 NOTIFY = "00005354-0000-1000-8000-00805f9b34fb"
@@ -31,7 +33,10 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--adapter", default="hci1")
     ap.add_argument("--timeout", type=int, default=30)
+    ap.add_argument("--model", choices=sorted(XOR_KEYS), default="plain",
+                    help="XOR the frames like the app does for this model; run the fake with the same --model")
     args = ap.parse_args()
+    tx_key = XOR_KEYS[args.model][0]
 
     dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
     bus = dbus.SystemBus()
@@ -68,8 +73,9 @@ def main():
         dbus.Interface(notify, "org.bluez.GattCharacteristic1").StartNotify()
         chr_ = dbus.Interface(bus.get_object("org.bluez", write_path), "org.bluez.GattCharacteristic1")
         for f in FRAMES:
-            chr_.WriteValue(dbus.Array(bytes.fromhex(f.replace(" ", "")), signature="y"), {"type": "request"})
-            print("wrote:", f)
+            wire = xor(bytes.fromhex(f.replace(" ", "")), tx_key)
+            chr_.WriteValue(dbus.Array(wire, signature="y"), {"type": "request"})
+            print("wrote:", wire.hex(" "))
         result["ok"] = True
         GLib.timeout_add(1500, loop.quit)
 
