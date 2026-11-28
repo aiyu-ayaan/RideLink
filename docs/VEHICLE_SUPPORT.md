@@ -26,7 +26,7 @@ Detailed research notes live in the maintainer's development docs.
 
 ## Report your vehicle
 
-Comment on [issue #20](https://github.com/aiyu-ayaan/RideLink/issues/20) with:
+Open the [vehicle report form](https://github.com/aiyu-ayaan/RideLink/issues/new?template=vehicle_report.yml), or comment on [issue #20](https://github.com/aiyu-ayaan/RideLink/issues/20), with:
 
 - Vehicle model and year
 - Display type (LCD or TFT)

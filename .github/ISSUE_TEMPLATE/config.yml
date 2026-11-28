@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Vehicle support status
+    url: https://github.com/aiyu-ayaan/RideLink/blob/master/docs/VEHICLE_SUPPORT.md
+    about: See which vehicles are supported before you report one.

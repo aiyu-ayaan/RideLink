@@ -1,0 +1,114 @@
+name: Vehicle support / vehicle problem
+description: Your scooter or bike is not supported, or misbehaves with RideLink.
+labels: ["vehicle"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for testing. Read the [vehicle support page](https://github.com/aiyu-ayaan/RideLink/blob/master/docs/VEHICLE_SUPPORT.md) first.
+        Remove names, phone numbers, locations and Bluetooth addresses from logs before you paste them.
+  - type: dropdown
+    id: family
+    attributes:
+      label: Vehicle family
+      options:
+        - Ntorq 125 SmartXonnect LCD
+        - Ntorq XT / U577 premium
+        - Ntorq U716 / U577 base
+        - 2025+ Ntorq
+        - Raider
+        - Ronin
+        - Apache RR310
+        - Apache RTR 310
+        - Apache RTR 4V
+        - Apache (other)
+        - Jupiter
+        - Zest
+        - iQube / EV
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: model
+    attributes:
+      label: Model and year
+      placeholder: "Raider 125 TFT, 2024"
+    validations:
+      required: true
+  - type: dropdown
+    id: display
+    attributes:
+      label: Display type
+      options: [LCD, TFT, Hybrid (TFT + LCD), Not sure]
+    validations:
+      required: true
+  - type: input
+    id: ble_name
+    attributes:
+      label: Bluetooth name of the display
+      description: The name shown in RideLink's scan list. It starts with "TVS".
+      placeholder: "TVSBT01"
+    validations:
+      required: true
+  - type: dropdown
+    id: ridelink_model
+    attributes:
+      label: Model chosen in RideLink (Settings)
+      options: [Auto, Ntorq 125 SmartXonnect, Ntorq XT / U577 premium, Ntorq U716 / U577 base, 2025+ Ntorq, Other, Not available]
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: RideLink version
+      placeholder: "1.1.0"
+    validations:
+      required: true
+  - type: input
+    id: phone
+    attributes:
+      label: Phone and Android version
+      placeholder: "Pixel 8, Android 15"
+    validations:
+      required: true
+  - type: checkboxes
+    id: works
+    attributes:
+      label: What works
+      options:
+        - label: Connects to the display
+        - label: Clock and phone battery
+        - label: Turn arrows
+        - label: Calls
+        - label: Music
+        - label: Weather
+        - label: Social counts
+        - label: Ride data and speed
+  - type: checkboxes
+    id: broken
+    attributes:
+      label: What does not work
+      options:
+        - label: Does not connect
+        - label: Clock and phone battery
+        - label: Turn arrows
+        - label: Calls
+        - label: Music
+        - label: Weather
+        - label: Social counts
+        - label: Ride data and speed
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What did you see on the display and in the app?
+    validations:
+      required: true
+  - type: textarea
+    id: log
+    attributes:
+      label: Console log
+      description: |
+        Settings, Developer options, Developer mode, then Console. Ride for a minute, then tap Copy log and paste it here.
+        Keep the RX lines (frames from the display). Photos of the display are welcome: drag them into the box above.
+      render: shell

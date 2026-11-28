@@ -67,7 +67,7 @@ Extras on the SmartXonnect LCD (Race XP): race stats (best lap, top speed, 0–6
 
 Extras on TFT displays: weather + AQI, place name and music info.
 
-Tested your scooter? Open an issue with the model and year and a Console log (Settings → Developer options → Save logs) so it can move to ✅.
+Tested your scooter? Use the [vehicle report form](https://github.com/aiyu-ayaan/RideLink/issues/new?template=vehicle_report.yml) with the model and year and a Console log (Settings → Developer options → Save logs) so it can move to ✅.
 
 Other TVS vehicles (Raider, Apache, Ronin, Jupiter, iQube and more) are not supported yet. See [vehicle support](docs/VEHICLE_SUPPORT.md).
 

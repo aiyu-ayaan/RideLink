@@ -1,0 +1,59 @@
+name: Bug report
+description: Something in RideLink does not work as expected.
+labels: ["bug"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open ...
+        2. Tap ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: RideLink version
+    validations:
+      required: true
+  - type: input
+    id: phone
+    attributes:
+      label: Phone and Android version
+    validations:
+      required: true
+  - type: input
+    id: scooter
+    attributes:
+      label: Scooter model
+      placeholder: "Ntorq 125 Race XP, 2026"
+  - type: textarea
+    id: log
+    attributes:
+      label: Console log (optional)
+      description: Settings, Developer options, Developer mode, Console, Copy log. Remove personal data first.
+      render: shell
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots (optional)
+      description: Drag images here.
