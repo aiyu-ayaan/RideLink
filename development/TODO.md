@@ -75,7 +75,9 @@
 
 ## All TVS vehicles (issue #20; research in `development/docs/vehicles/`, plan in `IMPLEMENTATION_PLAN.md`)
 - [x] Research TVS Connect 8.13.2 for every vehicle family: ids, stacks, encryption, frames, feature matrix (2026-11-29)
-- [ ] P0 Phase 0: XOR frames for U716 (TX 0xEB) and U577 premium (TX/RX 0xEA); stock does it, RideLink sends plain (`vehicles/NTORQ.md`)
+- [x] P0 Phase 0: XOR frames for U716 (TX 0xEB) and U577 premium (TX/RX 0xEA) (`FrameCrypto`, `tools/emulate_test.py`) (2026-11-29)
+- [ ] Phase 0 follow-up: Auto mode never XORs (detect() cannot tell U716 / U577 base / premium apart); tell U716 and U577 premium riders to pick their model (Settings hint + `model_auto_using`, 23 locales), or detect premium from its 0xEA RX payload once a capture confirms it
+- [ ] Confirm on a real U716 / U577 premium (Console log with RX lines via the vehicle issue form)
 - [ ] P0 Vehicle 8 `N251Spp` and non-TI vehicle 9 clusters use classic Bluetooth SPP for data (found by BLE scan, then RFCOMM); possible cause of issue #15 "detected but keeps searching" (research `SppSendDataToCluster` first)
 - [ ] Phase 1: multi-family foundation: new `ClusterFamily` values, capability flags, detect() limited to Ntorq, service found by `5352`/`5354` chars, per-model MTU / write type
 - [ ] Phase 2: Raider (issue #19): firmware-date XOR 0xED, status frame, Raider pictogram table, TFT/LCD from `5A 11` [9]

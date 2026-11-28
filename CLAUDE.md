@@ -165,6 +165,8 @@ Error `[28444] Developer console is not set up correctly` = the package + SHA-1 
 - Fake display (needs a BLE adapter): `/usr/bin/python3 tools/fake_cluster.py --adapter hci0`
 - End-to-end BLE check (two adapters): run the fake on hci0, then
   `/usr/bin/python3 tools/central_test.py --adapter hci1`
+- Frame XOR (U716 0xEB TX, U577 premium 0xEA both ways): `--model u716|u577p` on both tools above;
+  offline check without Bluetooth: `/usr/bin/python3 tools/emulate_test.py`
 
 ## Testing without the scooter
 

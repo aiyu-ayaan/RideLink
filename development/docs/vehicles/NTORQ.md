@@ -18,8 +18,9 @@ every frame before writing (Observed, exact switch table checked with a script, 
 
 So a real U716 or U577 premium cluster would most likely ignore RideLink's frames, and RideLink would misread a
 U577 premium's telemetry. Neither model has been tested on a real scooter (README table). `isChecksumNeeded` frames
-(social counts, music) get the checksum first, then the XOR. Fix: per-model frame transform before `ClusterLink.send`
-and after receive (IMPLEMENTATION_PLAN.md phase 1).
+(social counts, music) get the checksum first, then the XOR. Fixed in phase 0 (2026-11-29): `FrameCrypto` in
+`ClusterController.send` and the receive path, keyed by the model picked in Settings (Auto stays plain). Untested on
+hardware.
 
 ## Resolved: U577 premium pictogram table
 
