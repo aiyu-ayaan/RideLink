@@ -74,6 +74,7 @@
 - [ ] Check whether the display needs Bluetooth bonding
 
 ## Later
+- [ ] Support more TVS vehicles: Raider, Apache, Ronin, Jupiter, Zest, iQube, NTORQ 150, U388 (issue #20, `docs/VEHICLE_SUPPORT.md`)
 - [ ] Turn arrow fallback if a Maps update renames its `maneuver_*` drawables (Console note then says `0 Maps icons`)
 - [ ] Legacy Ntorq SmartXonnect (VehicleCode "9") uses separate code, not analysed
 - [x] Optional Google sign-in (Firebase Auth) with skippable welcome screen

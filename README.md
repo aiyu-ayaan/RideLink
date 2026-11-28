@@ -69,6 +69,8 @@ Extras on TFT displays: weather + AQI, place name and music info.
 
 Tested your scooter? Open an issue with the model and year and a Console log (Settings → Developer options → Save logs) so it can move to ✅.
 
+Other TVS vehicles (Raider, Apache, Ronin, Jupiter, iQube and more) are not supported yet. See [vehicle support](docs/VEHICLE_SUPPORT.md).
+
 ## Screenshots
 
 | Ride (Demo Mode) | Ride (Dark Theme) | Analytics | Settings | Developer Console |
@@ -198,6 +200,7 @@ The repository includes desktop Python test utilities (requires BlueZ on Linux, 
 
 ## Related docs
 
+- [`docs/VEHICLE_SUPPORT.md`](docs/VEHICLE_SUPPORT.md) — Vehicle support plan, rider reports and how to add a model
 - [`PROTOCOL.md`](PROTOCOL.md) — Specification of TVS SmartXonnect BLE frames and opcodes
 - [`development/docs/ARCHITECTURE.md`](development/docs/ARCHITECTURE.md) — Subsystem architecture and data flow
 - [`development/docs/DESIGN_SYSTEM.md`](development/docs/DESIGN_SYSTEM.md) — Visual styling, tokens, and motion curves
